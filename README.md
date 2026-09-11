@@ -225,6 +225,7 @@ open a **new** PowerShell window, `cd C:\TechRadar\tech-atlas`, and try again.
 | `Cannot connect to the Docker daemon` | Docker Desktop is installed but not running. Launch it and wait for the whale. |
 | `port is already allocated` (mentions 27017, 8100, or 3100) | Another program on your computer uses that port. On a Mac with a locally installed MongoDB, run `brew services stop mongodb-community` and try again. |
 | Build error mentioning `../tech-lens` | The folders aren't side by side, or the `-main` rename in step 1 was skipped. |
+| `MongoDB cannot start: Linux kernel versions 6.19 and newer…` | A workaround for this is already built in (`GLIBC_TUNABLES` on the `mongo` service in `docker-compose.yml`). If you still see it, you may have an old copy of the code — re-download it. If it persists, change `image: mongo:8` to `image: mongo:7` in `docker-compose.yml` and start again. |
 | First start seems stuck for minutes | Normal — it is downloading and building. Watch Docker Desktop's whale menu or the scrolling log. |
 
 Anything else: copy the last ~20 lines of the log and send them to whoever
