@@ -1,0 +1,196 @@
+{
+  "measures": [
+    {
+      "measure_id": "addressable-market",
+      "code": "M1",
+      "name": "Addressable market",
+      "axis": "market_potential",
+      "weight": 0.4,
+      "definition": "Size of the opportunity the technology opens, for anyone.",
+      "anchors": {
+        "low": "0–2: niche; total spend plausibly under ~$100M/yr.",
+        "mid": "5: material category, ~$1B-scale, or credible path to it.",
+        "high": "8–10: reshapes a multi-billion category or creates one."
+      },
+      "required_evidence": "At least one analyst or primary market figure WITH its scope and date recorded. One TAM figure is thin support — say so.",
+      "open_question": "Anchor thresholds ($100M / $1B) to be confirmed with the client.",
+      "version": 1
+    },
+    {
+      "measure_id": "growth",
+      "code": "M2",
+      "name": "Growth",
+      "axis": "market_potential",
+      "weight": 0.3,
+      "definition": "The rate the space is expanding — capital, players, deployments — not its current size.",
+      "anchors": {
+        "low": "0–2: flat or contracting interest; funding and entrants declining.",
+        "mid": "5: steady growth; new entrants each year, funding trending up.",
+        "high": "8–10: inflecting — funding rounds accelerating, hyperscaler entry, standard-body urgency."
+      },
+      "required_evidence": "Dated series or repeated events across the evidence window (funding, launches, adoptions), not a single enthusiastic article.",
+      "open_question": null,
+      "version": 1
+    },
+    {
+      "measure_id": "use-case-breadth",
+      "code": "M3",
+      "name": "Use-case breadth",
+      "axis": "market_potential",
+      "weight": 0.3,
+      "definition": "How many distinct TCL-relevant problems the technology addresses.",
+      "anchors": {
+        "low": "0–2: single narrow use case.",
+        "mid": "5: a family of related uses within one fabric.",
+        "high": "8–10: broad horizontal utility across several fabrics or industries TCL serves."
+      },
+      "required_evidence": "Distinct named use cases, each with at least one piece of evidence; hypothetical uses do not count.",
+      "open_question": null,
+      "version": 1
+    },
+    {
+      "measure_id": "fabric-fit",
+      "code": "S1",
+      "name": "Fabric fit",
+      "axis": "strategic_fit",
+      "weight": 0.4,
+      "definition": "How squarely the technology sits inside one of TCL's fabrics — assessed per fabric.",
+      "anchors": {
+        "low": "0–2: touches the fabric only by analogy; no plausible TCL service embeds it.",
+        "mid": "5: adjacent — fits the fabric's domain but would extend, not deepen, current offerings.",
+        "high": "8–10: core — directly upgrades or threatens services this fabric sells today."
+      },
+      "required_evidence": "Technical descriptions concrete enough to map onto the fabric's services; at least one piece of evidence naming a use in this fabric's domain.",
+      "open_question": null,
+      "version": 1
+    },
+    {
+      "measure_id": "portfolio-adjacency",
+      "code": "S2",
+      "name": "Portfolio adjacency",
+      "axis": "strategic_fit",
+      "weight": 0.3,
+      "definition": "How close the technology is to what TCL already operates — assets, platforms, skills.",
+      "anchors": {
+        "low": "0–2: nothing TCL runs today is reusable toward it.",
+        "mid": "5: TCL's assets help (network, PoPs, enterprise relationships) but the core capability is new.",
+        "high": "8–10: TCL could credibly deliver it by extending an existing platform or asset."
+      },
+      "required_evidence": "What the technology needs to operate (infrastructure, data, distribution), mappable against the TCL portfolio.",
+      "open_question": "Depends on the TCL portfolio description, pending stakeholder interviews.",
+      "version": 1
+    },
+    {
+      "measure_id": "right-to-play",
+      "code": "S3",
+      "name": "Right to play",
+      "axis": "strategic_fit",
+      "weight": 0.3,
+      "definition": "Whether TCL would be a credible provider in the eyes of buyers — beyond mere capability.",
+      "anchors": {
+        "low": "0–2: buyers would not shortlist a carrier for this; incumbents own the trust.",
+        "mid": "5: TCL could earn a seat via partnerships or an anchor customer.",
+        "high": "8–10: carrier-grade trust, global reach or regulatory standing is exactly why buyers would pick TCL."
+      },
+      "required_evidence": "Who buys it, from whom today, and what the buying criteria are.",
+      "open_question": null,
+      "version": 1
+    },
+    {
+      "measure_id": "maturity-trl",
+      "code": "A1",
+      "name": "Maturity (TRL)",
+      "axis": "adoption_readiness",
+      "weight": 0.4,
+      "definition": "Technology readiness, expressed on TCL's TRL-style scale.",
+      "anchors": {
+        "low": "0–2: paper or lab demonstration only (TRL 1–3).",
+        "mid": "5: working prototypes, early field trials, pre-standard (TRL 4–6).",
+        "high": "8–10: productised, deployed at scale, standards ratified (TRL 7–9)."
+      },
+      "required_evidence": "Dated evidence of demonstrations, trials, deployments or ratified standards — a vendor claim alone does not raise TRL.",
+      "open_question": null,
+      "version": 1
+    },
+    {
+      "measure_id": "commercial-adoption",
+      "code": "A2",
+      "name": "Commercial adoption",
+      "axis": "adoption_readiness",
+      "weight": 0.4,
+      "definition": "Real buying behaviour, distinct from technical maturity.",
+      "anchors": {
+        "low": "0–2: no paying customers identifiable.",
+        "mid": "5: early adopters and lighthouse deals; revenue exists, references are few.",
+        "high": "8–10: repeatable purchasing across segments; named production customers at scale."
+      },
+      "required_evidence": "Named deployments, revenue disclosures, procurement or operator announcements — repeated coverage of the SAME deal counts once.",
+      "open_question": null,
+      "version": 1
+    },
+    {
+      "measure_id": "deliverability",
+      "code": "A3",
+      "name": "Deliverability",
+      "axis": "adoption_readiness",
+      "weight": 0.2,
+      "definition": "How hard it would be to stand this up and run it at carrier grade — the risk axis. High score means EASY to deliver.",
+      "anchors": {
+        "low": "0–2: severe blockers — unresolved physics/scale problems, hostile regulation, single-vendor lock.",
+        "mid": "5: hard but chartable — skills or ecosystem gaps that money and time close.",
+        "high": "8–10: deliverable with known engineering; mature supply chain and operational patterns."
+      },
+      "required_evidence": "What deployments actually required (skills, capex, timelines, dependencies); regulatory posture where relevant.",
+      "open_question": null,
+      "version": 1
+    },
+    {
+      "measure_id": "disruption-threat",
+      "code": "X1",
+      "name": "Disruption threat",
+      "axis": "extra",
+      "weight": null,
+      "definition": "If TCL does nothing, how badly does this hurt existing revenue? The only defence-oriented measure.",
+      "anchors": {
+        "low": "0–2: no plausible impact on any current revenue line.",
+        "mid": "5: erodes one line over years; substitution is possible but sticky.",
+        "high": "8–10: direct substitution for a major line, already being marketed at TCL's customers."
+      },
+      "required_evidence": "Evidence of substitution actually happening or being sold — competitor positioning, customer pilots replacing incumbent services.",
+      "open_question": "Depends on the TCL portfolio description, pending stakeholder interviews.",
+      "version": 1
+    },
+    {
+      "measure_id": "serviceable-capture",
+      "code": "X2",
+      "name": "Serviceable capture",
+      "axis": "extra",
+      "weight": null,
+      "definition": "The slice of the opportunity TCL could realistically win.",
+      "anchors": {
+        "low": "0–2: TCL's channels and assets reach almost none of it.",
+        "mid": "5: a definable segment (existing enterprise base, specific geographies) is winnable.",
+        "high": "8–10: TCL's position makes it a natural top-3 provider for a large share."
+      },
+      "required_evidence": "Market shape by segment/geography against TCL's footprint. Depends on addressable-market being scorable; inherit its thinness.",
+      "open_question": null,
+      "version": 1
+    },
+    {
+      "measure_id": "capability-gap",
+      "code": "X3",
+      "name": "Capability gap",
+      "axis": "extra",
+      "weight": null,
+      "definition": "What TCL lacks to pursue this, and how expensive the gap is to close. High score means the gap is SMALL.",
+      "anchors": {
+        "low": "0–2: the gap is the business itself — talent, IP and platforms all absent.",
+        "mid": "5: buildable or buyable within normal investment horizons.",
+        "high": "8–10: TCL substantially has what it needs today."
+      },
+      "required_evidence": "What delivering requires versus what the portfolio shows TCL operates; hiring or acquisition signals where present.",
+      "open_question": "Depends on the TCL portfolio description, pending stakeholder interviews.",
+      "version": 1
+    }
+  ]
+}
