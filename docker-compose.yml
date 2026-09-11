@@ -17,6 +17,10 @@ name: tech-radar
 services:
   mongo:
     image: mongo:8
+    environment:
+      # MongoDB 8 crashes on Linux kernel 6.19+ (TCMalloc/rseq, SERVER-121912);
+      # letting glibc claim rseq makes tcmalloc fall back to a safe path.
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
     ports:
       - "27017:27017"
     volumes:
