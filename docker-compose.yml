@@ -8,14 +8,17 @@
 #   2. docker compose up
 #   3. open http://localhost:3100
 #
-# MongoDB is not exposed to the host, so it won't clash with a locally
-# installed MongoDB; its data survives restarts in the mongo-data volume.
+# MongoDB is exposed on localhost:27017 (stop any locally installed
+# MongoDB first, or the port clashes); its data survives restarts in
+# the mongo-data volume.
 
 name: tech-radar
 
 services:
   mongo:
     image: mongo:8
+    ports:
+      - "27017:27017"
     volumes:
       - mongo-data:/data/db
     healthcheck:
