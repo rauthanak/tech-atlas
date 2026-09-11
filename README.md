@@ -90,6 +90,19 @@ install anything else (no database, no programming languages).
    your key right after the `=` (no spaces), so it reads
    `OPENAI_API_KEY=sk-...`. Save (`⌘`+`S`) and close TextEdit.
 
+**Prefer not to use Terminal?** You can do the same in Finder:
+
+1. Open the `tech-atlas` folder in Finder and press `⌘`+`Shift`+`.` (period)
+   — this shows hidden files, and `.env.example` appears (files whose names
+   start with a dot are normally invisible).
+2. Click `.env.example` once, copy it (`⌘`+`C`) and paste it (`⌘`+`V`) — you
+   get a copy of the file.
+3. Rename the copy to exactly `.env` (click its name, press Return, type
+   `.env`). If macOS warns that names starting with a dot are reserved or
+   hidden, choose to use the name anyway.
+4. Right-click `.env` → **Open With → TextEdit**, paste your key after
+   `OPENAI_API_KEY=`, save and close.
+
 ### 4. Start it
 
 In the same Terminal window:
@@ -183,6 +196,17 @@ install anything else (no database, no programming languages).
    your key right after the `=` (no spaces), so it reads
    `OPENAI_API_KEY=sk-...`. Save and close Notepad.
 
+**Prefer not to use PowerShell?** You can do the same in File Explorer:
+
+1. Open the `tech-atlas` folder in File Explorer. In the **View** menu, tick
+   **File name extensions** — otherwise renaming won't work properly.
+2. Click `.env.example` once, copy it (`Ctrl`+`C`) and paste it (`Ctrl`+`V`)
+   — you get a copy of the file.
+3. Rename the copy (right-click → **Rename**) to exactly `.env` — nothing
+   before or after.
+4. Right-click `.env` → **Open with → Notepad**, paste your key after
+   `OPENAI_API_KEY=`, save and close.
+
 ### 4. Start it
 
 In the same PowerShell window:
@@ -217,6 +241,42 @@ open a **new** PowerShell window, `cd C:\TechRadar\tech-atlas`, and try again.
 
 ---
 
+## Updating to a new version
+
+When you're told there are fresh changes on GitHub and the app is already
+set up on your computer:
+
+1. **Stop the app** — click the terminal window where it runs and press
+   `Ctrl`+`C` (or press Stop on the `tech-radar` stack in Docker Desktop).
+2. **Get the new code** — repeat step 1 of your setup: download both ZIPs
+   again, unpack, rename to `tech-atlas` and `tech-lens`. Before replacing,
+   rename your current folders to `tech-atlas-old` and `tech-lens-old` (as a
+   backup), then put the new ones in their place.
+3. **Put your API key back** — the download never includes your key (it is
+   deliberately kept out of GitHub), so redo step 3 of your setup: create
+   `.env` from `.env.example` again and paste your key in.
+4. **Start with a rebuild** — this is the step people miss. From the
+   `tech-atlas` folder:
+
+   ```bash
+   docker compose up --build
+   ```
+
+   The `--build` part is essential: without it, Docker keeps running the
+   **old** version it built earlier, and nothing seems to change. You'll see
+   a few minutes of build output when it's genuinely rebuilding.
+5. Check <http://localhost:3100> as usual, then delete the `-old` backup
+   folders.
+
+**Your data is safe during all of this.** Everything the app has collected
+lives inside Docker (a storage volume), not in these folders — replacing the
+folders doesn't touch it.
+
+*If you use git:* `git pull` in both folders, then `docker compose up
+--build` from `tech-atlas`.
+
+---
+
 ## If something goes wrong
 
 | What you see | What it means / what to do |
@@ -227,6 +287,7 @@ open a **new** PowerShell window, `cd C:\TechRadar\tech-atlas`, and try again.
 | Build error mentioning `../tech-lens` | The folders aren't side by side, or the `-main` rename in step 1 was skipped. |
 | `MongoDB cannot start: Linux kernel versions 6.19 and newer…` | A workaround for this is already built in (`GLIBC_TUNABLES` on the `mongo` service in `docker-compose.yml`). If you still see it, you may have an old copy of the code — re-download it. If it persists, change `image: mongo:8` to `image: mongo:7` in `docker-compose.yml` and start again. |
 | First start seems stuck for minutes | Normal — it is downloading and building. Watch Docker Desktop's whale menu or the scrolling log. |
+| You installed an update but the app behaves like the old version | You started without rebuilding. Stop it and run `docker compose up --build` (see [Updating to a new version](#updating-to-a-new-version)). |
 
 Anything else: copy the last ~20 lines of the log and send them to whoever
 gave you these repos.
