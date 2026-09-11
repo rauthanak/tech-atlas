@@ -1,0 +1,49 @@
+# ── Tech Atlas + Tech Lens + MongoDB, all in containers ──────────────────
+# Nothing to install locally except Docker Desktop.
+#
+# Layout: clone tech-atlas and tech-lens side by side in the same folder
+# (this file builds the portal from ../tech-lens).
+#
+#   1. copy .env.example to .env and fill in your API key
+#   2. docker compose up
+#   3. open http://localhost:3100
+#
+# MongoDB is not exposed to the host, so it won't clash with a locally
+# installed MongoDB; its data survives restarts in the mongo-data volume.
+
+name: tech-radar
+
+services:
+  mongo:
+    image: mongo:8
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  atlas:
+    build: .
+    env_file: .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      HOST: 0.0.0.0
+    ports:
+      - "8100:8100"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  lens:
+    build: ../tech-lens
+    environment:
+      TECH_ATLAS_API_URL: http://atlas:8100
+    ports:
+      - "3100:3100"
+    depends_on:
+      - atlas
+
+volumes:
+  mongo-data:
