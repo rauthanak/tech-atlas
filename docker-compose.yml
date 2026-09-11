@@ -44,9 +44,11 @@ services:
         condition: service_healthy
 
   lens:
-    build: ../tech-lens
-    environment:
-      TECH_ATLAS_API_URL: http://atlas:8100
+    build:
+      context: ../tech-lens
+      args:
+        # Baked into the Next.js build — see the Dockerfile in tech-lens.
+        TECH_ATLAS_API_URL: http://atlas:8100
     ports:
       - "3100:3100"
     depends_on:
