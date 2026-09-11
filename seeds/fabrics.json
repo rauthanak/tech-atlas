@@ -6,7 +6,7 @@
       "definition": "Connectivity as a service — core, edge, subsea, satellite integration, network APIs, SDN/NFV, private networks, optical and photonic transport.",
       "enabled": true,
       "open_question": "Refine definition and included offerings with TCL stakeholders.",
-      "version": 1
+      "version": 2
     },
     {
       "fabric_id": "cloud",

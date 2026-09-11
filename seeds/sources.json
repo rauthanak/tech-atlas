@@ -7,7 +7,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "microsoft_research",
@@ -16,7 +16,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "meta_ai",
@@ -25,7 +25,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "amazon_science",
@@ -43,7 +43,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "nvidia_blog",
@@ -52,7 +52,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "intel_research",
@@ -61,7 +61,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "qualcomm_research",
@@ -70,7 +70,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "cisco_blogs",
@@ -88,7 +88,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "cloudflare_radar",
@@ -97,7 +97,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "akamai_blog",
@@ -106,7 +106,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "aws_reinvent",
@@ -115,7 +115,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "google_cloud_next",
@@ -124,7 +124,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "microsoft_ignite",
@@ -133,7 +133,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "mckinsey",
@@ -142,7 +142,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "gartner",
@@ -151,7 +151,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "licensed",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "idc",
@@ -160,7 +160,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free_tier",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "forrester",
@@ -169,7 +169,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free_tier",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "cbinsights_research",
@@ -178,7 +178,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free_tier",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "rcr_wireless",
@@ -187,7 +187,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "fierce_network",
@@ -196,7 +196,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "light_reading",
@@ -205,7 +205,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "wballiance",
@@ -214,7 +214,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "verizon_innovation",
@@ -223,7 +223,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "att_innovation",
@@ -232,7 +232,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "crunchbase",
@@ -241,7 +241,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "licensed",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "pitchbook",
@@ -250,7 +250,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "licensed",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "dealroom",
@@ -259,7 +259,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "licensed",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "tracxn",
@@ -268,7 +268,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "licensed",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "cbinsights",
@@ -277,7 +277,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "licensed",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "ycombinator",
@@ -286,7 +286,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "techstars",
@@ -304,7 +304,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "alchemist",
@@ -313,7 +313,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "a16z",
@@ -322,7 +322,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "sequoia",
@@ -331,7 +331,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "lightspeed",
@@ -340,7 +340,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "greylock",
@@ -349,7 +349,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "index_ventures",
@@ -358,7 +358,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "nfx",
@@ -367,7 +367,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "github_trending",
@@ -376,7 +376,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "pypi",
@@ -385,7 +385,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "npm_trends",
@@ -394,7 +394,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "stackoverflow_trends",
@@ -403,7 +403,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "kaggle",
@@ -412,7 +412,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "hacker_news",
@@ -430,7 +430,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "reddit_networking",
@@ -439,7 +439,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "reddit_netsec",
@@ -448,7 +448,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "reddit_cloud",
@@ -457,7 +457,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "cncf_landscape",
@@ -466,7 +466,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "stac_research",
@@ -475,7 +475,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free_tier",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "arxiv",
@@ -493,7 +493,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "licensed",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "acm_dl",
@@ -502,7 +502,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "licensed",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "ssrn",
@@ -511,7 +511,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "nature",
@@ -520,7 +520,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free_tier",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "science",
@@ -529,7 +529,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free_tier",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "pnas",
@@ -538,7 +538,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "cacm",
@@ -547,7 +547,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free_tier",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "ieee_comsoc",
@@ -556,7 +556,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "licensed",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "mit_csail",
@@ -565,7 +565,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "stanford_ai",
@@ -574,7 +574,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "berkeley_bair",
@@ -583,7 +583,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "cmu_ml",
@@ -592,7 +592,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "eth_inf",
@@ -601,7 +601,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "tsinghua_air",
@@ -610,7 +610,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "nus_computing",
@@ -619,7 +619,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "ntu_scse",
@@ -628,7 +628,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "iisc_csa",
@@ -637,7 +637,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "iitb_cse",
@@ -646,7 +646,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "iitm_rise",
@@ -655,7 +655,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "neurips",
@@ -664,7 +664,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "iclr",
@@ -673,7 +673,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "icml",
@@ -682,7 +682,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "sigcomm",
@@ -691,7 +691,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "usenix_nsdi",
@@ -700,7 +700,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "conext",
@@ -709,7 +709,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "hotnets",
@@ -718,7 +718,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "sosp",
@@ -727,7 +727,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "usenix_osdi",
@@ -736,7 +736,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "usenix_security",
@@ -745,7 +745,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "ieee_sp",
@@ -754,7 +754,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "ndss",
@@ -763,7 +763,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "acm_ccs",
@@ -772,7 +772,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "blackhat",
@@ -781,7 +781,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free_tier",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "mobicom",
@@ -790,7 +790,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "mobisys",
@@ -799,7 +799,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "edgesys",
@@ -808,7 +808,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "sensys",
@@ -817,7 +817,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "ipsn",
@@ -826,7 +826,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "acm_socc",
@@ -835,7 +835,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "eurosys",
@@ -844,7 +844,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "hotos",
@@ -853,7 +853,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "mwc_barcelona",
@@ -862,7 +862,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "mwc_exhibitors",
@@ -871,7 +871,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "ietf",
@@ -889,7 +889,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "3gpp",
@@ -898,7 +898,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "gsma",
@@ -907,7 +907,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "etsi",
@@ -916,7 +916,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "itu",
@@ -925,7 +925,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free_tier",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "nist_pubs",
@@ -934,7 +934,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "iso",
@@ -943,7 +943,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free_tier",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "linux_foundation",
@@ -952,7 +952,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "cncf",
@@ -961,7 +961,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "lf_edge",
@@ -970,7 +970,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "openapis",
@@ -979,7 +979,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "onf",
@@ -988,7 +988,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "apache",
@@ -997,7 +997,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "uspto_ppubs",
@@ -1006,7 +1006,7 @@
       "horizon": "H3",
       "cluster": "patents",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "uspto_odp",
@@ -1015,7 +1015,7 @@
       "horizon": "H3",
       "cluster": "patents",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "espacenet",
@@ -1024,7 +1024,7 @@
       "horizon": "H3",
       "cluster": "patents",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "wipo_patentscope",
@@ -1033,7 +1033,7 @@
       "horizon": "H3",
       "cluster": "patents",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "darpa",
@@ -1042,7 +1042,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "nsf_awards",
@@ -1051,7 +1051,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "cordis",
@@ -1060,7 +1060,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "ukri",
@@ -1069,7 +1069,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "dfg",
@@ -1078,7 +1078,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "jst",
@@ -1087,7 +1087,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "meity",
@@ -1096,7 +1096,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "dst_india",
@@ -1105,7 +1105,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "nsm_india",
@@ -1114,7 +1114,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "enisa",
@@ -1123,7 +1123,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "cisa",
@@ -1132,7 +1132,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     },
     {
       "source_id": "bis_india",
@@ -1141,7 +1141,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true
+      "enabled": false
     }
   ]
 }

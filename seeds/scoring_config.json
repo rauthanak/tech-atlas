@@ -14,8 +14,8 @@
         }
       },
       "unscorable_policy": "An unscorable measure is EXCLUDED from its axis mean and the axis is marked partial — never substituted with zero.",
-      "open_question": "Axis composition and per-measure weights to be confirmed against the client's scoring sheet.",
-      "version": 1
+      "open_question": null,
+      "version": 2
     },
     {
       "name": "priority_grid",
@@ -48,15 +48,15 @@
         "far_mid": "P5",
         "far_low": "P6"
       },
-      "open_question": "Cut-points are proposals; the reference deck's P1–P6 descriptions and activities are preserved as-is.",
-      "version": 1
+      "open_question": null,
+      "version": 2
     },
     {
       "name": "evidence",
       "max_dossier_tokens": 300000,
       "note": "Safety ceiling only — the full summarized dossier is sent; this guard exists for pathological cases.",
       "open_question": null,
-      "version": 1
+      "version": 5
     },
     {
       "name": "horizons",
