@@ -24,8 +24,5 @@ python -m pip install --quiet -e .
 python -m playwright install chromium >/dev/null 2>&1 || echo "warning: playwright chromium install failed — JS-heavy sources degrade to plain HTTP"
 
 python scripts/create_db.py
-python scripts/seed_sources.py
-python scripts/seed_prompts.py
-python scripts/seed_scoring.py
 
 exec uvicorn app.main:app --host "${HOST:-0.0.0.0}" --port "${PORT:-8100}"

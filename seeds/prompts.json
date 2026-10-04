@@ -22,28 +22,30 @@
     },
     {
       "name": "scout",
-      "description": "Scout agent instructions: scrape the assigned sources for technology updates.",
+      "description": "Scout agent instructions: collect the assigned sources (websites and data sources) for technology updates.",
       "system": "You are a scout for an emerging-technology radar. You scrape assigned sources and collect every technology update they carry.",
-      "prompt": "You are assigned these sources (category {category}):\n{sources}\n\nFor EACH source above, call crawl_source with its exact URL, once per source. The tool crawls the source website up to {max_depth} link levels deep (following hyperlinks inside articles, news and blog posts to the pages they reference) within a budget of {max_pages} pages, extracts every update/article/news item related directly or indirectly to technology, records each item's reference URL, and stores the extracted text with a summary. When every source has been crawled, finish with a short report: one line per source stating pages visited and documents collected. If a tool ever returns RUN CANCELLED, stop immediately.",
+      "prompt": "You are assigned these sources (category {category}), listed as source_id: name (url):\n{sources}\n\nFor EACH source above, call collect_source with its exact source_id, once per source. For a website, the tool crawls up to {max_depth} link levels deep within a budget of {max_pages} pages, following links inside articles, news and blog posts; for a data source, it runs the source's saved searches. Either way it extracts every update related directly or indirectly to technology, records each item's reference URL, and stores the extracted text with a summary. When every source has been collected, finish with a short report: one line per source stating items visited and documents collected. If a tool ever returns RUN CANCELLED, stop immediately.",
       "variables": [
         "category",
         "sources",
         "max_depth",
         "max_pages"
       ],
-      "version": 1,
+      "version": 2,
       "enabled": true
     },
     {
       "name": "article_summary",
-      "description": "Faithful 5-10 line summary, granular technologies, and the scout's take on one extracted page.",
+      "description": "Faithful 5-10 line summary, granular technologies, the scout's take, and the signals from the Signal list on one extracted page.",
       "system": "You are a scout for an emerging-technology radar. Be concrete and faithful to the text — downstream agents rely on your read as a reference point.",
-      "prompt": "Analyze the following page. Reply with ONLY a JSON object (no code fences, no other text) of this shape:\n{{\"summary\": \"5-10 lines that condense the page WITHOUT losing its gist, context or focus — keep the concrete claims, figures, dates, named parties and caveats; if the page carries no technology content, one line saying what it is instead\", \"technologies\": [\"the granular technologies this page is actually written about — the specific level, not the umbrella: 'quantum computing' or 'quantum security' rather than 'quantum', 'sparse attention' rather than 'ai'; several are fine, but only those the text is genuinely about, not every term it name-drops; lowercase english — translate a non-english technology name to its standard english equivalent; empty array if none\"], \"scout_take\": \"your read as the scout, 2-5 sentences: the flavor and sentiment of the writing, the message the writer wants to convey, and the direction this is heading — not a rising/falling flag, but where and how the trend leads: gaining traction, setting up a next discovery, settling into maturity or standardization, narrowing to a niche, stalling, or whatever the text actually implies, and by what path — what a downstream analyst should take from this page, knowing another agent may refute it\"}}\n\nURL: {url}\n\n{text}",
+      "prompt": "Analyze the following page. Reply with ONLY a JSON object (no code fences, no other text) of this shape:\n{{\"summary\": \"5-10 lines that condense the page WITHOUT losing its gist, context or focus — keep the concrete claims, figures, dates, named parties and caveats; when signals are present, name them and say why they matter; if the page carries no technology content, one line saying what it is instead\", \"technologies\": [\"the granular technologies this page is actually written about — the specific level, not the umbrella: 'quantum computing' or 'quantum security' rather than 'quantum', 'sparse attention' rather than 'ai'; several are fine, but only those the text is genuinely about, not every term it name-drops; lowercase english — translate a non-english technology name to its standard english equivalent; empty array if none\"], \"scout_take\": \"your read as the scout, 2-5 sentences: the flavor and sentiment of the writing, the message the writer wants to convey, and the direction this is heading — not a rising/falling flag, but where and how the trend leads: gaining traction, setting up a next discovery, settling into maturity or standardization, narrowing to a niche, stalling, or whatever the text actually implies, and by what path — what a downstream analyst should take from this page, knowing another agent may refute it\", \"signals\": [{{\"signal\": \"the exact name of an entry from the Never miss list, or Other\", \"label\": \"for Other only: a short name for this kind of development; otherwise null\", \"headline\": \"a news-style headline of at most 12 words saying who did what, starting with the actor — never with 'The document', 'The paper', 'The page' or 'The article'\", \"what\": \"what happened, in one sentence\", \"who\": \"the organisations or people involved\", \"when\": \"when it happened or was announced, as YYYY-MM-DD or YYYY-MM, or null\", \"quote\": \"the exact sentence from the page that shows it\", \"implication\": \"one sentence: what it means for the technology\", \"technologies\": [\"the 1-3 names from your technologies list above that this signal is about, copied exactly\"]}}], \"ignore\": \"the exact name of a Can ignore entry if the whole page is that kind of content, otherwise null\"}}\n\nSignals add emphasis; they never replace the analysis. Always write the summary, technologies and scout_take in full, whatever the page contains.\n- Report a signal only when the page itself states it, and quote the sentence that shows it. Do not infer what the text does not support.\n- Report any other notable development a technology radar should not miss as signal \"Other\", with a short label.\n- Acknowledgements, funding notes, author biographies and other boilerplate are not signals: leave them out.\n- If there are no signals, return an empty list.\n- Use \"ignore\" only when the whole page is clearly that kind of content and carries no signal.\n\nNever miss:\n{never_miss}\n\nCan ignore:\n{can_ignore}\n\nURL: {url}\n\n{text}",
       "variables": [
+        "never_miss",
+        "can_ignore",
         "url",
         "text"
       ],
-      "version": 3,
+      "version": 6,
       "enabled": true
     },
     {
@@ -59,10 +61,21 @@
       "enabled": true
     },
     {
+      "name": "technology_label",
+      "description": "Gives each technology name the capitals it usually has in writing (\"ml-kem\" → \"ML-KEM\"), for display only. A reply that changes anything but capitals is ignored.",
+      "system": "You format technology names for display in an emerging-technology radar.",
+      "prompt": "Below is a JSON array of technology names, all in lowercase. Give each name the capitals it usually has in English writing: acronyms and initialisms in capitals (AI, 6G, ML-KEM, QUIC, EVPN-VXLAN), product and project names as their owners write them (Kubernetes, PyTorch, eBPF), and everything else in lowercase with a capital first letter (Post-quantum cryptography, Agentic AI, Network automation). Change capitals only: never add, remove, reorder or respell any character, space or hyphen.\n\nReply with ONLY a JSON object (no code fences, no other text) mapping every name to its display form:\n{{\"labels\": {{\"<name>\": \"<display form>\"}}}}\n\nNames:\n{names}",
+      "variables": [
+        "names"
+      ],
+      "version": 1,
+      "enabled": true
+    },
+    {
       "name": "measure_scoring",
       "description": "Score one measure (0-10) for one technology in one fabric, with evidence and counter-case.",
       "system": "You are a scorer for an emerging-technology radar. Score only what the evidence supports — an honest 'unscorable' is a success, a guess is a defect.",
-      "prompt": "Score the technology below on ONE measure, for ONE fabric.\n\nMEASURE: {measure_name}\n{definition}\nAnchors:\n{anchors}\nRequired evidence: {required_evidence}\n\nTECHNOLOGY: {technology}\nFABRIC ({fabric_name}): {fabric_definition}\n\nEVIDENCE DOSSIER (summaries of scraped documents; cite by URL):\n{evidence}\n\nReply with ONLY a JSON object, no code fences: {{\"score\": <integer 0-10 or null>, \"justification\": \"why this score, grounded in the dossier\", \"evidence_urls\": [\"URLs from the dossier that support it\"], \"counter_case\": \"the strongest argument against your own score\", \"unscorable\": <true if the required evidence is absent>, \"missing\": \"if unscorable — exactly what evidence would resolve it, else null\"}}. A score without evidence_urls is invalid. Never guess: if the required evidence is absent, set unscorable true and score null.",
+      "prompt": "Score the technology below on ONE measure, for ONE fabric.\n\nMEASURE: {measure_name}\n{definition}\nAnchors:\n{anchors}\nRequired evidence: {required_evidence}\n\nTECHNOLOGY: {technology}\nFABRIC ({fabric_name}): {fabric_definition}\n\nTCL TODAY IN THIS FABRIC (from Tata Communications' own website; cite its URL when you use it):\n{tcl_today}\n\nEVIDENCE (summaries of collected pages; cite by URL):\n{evidence}\n\nFor a measure about TCL's own position, such as what it already runs, who would buy from it, what it lacks or which of its services a technology could replace, take TCL's side from TCL TODAY and the technology's side from the evidence. A score needs both sides, and cites URLs for both. For any other measure, use the evidence alone.\n\nReply with ONLY a JSON object, no code fences: {{\"score\": <integer 0-10 or null>, \"justification\": \"1-3 sentences on why this score, leading with the facts it rests on (e.g. 'Cisco reports more than 300 organizations onboarded since August…'); call the material 'the evidence', never 'the dossier'; no URLs in the text, they go in evidence_urls\", \"evidence_urls\": [\"URLs that support it: from the evidence, and TCL TODAY's URL when you used it\"], \"counter_case\": \"the strongest argument against your own score\", \"unscorable\": <true if the required evidence is absent>, \"missing\": \"if unscorable — exactly what evidence would resolve it, else null\"}}. A score without evidence_urls is invalid. Never guess: if the required evidence is absent, set unscorable true and score null.",
       "variables": [
         "measure_name",
         "definition",
@@ -71,33 +84,35 @@
         "technology",
         "fabric_name",
         "fabric_definition",
+        "tcl_today",
         "evidence"
       ],
-      "version": 1,
+      "version": 3,
       "enabled": true
     },
     {
       "name": "watch_metrics",
-      "description": "Pick 2-4 falsifiable inflection indicators for a technology.",
+      "description": "Picks 2-4 checkable indicators that would change a technology's story, in plain words.",
       "system": "You are an analyst for an emerging-technology radar. Every watch metric must be concrete and checkable by a later run.",
-      "prompt": "From the evidence below, pick 2 to 4 indicators that would signal an inflection for this technology — the measurable things that, if they crossed a threshold, would change its story (readiness, horizon, or priority).\n\nTECHNOLOGY: {technology}\n\nEVIDENCE DOSSIER:\n{evidence}\n\nReply with ONLY a JSON array, no code fences: [{{\"metric\": \"what is measured\", \"current_value\": \"today's value, with the evidence URL\", \"inflection_threshold\": \"the value that changes the story\", \"direction\": \"rising|falling\", \"implication\": \"what crossing it would mean for TCL (e.g. readiness rises, H3 becomes H2)\"}}]. Each metric must be checkable by a future run — vague trends ('more adoption') are invalid.",
+      "prompt": "From the evidence below, pick 2 to 4 indicators that would signal a turning point for this technology: measurable things that, if they crossed a threshold, would change how ready or how important it is for TCL.\n\nTECHNOLOGY: {technology}\n\nEVIDENCE:\n{evidence}\n\nReply with ONLY a JSON array, no code fences: [{{\"metric\": \"what is measured\", \"current_value\": \"today's value and when it was reported, in plain words (no URL here)\", \"source\": \"the URL from the evidence that shows today's value\", \"inflection_threshold\": \"the value that would change the story\", \"direction\": \"rising|falling\", \"implication\": \"what crossing it would mean for TCL, in plain words (e.g. 'commercial adoption would be proven, so a pilot becomes worth assessing'); never name priority or horizon codes such as P1-P6 or H1-H3\"}}]. Each metric must be checkable by a future run — vague trends ('more adoption') are invalid.",
       "variables": [
         "technology",
         "evidence"
       ],
-      "version": 1,
+      "version": 2,
       "enabled": true
     },
     {
       "name": "link_selection",
-      "description": "Pick which candidate links a scout should crawl next.",
+      "description": "Pick which candidate links a scout should crawl next, preferring pages likely to carry never-miss signals.",
       "system": "You are an analyst for an emerging-technology radar. Be concrete and brief.",
-      "prompt": "From the candidate links below, pick up to {budget} that most likely lead to technology updates, articles, news, research or product announcements (skip navigation, tags, login, careers, legal and social pages). Reply with only the chosen URLs, one per line.\n\n{links}",
+      "prompt": "From the candidate links below, pick up to {budget} that most likely lead to technology updates, articles, news, research, filings or product announcements (skip navigation, tags, login, legal and social pages). Prefer links likely to lead to pages carrying these signals:\n{never_miss_names}\n\nReply with only the chosen URLs, one per line.\n\n{links}",
       "variables": [
         "budget",
+        "never_miss_names",
         "links"
       ],
-      "version": 1,
+      "version": 2,
       "enabled": true
     },
     {
@@ -124,14 +139,14 @@
     },
     {
       "name": "pov",
-      "description": "Composes the client-format Point of View for one technology from its stored assessment data — narrates, never scores.",
-      "system": "You compose Point of View documents for Tata Communications' (TCL) emerging-technology radar — the client-facing deliverable an executive reads. House style: crisp, confident, evidence-led business prose.\n\nHard rules:\n- NEVER invent or adjust a number. Every score, priority and horizon you mention must appear verbatim in the assessment data.\n- Write plain business English. Never copy internal notation into the prose: no measure codes (M1, A1, X3), no snake_case (write 'Market Potential', never 'market_potential'), no 'UNSCORABLE' or 'UNSCORED', and never fragments echoed from the data like '(1/3 measures — partial)' or 'priority: not placeable | horizon: —'. Translate instead: a measure that could not be scored 'could not be assessed from the current evidence'; a roll-up from a subset of measures rests 'on partial evidence'.\n- Scores are on a 0-10 scale; cite them as plain numbers in sentences, e.g. 'Market Potential scored 7.5 in Cloud'.\n- An honest gap is part of the product. Describe missing evidence in the language of the thing that is missing (deployments, market sizings, named customers, operating results), never in the language of the scoring system.",
-      "prompt": "Write the Point of View for the technology below from its assessment data. Use only what the data says.\n\nTECHNOLOGY: {technology}\n\nASSESSMENT DATA (scores, justifications, placement, watch metrics — the only source of truth):\n{assessment_data}\n\nFirst decide the document's mode:\n- FULL: at least 4 measures were scored across the fabrics — write every section.\n- INSUFFICIENT EVIDENCE: fewer than 4 measures were scored. Write only headline, summary, evidence_gaps and recommendation, and set every other field to null. A short honest document beats a long empty one: never restate 'could not be assessed' section after section. The summary must lead with what the evidence DOES show, however little that is.\n\nReply with ONLY a JSON object (no code fences, no other text) of this shape:\n{{\"headline\": \"one sentence: the verdict a CxO reads first\", \"summary\": \"3-6 sentences: what this technology is, what the evidence shows, and TCL's angle\", \"tora_analysis\": {{\"market_potential\": \"2-4 sentences interpreting the Market Potential scores across fabrics, citing the numbers\", \"strategic_fit\": \"same for Strategic Fit\", \"adoption_readiness\": \"same for Adoption Readiness\"}}, \"maturity\": \"2-4 sentences on technical and commercial maturity\", \"market_view\": \"2-4 sentences on opportunity size and growth; if the market was not independently sized in the evidence, say exactly that\", \"placement_rationale\": \"2-3 sentences: why it lands in its priority cell and horizon, named as plain words ('P1, near horizon (H1), in the Cloud fabric'), and the drivers behind how-soon and how-big; note where fabrics differ. If it cannot be placed, say so in one sentence and name only the one or two decisive missing pieces\", \"capability_gap\": \"1-3 sentences on what TCL would need to build or buy, or null if there is no evidence either way\", \"evidence_gaps\": [{{\"fabric\": \"the fabric name\", \"missing\": [\"one plain sentence naming a missing piece of evidence and what it would resolve\"]}}], \"recommendation\": \"2-4 sentences: what TCL should do next, consistent with the priority and the gaps\"}}\n\nevidence_gaps rules: one entry per fabric; at most 5 items per fabric, most decisive first, one sentence each. Name the evidence that would resolve the gap (e.g. 'A dated production deployment with named customers in a cloud-operations context would establish maturity'). Do NOT enumerate every measure — pick what would most change the placement. In FULL mode, fabrics with no material gaps may be omitted.",
+      "description": "Writes the client-format Point of View for one technology from its stored assessment — narrates, never scores.",
+      "system": "You write Point of View documents for Tata Communications' (TCL) emerging-technology radar: the client-facing brief a TCL executive reads to decide what to do about a technology. House style: crisp, plain, evidence-led business English.\n\nHard rules:\n- NEVER invent or change a number. Every score, priority and horizon you mention must appear in the assessment data exactly as written there.\n- Use plain words, never the scoring system's. No measure codes, no snake_case, and none of these words: TORA, roll-up, dossier, cell, placed, placeable, unscorable, unscored. Say 'the evidence' or 'the pages reviewed'; a measure that could not be scored 'could not be assessed from the evidence'; a missing priority means 'no priority could be set yet'.\n- Mention a priority or horizon only as the assessment data sets it. If it sets none, never name one, even where a sign to watch does.\n- Cite scores only for the three main ones: Market Potential, Strategic Fit and Adoption Readiness. For the other measures, say what they show in words.\n- When a score rests on only some of its measures, say so where you cite it, naming what was and wasn't assessed. For example: 'Strategic Fit scored 8, but only for how well it fits the Cloud business; fit with TCL's portfolio and TCL's right to play could not be assessed.' Never call something strong, high or proven on the strength of a partial score.\n- Say where the evidence comes from when it is narrow. If most cited pages come from one company or site, the summary says so plainly (e.g. 'All the evidence is Cisco's own announcements').\n- Say each limitation once: in its measure's section, in one clause. evidence_gaps then names the evidence that would settle the biggest gaps, and the summary may name the biggest one in a clause. No other section repeats them.\n- An honest gap is part of the product. Describe missing evidence as the thing that is missing (deployments, market sizings, named customers, operating results), never in the language of the scoring system.",
+      "prompt": "Write the Point of View for the technology below from its assessment data. Use only what the data says.\n\nTECHNOLOGY: {technology}\n\nASSESSMENT DATA (the scores and the measures under each, the priority's inputs, signs to watch — the only source of truth):\n{assessment_data}\n\nWrite every section. Each measure is discussed once, in its own section: each main score's section covers the measures listed under that score, and other_measures covers those listed under 'Other measures'. Other sections may name a measure but don't explain it again. A short honest document beats a long repetitive one.\n\nReply with ONLY a JSON object (no code fences, no other text) of this shape:\n{{\"headline\": \"one sentence of at most 25 words: the verdict a TCL executive reads first, in plain words\", \"summary\": \"3-5 sentences in words, without scores: what the technology is, what the evidence shows and where it comes from, and what it means for TCL. The scores belong in their own sections\", \"tora_analysis\": {{\"market_potential\": \"2-3 sentences on the Market Potential score and the measures under it: the score, what each measure shows, and which could not be assessed. Where fabrics share a score, say it once for all of them\", \"strategic_fit\": \"the same for Strategic Fit\", \"adoption_readiness\": \"the same for Adoption Readiness\"}}, \"other_measures\": \"2-4 sentences on the measures listed under 'Other measures', in words, without their numbers: what each shows (for a capability gap, what TCL would need to build or buy), and in one clause which could not be assessed. Where fabrics agree, say it once\", \"placement_rationale\": \"2-3 sentences: the priority and horizon in plain words ('P1, near horizon (H1), in the Cloud fabric') and what drove how soon and how big; note where fabrics differ. If no priority could be set, one sentence naming what was missing for it: the measures behind how soon or how big that couldn't be assessed\", \"evidence_gaps\": [{{\"fabric\": \"the fabric name\", \"missing\": [\"one plain sentence naming a missing piece of evidence and what it would settle\"]}}], \"recommendation\": \"2-4 sentences. Open with the stance in a few plain words, consistent with the priority and the gaps (e.g. 'Monitor; don't invest yet.' or 'Start a pilot in Cloud.'). Then the main reason, then what would change the stance: the one or two most telling signs to watch for, briefly, with a threshold as an example rather than a target TCL has set\"}}\n\nevidence_gaps rules: one entry per fabric; at most 3 items per fabric, most decisive first, one sentence each. Name the evidence that would settle the gap (e.g. 'A dated production deployment with named customers in cloud operations would show maturity'). Don't list every measure that couldn't be assessed; pick what would most change the verdict. A fabric with no material gaps may be left out.",
       "variables": [
         "technology",
         "assessment_data"
       ],
-      "version": 2,
+      "version": 4,
       "enabled": true
     }
   ]

@@ -2,12 +2,16 @@
 admin edits here (rename, alias moves, enable/disable) restamp documents
 deterministically — no LLM involved — so corrections are cheap and safe."""
 
+from collections import Counter
 from datetime import datetime, timezone
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from agent.analyzer.estimate import estimate
 from agent.resolver import restamp_all, start_resolve
+from app.services import evidence
 from app.services.db.mongo import get_collection
 
 router = APIRouter()
@@ -17,17 +21,51 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+STATES = Literal["new_evidence", "no_pov", "not_assessed", "stopped_partway", "assessing", "current", "off"]
+
+
+def _over_floor(ids: list[str], found: dict[str, dict]) -> dict | None:
+    """Technologies never assessed that now have as many pages as the latest
+    assessment by page count asked for: they got there after it ran, so no
+    run included them. The Not assessed filter offers them, with the cost."""
+    run = get_collection("scoring_runs").find_one({"params.min_docs": {"$gte": 1}},
+                                                  {"params": 1, "started_at": 1}, sort=[("started_at", -1)])
+    if run is None:
+        return None
+    floor = run["params"]["min_docs"]
+    over = [i for i in ids if found[i]["state"] == "not_assessed" and found[i]["new_pages"] >= floor]
+    return {"min_pages": floor, "started_at": run["started_at"], "tech_ids": over,
+            **estimate(over)} if over else None
+
+
 @router.get("/technologies")
-def list_technologies(q: str = "", limit: int = 100, skip: int = 0) -> dict:
+def list_technologies(q: str = "", state: STATES | None = None, limit: int = 100, skip: int = 0) -> dict:
+    """The register, most pages first, each row with its state (services/
+    evidence), new pages, assessment date and newest Point of View. `state`
+    filters before paging; `state_counts` and `over_floor` cover the search's
+    matches."""
     import re as _re
     coll = get_collection("technologies")
     query: dict = {}
     if q.strip():
         rx = _re.compile(_re.escape(q.strip().lower()))
-        query = {"$or": [{"name": rx}, {"aliases": rx}]}
-    total = coll.count_documents(query)
-    techs = list(coll.find(query).sort("doc_count", -1)
-                 .skip(max(0, skip)).limit(max(1, min(limit, 500))))
+        query = {"$or": [{"name": rx}, {"aliases": rx}, {"label": _re.compile(_re.escape(q.strip()), _re.I)}]}
+    ids = [t["_id"] for t in coll.find(query, {"_id": 1}).sort([("doc_count", -1), ("_id", 1)])]
+    found = evidence.list_states(ids)
+    state_counts = Counter(s["state"] for s in found.values())
+    over_floor = _over_floor(ids, found)
+    if state:
+        ids = [i for i in ids if found[i]["state"] == state]
+    start = max(0, skip)
+    page = ids[start:start + max(1, min(limit, 500))]
+    rows = {t["_id"]: t for t in coll.find({"_id": {"$in": page}})}
+    povs = {p["_id"]: {"scoring_run_id": p["scoring_run_id"], "composed_at": p["composed_at"]}
+            for p in get_collection("povs").aggregate([
+                {"$match": {"tech_id": {"$in": page}}}, {"$sort": {"composed_at": -1}},
+                {"$group": {"_id": "$tech_id", "scoring_run_id": {"$first": "$scoring_run_id"},
+                            "composed_at": {"$first": "$composed_at"}}}])}
+    techs = [{**rows[i], **found[i], "pov": povs.get(i)} for i in page if i in rows]
+    total = len(ids)
     docs = get_collection("documents")
     tagged = docs.count_documents({"technologies_resolved": {"$exists": True, "$ne": []}})
     kinds: dict[str, int] = {}
@@ -42,6 +80,8 @@ def list_technologies(q: str = "", limit: int = 100, skip: int = 0) -> dict:
     return {
         "technologies": techs,
         "total": total,
+        "state_counts": dict(state_counts),
+        "over_floor": over_floor,
         "summary": {"tech_count": coll.estimated_document_count(),
                     "tagged_docs": tagged,
                     "kinds": kinds, "horizons": horizons},
@@ -68,12 +108,60 @@ def list_resolves() -> dict:
         get_collection("resolves").find().sort("started_at", -1).limit(20))}
 
 
+@router.get("/technologies/labels")  # before /technologies/{tech_id}
+def technology_labels() -> dict:
+    """Display names, {name: label}, for technologies that have one
+    ("ml-kem" → "ML-KEM"). The portal shows a label wherever it shows a name."""
+    return {t["name"]: t["label"] for t in get_collection("technologies").find(
+        {"label": {"$nin": [None, ""]}}, {"name": 1, "label": 1})}
+
+
 @router.get("/technologies/{tech_id}")
 def get_technology(tech_id: str) -> dict:
     t = get_collection("technologies").find_one({"_id": tech_id})
     if t is None:
         raise HTTPException(status_code=404, detail=f"unknown technology {tech_id!r}")
     return t
+
+
+@router.get("/technologies/{tech_id}/summary")
+def technology_summary(tech_id: str) -> dict:
+    """The technology page in one call: the technology and its one state
+    (services/evidence), its latest assessment, any newer run still going or
+    stopped partway, its newest Point of View, its new pages, and about how
+    many model calls the next step takes."""
+    t = get_collection("technologies").find_one({"_id": tech_id})
+    if t is None:
+        raise HTTPException(status_code=404, detail=f"unknown technology {tech_id!r}")
+    s = evidence.state(tech_id)
+    a = s["assessment"]
+    pov = get_collection("povs").find_one(
+        {"tech_id": tech_id}, {"sections.headline": 1, "scoring_run_id": 1, "composed_at": 1,
+                               "version": 1, "assessment_ids": 1}, sort=[("composed_at", -1)])
+    since_pov = None
+    if pov:
+        read = evidence.reading(list(get_collection("assessments").find(
+            {"_id": {"$in": pov.get("assessment_ids") or []}}, {"measures": 0, "watch_metrics": 0})))
+        since_pov = len(evidence.new_pages(t["name"], read)) if read else None
+    cost = estimate([tech_id])
+    return {
+        "technology": {"id": t["_id"], "name": t["name"], "aliases": t.get("aliases", []),
+                       "enabled": t.get("enabled", True), "page_count": t.get("page_count", 0),
+                       "source_count": t.get("source_count", 0)},
+        "state": s["state"],
+        "assessment": {k: a[k] for k in ("scoring_run_id", "run_status", "assessed_at", "pages_read",
+                                         "evidence_runs", "fabrics", "not_assessed_in")} if a else None,
+        "unfinished": s["unfinished"],
+        "pov": {"id": pov["_id"], "scoring_run_id": pov["scoring_run_id"],
+                "composed_at": pov["composed_at"], "version": pov.get("version"),
+                "headline": (pov.get("sections") or {}).get("headline"),
+                "from_latest_assessment": bool(a) and pov["scoring_run_id"] == a["scoring_run_id"]}
+        if pov else None,
+        "new_pages": {"since_assessment": len(s["new"]), "since_pov": since_pov,
+                      "recent": [evidence.page(d) for d in s["new"][:5]]},
+        "estimate": {"assess_calls": cost["calls"], "assess_calls_max": cost["calls_max"],
+                     "write_calls": 1},
+    }
 
 
 @router.get("/technologies/{tech_id}/documents")
@@ -92,7 +180,9 @@ def technology_documents(tech_id: str, limit: int = 50, skip: int = 0,
     docs = list(docs_coll.find(match, {"extracted_text": 0})
                 .sort(order)
                 .skip(max(0, skip)).limit(max(1, min(limit, 500))))
+    new_versions = {evidence.version(d) for d in evidence.state(tech_id)["new"]}
     for d in docs:
+        d["new"] = evidence.version(d) in new_versions  # not read by the latest assessment
         d["id"] = str(d.pop("_id"))
     return {"name": t["name"], "documents": docs, "total": total}
 
@@ -111,13 +201,17 @@ def update_technology(tech_id: str, edit: TechEdit) -> dict:
         raise HTTPException(status_code=422,
                             detail=f"another technology already uses the name {name!r}"
                                    " — move its aliases instead")
-    updated = techs.find_one_and_update(
-        {"_id": tech_id},
-        {"$set": {"name": name, "enabled": edit.enabled, "updated_at": _now()},
-         "$addToSet": {"aliases": name}},
-        return_document=True)
-    if updated is None:
+    current = techs.find_one({"_id": tech_id}, {"name": 1})
+    if current is None:
         raise HTTPException(status_code=404, detail=f"unknown technology {tech_id!r}")
+    update: dict = {"$set": {"name": name, "enabled": edit.enabled, "updated_at": _now()},
+                    "$addToSet": {"aliases": name}}
+    typed = edit.name.strip()
+    if typed != name:                 # typed with capitals: that's how it's shown
+        update["$set"]["label"] = typed
+    elif name != current["name"]:     # renamed in lowercase: the next organize labels it
+        update["$unset"] = {"label": ""}
+    techs.update_one({"_id": tech_id}, update)
     restamp_all()
     return get_collection("technologies").find_one({"_id": tech_id})
 

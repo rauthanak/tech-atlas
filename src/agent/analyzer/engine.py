@@ -11,7 +11,6 @@ renormalized; an unscorable measure is excluded, never zero, and the axis is
 marked partial. Roll-ups are recomputable later from stored scores without
 any LLM call."""
 
-import json
 import logging
 import threading
 import uuid
@@ -20,7 +19,7 @@ from datetime import datetime, timezone
 
 from agent.analyzer.placement import compute_placement
 from app.services.db.mongo import get_collection
-from app.services.llm.llm import LLM
+from app.services.llm.llm import LLM, call_with_backoff, parse_json
 from app.services.prompts.store import PromptStore
 from app.settings import get_settings
 
@@ -132,19 +131,24 @@ def shutdown() -> None:
 
 # ── evidence dossier ─────────────────────────────────────────────────
 
-def build_dossier(tech_name: str, max_tokens: int) -> tuple[str, int]:
+def build_dossier(tech_name: str, max_tokens: int) -> dict:
     """Every stamped document's summary — full dossier, no doc cap. Deduped by
-    URL keeping the newest. The token ceiling is a guard for pathological
-    volume only: oldest entries drop first, and the dossier says so."""
+    URL keeping the newest visit. The token ceiling is a guard for
+    pathological volume only: oldest entries drop first, and the dossier says
+    so. Returns the `text` with what it read: `pages`, the page versions (an
+    unchanged revisit counts as the version it repeats); `runs`, the
+    collection runs those visits came from; and `from`, the newest-visit time
+    of the oldest page read, set only when the guard dropped pages."""
     seen: dict[str, dict] = {}
     for d in get_collection("documents").find(
             {"technologies_resolved": tech_name},
             {"end_url": 1, "title": 1, "kind": 1, "published_date": 1,
              "scraped_at": 1, "summary_text": 1, "scout_take": 1,
-             "source_id": 1}).sort("scraped_at", -1):
+             "source_id": 1, "run_id": 1, "is_stub": 1, "ref_doc_id": 1}).sort("scraped_at", -1):
         seen.setdefault(d.get("end_url") or str(d["_id"]), d)
-    entries = []
-    for d in seen.values():
+    kept, pages, runs, cutoff, last_visit = [], [], set(), None, None
+    total_chars, budget = 0, max_tokens * 4  # ~4 chars per token
+    for d in seen.values():  # newest first; oldest fall off if the guard trips
         lines = [f"- [{d.get('kind') or 'article'}] {d.get('title') or d.get('end_url')}",
                  f"  url: {d.get('end_url')} · source: {d.get('source_id')}"
                  f" · published: {d.get('published_date') or 'n/a'}"
@@ -153,44 +157,37 @@ def build_dossier(tech_name: str, max_tokens: int) -> tuple[str, int]:
             lines.append(f"  summary: {d['summary_text']}")
         if d.get("scout_take"):
             lines.append(f"  scout take: {d['scout_take']}")
-        entries.append("\n".join(lines))
-    kept, total_chars, budget = [], 0, max_tokens * 4  # ~4 chars per token
-    for e in entries:  # newest first; oldest fall off if the guard trips
-        if total_chars + len(e) > budget:
+        text = "\n".join(lines)
+        if total_chars + len(text) > budget:
             kept.append(f"[dossier truncated at ~{max_tokens} tokens — "
-                        f"{len(entries) - len(kept)} oldest entries omitted]")
+                        f"{len(seen) - len(pages)} oldest entries omitted]")
+            cutoff = last_visit
             break
-        kept.append(e)
-        total_chars += len(e)
-    return "\n\n".join(kept), len(seen)
+        kept.append(text)
+        total_chars += len(text)
+        pages.append(d["ref_doc_id"] if d.get("is_stub") and d.get("ref_doc_id") else d["_id"])
+        last_visit = d.get("scraped_at")
+        if d.get("run_id"):
+            runs.add(d["run_id"])
+    return {"text": "\n\n".join(kept), "pages": pages, "runs": sorted(runs), "from": cutoff}
 
 
 # ── scoring ──────────────────────────────────────────────────────────
 
-import time
-
-
 def _ask_json(llm: LLM, rendered: str, run_id: str):
-    """One scoring call. Bad JSON gets one retry; transient provider errors
-    (rate limits above all — six parallel dossier-sized calls can burst the
-    TPM cap) back off and retry rather than killing the whole run."""
-    backoffs = (5, 15, 30, 60, 120)
-    json_retried = False
-    for attempt in range(len(backoffs) + 1):
+    """One scoring call. A bad reply gets one retry; provider errors (rate
+    limits above all — six parallel dossier-sized calls can burst the TPM
+    cap) back off and retry rather than killing the whole run."""
+    def call() -> str:
         _bump(run_id, llm_calls=1)
+        return llm.ask(rendered)
+
+    for attempt in (1, 2):
+        reply = call_with_backoff(call, lambda: cancelled(run_id))
         try:
-            return json.loads(llm.ask(rendered))
-        except json.JSONDecodeError as exc:
-            log.warning("scoring call returned bad JSON: %s", exc)
-            if json_retried:
-                return None
-            json_retried = True
-        except Exception as exc:
-            if attempt >= len(backoffs) or cancelled(run_id):
-                raise
-            delay = backoffs[attempt]
-            log.warning("scoring call failed (%s) — retrying in %ds", exc, delay)
-            time.sleep(delay)
+            return parse_json(reply)
+        except ValueError as exc:
+            log.warning("scoring call returned bad JSON (attempt %d): %s", attempt, exc)
     return None
 
 
@@ -202,7 +199,7 @@ def _relevant_fabrics(llm: LLM, run_id: str, tech_name: str,
         prompt = PromptStore.get("fabric_relevance")
         listing = "\n".join(f"- {f['_id']}: {f['name']} — {f['definition']}" for f in fabrics)
         data = _ask_json(llm, prompt.render(
-            technology=tech_name, fabrics=listing, evidence=dossier[:8000]), run_id)
+            technology=tech_name, fabrics=listing, evidence=dossier), run_id)
         ids = set(data.get("fabrics", [])) if isinstance(data, dict) else set()
         chosen = [f for f in fabrics if f["_id"] in ids]
         if chosen:
@@ -223,6 +220,7 @@ def _score_measure(llm: LLM, run_id: str, measure: dict, tech_name: str,
         technology=tech_name,
         fabric_name=fabric.get("name", ""),
         fabric_definition=fabric.get("definition", ""),
+        tcl_today=fabric.get("tcl_today") or "Not described.",  # TCL's side of the TCL-position measures
         evidence=dossier,
     )
     data = _ask_json(llm, rendered, run_id)
@@ -289,7 +287,8 @@ def assess_technology(run_id: str, tech_id: str, llm: LLM,
                          if c["_id"] == "evidence"), {})
     max_tokens = int(evidence_cfg.get("max_dossier_tokens", 300000))
 
-    dossier, doc_count = build_dossier(entry["name"], max_tokens)
+    built = build_dossier(entry["name"], max_tokens)
+    dossier = built["text"]
     if not dossier:
         _record_skip(run_id, entry, "no evidence — no documents stamped with this technology")
         return f"{entry['name']}: skipped, no evidence"
@@ -321,7 +320,10 @@ def assess_technology(run_id: str, tech_id: str, llm: LLM,
             "technology": entry["name"],
             "fabric_id": fabric["_id"],
             "fabric": fabric.get("name"),
-            "doc_count": doc_count,
+            "doc_count": len(built["pages"]),  # pages actually read, after the size guard
+            "evidence_runs": built["runs"],  # the collection runs whose pages the scorer read
+            "dossier_pages": built["pages"],  # the page versions read: new evidence is any other
+            **({"dossier_from": built["from"]} if built["from"] else {}),
             "measures": {mid: {**results[mid],
                                "code": next((m.get("code") for m in measures
                                              if m["_id"] == mid), mid)}

@@ -272,6 +272,15 @@ set up on your computer:
 lives inside Docker (a storage volume), not in these folders — replacing the
 folders doesn't touch it.
 
+**Your settings: check Changes first.** Edits made in the portal — sources,
+signals, skills, the scoring method, crawl settings — apply at once, but they
+live only in this running app. When a new version brings changed *seeding
+data* (the configuration in the code), it replaces them with its own. Before
+updating, open **Setup → Changes** in the portal: anything listed there is not
+in the seeding data yet. Tick what you want to keep, click **Update seeding
+data**, and make sure those files reach GitHub (send them to whoever maintains
+the repos) — otherwise the new version's settings replace them.
+
 *If you use git:* `git pull` in both folders, then `docker compose up
 --build` from `tech-atlas`.
 
@@ -294,6 +303,23 @@ gave you these repos.
 
 ---
 
+## Optional: keys for the data sources
+
+Besides websites, the radar reads a few free official data sources. They are
+off until you switch them on (Setup → Sources); one whose key is missing just
+shows "not configured". All keys are free. Put them in `.env`:
+
+| Key | For | How to get it |
+| --- | --- | --- |
+| `CONTACT_EMAIL` | SEC filings, USAJOBS | Your work email. SEC requires one in every request; USAJOBS wants the email its key was registered with. Never sent to websites. |
+| `EPO_OPS_KEY`, `EPO_OPS_SECRET` | Patents (EPO Open Patent Services) | Register at <https://developers.epo.org>, create an app, copy its consumer key and secret. No identity check. |
+| `OPENALEX_API_KEY` | Papers and grants (OpenAlex) | Optional — works without. A free key from <https://openalex.org> gives ten times the daily budget. |
+| `USAJOBS_API_KEY` | US federal job postings | Request one at <https://developer.usajobs.gov/apirequest/>. |
+
+Restart the app after editing `.env`.
+
+---
+
 ## For developers (run without Docker)
 
 Native setup needs local installs: **MongoDB** listening on
@@ -302,6 +328,9 @@ Native setup needs local installs: **MongoDB** listening on
 - macOS/Linux: `./start.sh` in each project.
 - Windows: double-click `start.bat` (runs `start.ps1`) in each project.
 
-Both scripts create the environment, install dependencies, seed the database
-(tech-atlas), and start dev servers: API on **8100**, portal on **3100**.
-Settings live in `.env` (created from `.env.example` on first start).
+Both scripts create the environment, install dependencies and start dev
+servers: API on **8100**, portal on **3100**. The API loads the seeding data
+(the files in `seeds/`) into a fresh database, and again whenever those files
+change; a plain restart keeps your live edits. Settings live in `.env`
+(created from `.env.example` on first start). Tests: `pip install -e .[dev]`
+then `pytest` (they use a throwaway `tech_atlas_test` database).

@@ -9,14 +9,17 @@ from pydantic import BaseModel, Field
 from agent.analyzer import engine
 from agent.analyzer.agent import resume_scoring_run, start_scoring_run
 from agent.analyzer import pov as pov_composer
+from agent.analyzer.estimate import estimate
 from agent.analyzer.pov import compose_pov
+from app.services import busy, evidence
 from app.services.db.mongo import get_collection
 
 router = APIRouter()
 
 
 class ScoringRunParams(BaseModel):
-    technologies: list[str] | None = Field(default=None, max_length=200,
+    # at least one: an empty list would fall through to every enabled technology
+    technologies: list[str] | None = Field(default=None, min_length=1, max_length=200,
                                            description="explicit tech_ids")
     top: int | None = Field(default=None, ge=1, le=200,
                             description="top N technologies by doc_count")
@@ -24,18 +27,24 @@ class ScoringRunParams(BaseModel):
 
 
 @router.get("/scoring/preview")
-def scoring_preview(min_docs: int = 1) -> dict:
-    """How many technologies a run with this evidence floor would assess —
-    the portal shows it live so 'score everything' is an informed choice."""
+def scoring_preview(min_docs: int = 1, technologies: str | None = None) -> dict:
+    """How many technologies a run with this evidence floor (or this
+    comma-separated list of ids) would assess, and about how many model calls
+    — the portal shows it before anything starts."""
     query: dict = {"enabled": True}
-    if min_docs > 1:
+    if technologies:
+        query["_id"] = {"$in": [t.strip() for t in technologies.split(",") if t.strip()]}
+    elif min_docs > 1:
         query["doc_count"] = {"$gte": min_docs}
-    return {"technologies": get_collection("technologies").count_documents(query)}
+    return estimate(get_collection("technologies").distinct("_id", query))
 
 
 @router.post("/scoring/runs", status_code=202)
 def create_run(params: ScoringRunParams) -> dict:
-    run_id = start_scoring_run(params.model_dump(exclude_none=True))
+    try:
+        run_id = start_scoring_run(params.model_dump(exclude_none=True))
+    except busy.Busy as exc:
+        raise HTTPException(status_code=409, detail=f"{exc} Assessments can start when it finishes.")
     if run_id is None:
         raise HTTPException(status_code=409, detail="a scoring run is already active")
     return {"scoring_run_id": run_id}
@@ -56,7 +65,7 @@ def get_run(run_id: str) -> dict:
         raise HTTPException(status_code=404, detail=f"unknown scoring run {run_id!r}")
     assessments = list(get_collection("assessments")
                        .find({"scoring_run_id": run_id},
-                             {"measures": 0})
+                             {"measures": 0, "dossier_pages": 0})  # page lists can be long
                        .sort("technology", 1))
     return {**run, "assessments": assessments}
 
@@ -74,7 +83,11 @@ def get_assessment(run_id: str, assessment_id: str) -> dict:
 def resume(run_id: str) -> dict:
     """Re-open a failed or terminated run — existing assessments are kept,
     only the missing work re-runs."""
-    if not resume_scoring_run(run_id):
+    try:
+        resumed = resume_scoring_run(run_id)
+    except busy.Busy as exc:
+        raise HTTPException(status_code=409, detail=f"{exc} Resume when it finishes.")
+    if not resumed:
         raise HTTPException(status_code=409,
                             detail="run is unknown, already active, completed, "
                                    "or another run is running")
@@ -88,69 +101,69 @@ def terminate(run_id: str) -> dict:
     return {"status": "terminating"}
 
 
-def _newest_assessed() -> list[dict]:
-    """Every technology still in the register, with the NEWEST completed
-    scoring run that assessed it — the composable universe."""
-    existing = set(get_collection("technologies").distinct("_id"))
-    out, seen = [], set()
-    for run in get_collection("scoring_runs").find(
-            {"status": "completed"}, {"started_at": 1}).sort("started_at", -1).limit(10):
-        for row in get_collection("assessments").aggregate([
-                {"$match": {"scoring_run_id": run["_id"]}},
-                {"$group": {"_id": "$tech_id", "technology": {"$first": "$technology"}}}]):
-            if row["_id"] in existing and row["_id"] not in seen:
-                seen.add(row["_id"])
-                out.append({"scoring_run_id": run["_id"],
-                            "tech_id": row["_id"],
-                            "technology": row["technology"],
-                            "run_started_at": run["started_at"]})
-    out.sort(key=lambda t: t["technology"])
-    return out
-
-
-def _pov_state() -> tuple[list[dict], list[dict]]:
-    """(composed povs, uncomposed assessed techs) — shared by the tab's GET
-    and the compose-all POST, so the batch targets exactly what the tab shows.
-    One PoV per technology: only techs still in the register count, the newest
-    composed PoV per tech wins, and a tech with any PoV is never 'uncomposed'
-    (merged-away or superseded entries drop out everywhere)."""
+def _pov_state(all_states: dict | None = None) -> tuple[list[dict], list[dict]]:
+    """(written Points of View, technologies waiting for one) — shared by the
+    list, compose-all and the pipeline, so the batch writes exactly what the
+    list shows. One Point of View per technology: only technologies still in
+    the register count and the newest written one wins. Waiting follows the
+    readiness rule (services/evidence): none written from the latest
+    assessment's run."""
+    all_states = evidence.states() if all_states is None else all_states
     existing = set(get_collection("technologies").distinct("_id"))
     povs, seen = [], set()
     for p in (get_collection("povs")
               .find({}, {"sections.headline": 1, "scoring_run_id": 1,
                          "tech_id": 1, "technology": 1, "version": 1,
-                         "composed_at": 1})
+                         "composed_at": 1, "assessment_ids": 1})
               .sort("composed_at", -1)):
         if p["tech_id"] in existing and p["tech_id"] not in seen:
             seen.add(p["tech_id"])
             povs.append(p)
-    uncomposed = [t for t in _newest_assessed() if t["tech_id"] not in seen]
-    return povs, uncomposed
+    return povs, evidence.pov_targets(all_states)
 
 
 @router.get("/scoring/povs")
 def all_povs() -> dict:
-    """Every composed PoV, the assessed technologies without one yet, and the
-    latest compose-all job — one poll drives the whole Points of View tab."""
-    povs, uncomposed = _pov_state()
+    """Every written Point of View, with the pages new since it was written
+    and its placements; the technologies waiting for one; how many a
+    rewrite covers; and the latest compose-all job — one poll drives the
+    whole Points of View list."""
+    all_states = evidence.states()
+    povs, uncomposed = _pov_state(all_states)
+    names = {t["_id"]: t["name"] for t in get_collection("technologies").find(
+        {"_id": {"$in": [p["tech_id"] for p in povs]}}, {"name": 1})}
+    rows = {a["_id"]: a for a in get_collection("assessments").find(
+        {"_id": {"$in": [i for p in povs for i in p.get("assessment_ids") or []]}},
+        {"measures": 0, "watch_metrics": 0})}
+    for p in povs:
+        mine = sorted((rows[i] for i in p.get("assessment_ids") or [] if i in rows),
+                      key=lambda a: a["fabric_id"])
+        read = evidence.reading(mine)
+        p["new_since_written"] = len(evidence.new_pages(names[p["tech_id"]], read)) if read else None
+        p["assessed_at"] = read["assessed_at"] if read else None  # the assessment it was written from
+        p["placements"] = [{"fabric_id": a["fabric_id"], "fabric": a.get("fabric"),
+                            "priority": (a.get("placement") or {}).get("priority"),
+                            "horizon": (a.get("placement") or {}).get("horizon")} for a in mine]
+        p.pop("assessment_ids", None)
     return {"povs": povs, "uncomposed": uncomposed,
+            "assessed": len(evidence.latest_assessments(all_states)),
             "job": pov_composer.batch_status()}
 
 
 class ComposeAllParams(BaseModel):
-    recompose: bool = False  # True: also rewrite every composed PoV
+    recompose: bool = False  # True: also rewrite every written Point of View
 
 
 @router.post("/scoring/povs/compose_all", status_code=202)
 def compose_all(params: ComposeAllParams | None = None) -> dict:
     """One background job, one LLM call per technology (scoring_concurrency-
-    wide pool). Default: only techs without a PoV. recompose=true: every
-    assessed technology, each from its newest completed scoring run —
-    existing PoVs are replaced and their version bumps."""
-    if params and params.recompose:
-        targets = _newest_assessed()
-    else:
-        _, targets = _pov_state()
+    wide pool). Default: the technologies waiting for a Point of View.
+    recompose=true: every technology with a latest assessment, each written
+    from it — existing Points of View from that run are replaced and their
+    version bumps."""
+    all_states = evidence.states()
+    targets = (evidence.latest_assessments(all_states) if params and params.recompose
+               else evidence.pov_targets(all_states))
     if not targets:
         raise HTTPException(status_code=409, detail="nothing to compose")
     job_id = pov_composer.start_compose_all(
@@ -173,7 +186,11 @@ def get_pov(run_id: str, tech_id: str) -> dict:
     pov = get_collection("povs").find_one({"_id": f"{run_id}:{tech_id}"})
     if pov is None:
         raise HTTPException(status_code=404, detail="no PoV composed yet for this technology")
-    return pov
+    run = get_collection("scoring_runs").find_one(
+        {"_id": run_id}, {"snapshot.fabrics._id": 1, "snapshot.fabrics.name": 1}) or {}
+    rows = list(get_collection("assessments").find(
+        {"scoring_run_id": run_id, "tech_id": tech_id}, {"fabric_id": 1}))
+    return {**pov, "not_assessed_in": evidence.not_assessed_in(run, rows)}
 
 
 @router.post("/scoring/runs/{run_id}/pov/{tech_id}")

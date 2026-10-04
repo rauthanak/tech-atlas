@@ -22,7 +22,6 @@ class Settings:
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
 
         self.scrape_max_depth = int(os.getenv("SCRAPE_MAX_DEPTH", "8"))
-        self.max_pages_per_source = int(os.getenv("MAX_PAGES_PER_SOURCE", "40"))
         self.sources_per_scout = int(os.getenv("SOURCES_PER_SCOUT", "5"))
         self.scout_concurrency = int(os.getenv("SCOUT_CONCURRENCY", "5"))
         self.scrape_delay_seconds = float(os.getenv("SCRAPE_DELAY_SECONDS", "1"))
@@ -38,6 +37,14 @@ class Settings:
 
         # analyzer (Phase C)
         self.scoring_concurrency = int(os.getenv("SCORING_CONCURRENCY", "6"))
+
+        # data sources (free APIs). CONTACT_EMAIL goes to SEC (User-Agent) and
+        # USAJOBS (the email its key was registered with) — never to the crawler.
+        self.contact_email = os.getenv("CONTACT_EMAIL", "").strip()
+        self.epo_ops_key = os.getenv("EPO_OPS_KEY", "").strip()
+        self.epo_ops_secret = os.getenv("EPO_OPS_SECRET", "").strip()
+        self.openalex_api_key = os.getenv("OPENALEX_API_KEY", "").strip()
+        self.usajobs_api_key = os.getenv("USAJOBS_API_KEY", "").strip()
 
     def selected_api_key(self) -> str:
         return self.anthropic_api_key if self.model_provider == "anthropic" else self.openai_api_key

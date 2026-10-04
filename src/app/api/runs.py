@@ -5,8 +5,13 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from agent.scout.tools.collect import page_budget
+from agent.supervisor.tools.sources import collectable_query
+from app.services import busy
 from app.services.db.mongo import get_collection
+from app.services.problems import didnt_finish, source_access
 from app.services.runs import runner
+from app.services.signals import snapshot
 
 router = APIRouter()
 
@@ -19,20 +24,39 @@ class RunParams(BaseModel):
 
 @router.post("/runs", status_code=201)
 def start_run(params: RunParams | None = None) -> dict:
-    run_id = runner.start_run((params or RunParams()).model_dump(exclude_none=True))
-    if run_id is None:
-        raise HTTPException(status_code=409, detail="a run is already in progress")
+    try:
+        run_id = runner.start_run((params or RunParams()).model_dump(exclude_none=True))
+    except busy.Busy as exc:
+        raise HTTPException(status_code=409, detail=f"{exc} Start the run when it finishes.")
     return {"id": run_id, "status": "running"}
+
+
+@router.get("/runs/preview")
+def preview() -> dict:
+    """What a collection started now would cover — the portal words it as
+    the cost before anything starts."""
+    sources, query = get_collection("sources"), collectable_query()
+    data_sources = sources.count_documents({**query, "access": "query"})
+    return {"websites": sources.count_documents(query) - data_sources,
+            "data_sources": data_sources,
+            "pages_per_source": page_budget(snapshot.build())}
 
 
 @router.get("/runs")
 def list_runs() -> dict:
-    runs = list(
-        get_collection("runs")
-        .find({}, {"sources": 0, "params": 0})
-        .sort("run_start_date_time", -1)
-        .limit(100)
-    )
+    """The latest 100 runs, without their per-source rows; `incomplete`
+    counts the websites that didn't finish."""
+    runs = list(get_collection("runs").aggregate([
+        {"$sort": {"run_start_date_time": -1}},
+        {"$limit": 100},
+        {"$addFields": {"unfinished": {"$filter": {
+            "input": {"$ifNull": ["$sources", []]}, "cond": "$$this.incomplete"}}}},
+        {"$project": {"sources": 0, "params": 0, "signal_list": 0, "crawl_settings": 0,
+                      "unfinished.incomplete_note": 0}},
+    ]))
+    access = source_access()
+    for run in runs:
+        run["incomplete"] = sum(didnt_finish(s, access) for s in run.pop("unfinished"))
     for run in runs:
         run["id"] = run.pop("_id")
     return {"runs": runs}
@@ -49,7 +73,51 @@ def get_run(run_id: str) -> dict:
         if resolve:
             resolve["id"] = resolve.pop("_id")
             run["resolve"] = resolve
+    run.pop("signal_list", None)  # the snapshot's rows are bulky; the hash identifies them
+    run["used_in"] = _used_in(run_id)
+    latest = get_collection("scoring_runs").find_one(
+        sort=[("started_at", -1)], projection={"status": 1, "started_at": 1})
+    # timing only — the portal labels it "Latest workspace activity"
+    run["latest_activity"] = ({"scoring_run_id": latest["_id"], "status": latest["status"],
+                               "started_at": latest["started_at"]} if latest else None)
+    run["assessments_before_upgrade"] = get_collection("assessments").count_documents(
+        {"evidence_runs": {"$exists": False}})
+    run["analysis_errors"] = analysis_errors(run_id)
     return run
+
+
+def analysis_errors(run_id: str) -> list[dict]:
+    """This run's pages that couldn't be analysed (wholly or in part),
+    grouped by reason, with an example detail and the sources involved."""
+    groups = get_collection("documents").aggregate([
+        {"$match": {"run_id": run_id, "is_stub": False, "analysis_error": {"$ne": None}}},
+        {"$sort": {"analysis_error.at": -1}},
+        {"$group": {"_id": "$analysis_error.reason", "detail": {"$first": "$analysis_error.detail"},
+                    "pages": {"$sum": 1}, "sources": {"$addToSet": "$source_id"}}},
+        {"$sort": {"pages": -1, "_id": 1}},
+    ])
+    return [{"reason": g["_id"], "detail": g["detail"], "pages": g["pages"],
+             "sources": sorted(g["sources"])} for g in groups]
+
+
+def _used_in(run_id: str) -> list[dict]:
+    """Recorded facts only: the assessments whose evidence actually included
+    this run's pages (evidence_runs), grouped by scoring run, with the
+    number of Points of View built from them."""
+    groups: dict[str, list[dict]] = {}
+    for a in get_collection("assessments").find({"evidence_runs": run_id},
+                                                {"scoring_run_id": 1, "tech_id": 1}):
+        groups.setdefault(a["scoring_run_id"], []).append(a)
+    used = []
+    for scoring_run_id, assessments in groups.items():
+        scoring = get_collection("scoring_runs").find_one(
+            {"_id": scoring_run_id}, {"status": 1, "started_at": 1}) or {}
+        used.append({"scoring_run_id": scoring_run_id, "status": scoring.get("status"),
+                     "started_at": scoring.get("started_at"),
+                     "technologies": len({a["tech_id"] for a in assessments}),
+                     "povs": get_collection("povs").count_documents(
+                         {"assessment_ids": {"$in": [a["_id"] for a in assessments]}})})
+    return sorted(used, key=lambda u: u["started_at"] or "", reverse=True)
 
 
 @router.get("/runs/{run_id}/documents")

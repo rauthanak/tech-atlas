@@ -14,6 +14,7 @@ COLLECTIONS = frozenset({
     "fabrics", "measures", "scoring_config",
     "technologies", "resolves",
     "scoring_runs", "assessments", "povs", "pov_compose_jobs",
+    "signals", "settings", "recheck_jobs", "seeding",
 })
 
 

@@ -20,7 +20,11 @@ dependencies = [
     "beautifulsoup4>=4.12",
     "pypdf>=5.0",
     "playwright>=1.45",
+    "protego>=0.3",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
 
 [build-system]
 requires = ["hatchling"]
@@ -28,3 +32,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/app", "src/agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

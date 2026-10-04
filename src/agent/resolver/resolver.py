@@ -13,6 +13,10 @@ Passes, cheapest first:
   3. LLM pass over the resulting canonical names, sorted by frequency, to
      catch merges split across chunk boundaries
 
+Afterwards, technologies without a display label get one — the same name
+with its usual capitals ("ml-kem" → "ML-KEM") — from the `technology_label`
+prompt (label_missing).
+
 Existing alias assignments are pinned: a raw string already claimed by a
 technology (including admin moves) is never re-sent to the LLM, so admin
 corrections and earlier resolves survive re-resolves. `replace=True` wipes the
@@ -29,7 +33,7 @@ from datetime import datetime, timezone
 from pymongo import UpdateOne
 
 from app.services.db.mongo import get_collection
-from app.services.llm.llm import LLM
+from app.services.llm.llm import LLM, parse_json
 from app.services.prompts.store import PromptStore
 from app.settings import get_settings
 
@@ -144,11 +148,13 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
     settings = get_settings()
     techs = get_collection("technologies")
 
-    # 1 · gather raw strings (stubs carry no technologies field — excluded)
+    # 1 · gather raw strings — pages set aside by a Can ignore rule are
+    # left out (a missing ignored_by counts as null, so old documents count)
     _progress(resolve_id, phase="gathering")
     raw_counts: Counter[str] = Counter()
     for d in get_collection("documents").find(
-            {"technologies": {"$exists": True, "$ne": []}}, {"technologies": 1}):
+            {"technologies": {"$exists": True, "$ne": []}, "ignored_by": None},
+            {"technologies": 1}):
         raw_counts.update(d["technologies"])
 
     # 2 · deterministic pass: group by normalized key, keep the most common
@@ -230,10 +236,21 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
     buckets: dict[str, set[str]] = defaultdict(set)
     for g in candidates.values():
         buckets[canon[g["display"]]].update(g["raws"])
+    # an existing name keeps its technology's id (a rename keeps the id it was
+    # created with); a new name gets a slug id, numbered if that id is taken
+    ids_by_name = {t["name"]: t["_id"] for t in techs.find({}, {"name": 1})}
+    taken = set(ids_by_name.values())
     writes = []
     now = _now()
     for name, raws in buckets.items():
-        tech_id = _slug(name)
+        tech_id = ids_by_name.get(name)
+        if tech_id is None:
+            tech_id = base = _slug(name)
+            n = 2
+            while tech_id in taken:
+                tech_id, n = f"{base}-{n}", n + 1
+            taken.add(tech_id)
+            ids_by_name[name] = tech_id
         writes.append(UpdateOne(
             {"_id": tech_id},
             {"$set": {"name": name, "updated_at": now, "last_resolve": resolve_id},
@@ -252,6 +269,11 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
     stamped = _stamp_documents(alias_map)
     _recompute_stats()
 
+    # 9 · display labels for technologies that have none
+    _progress(resolve_id, phase="labelling")
+    label_calls = label_missing(llm)
+    llm_calls += label_calls
+
     return {
         "raw_strings": len(raw_counts),
         "after_deterministic": len(groups),
@@ -260,6 +282,38 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
         "technologies": techs.estimated_document_count(),
         "docs_stamped": stamped,
     }
+
+
+LABEL_BATCH = 500  # names per technology_label call
+
+
+def label_missing(llm: LLM | None = None) -> int:
+    """Display labels for technologies without one: the same name with its
+    usual capitals ("ml-kem" → "ML-KEM"), from the technology_label skill.
+    A label that changes more than capitals is ignored, and a failed batch
+    stays unlabelled until the next organize. Returns the model calls made."""
+    techs = get_collection("technologies")
+    names = sorted(t["name"] for t in techs.find({"label": {"$in": [None, ""]}}, {"name": 1}))
+    if not names:
+        return 0
+    llm = llm or LLM.initialize(get_settings().model_name)
+    prompt = PromptStore.get("technology_label")
+    calls = 0
+    for chunk in _chunks(names, LABEL_BATCH):
+        calls += 1
+        try:
+            labels = parse_json(llm.ask(prompt.render(names=json.dumps(chunk, ensure_ascii=False))))
+            labels = labels.get("labels") if isinstance(labels, dict) else None
+            if not isinstance(labels, dict):
+                raise ValueError("no labels object in the reply")
+        except Exception as exc:  # labels only change how names look: never fail the organize
+            log.warning("technology labels skipped for %d names: %s", len(chunk), exc)
+            continue
+        writes = [UpdateOne({"name": n}, {"$set": {"label": labels[n].strip()}}) for n in chunk
+                  if isinstance(labels.get(n), str) and labels[n].strip().lower() == n]
+        if writes:
+            techs.bulk_write(writes)
+    return calls
 
 
 def _chunks(items: list, size: int):
@@ -278,7 +332,7 @@ def _llm_groups(llm: LLM, prompt, names: list[str], register: list[str]) -> list
     for attempt in (1, 2):
         try:
             out = llm.ask(prompt.render(tech_list=payload, known_list=known_payload))
-            data = json.loads(out)
+            data = parse_json(out)
             groups = []
             for g in data.get("groups", []):
                 members = [m for m in g.get("members", []) if m in known]
@@ -286,19 +340,35 @@ def _llm_groups(llm: LLM, prompt, names: list[str], register: list[str]) -> list
                 if len(members) >= 1 and name:
                     groups.append({"name": name, "members": members})
             return groups
-        except (json.JSONDecodeError, KeyError, TypeError, AttributeError) as exc:
+        except (ValueError, KeyError, TypeError, AttributeError) as exc:
             log.warning("resolver chunk parse failed (attempt %d): %s", attempt, exc)
     log.error("resolver chunk skipped after 2 failures (%d names stay unique)", len(names))
     return []
 
 
 def _stamp_documents(alias_map: dict[str, str]) -> int:
+    """technologies_resolved per document, and per finding that names its own
+    technologies (signals.N.technologies_resolved). A set-aside page gets
+    none, so the evidence for scoring, the counts and the Technologies page
+    never include it; its own `technologies` field stays, so the decision can
+    be audited. A finding none of whose names resolve has none of its own,
+    and readers fall back to the page's."""
     docs = get_collection("documents")
     writes, stamped = [], 0
-    for d in docs.find({"technologies": {"$exists": True}}, {"technologies": 1}):
-        resolved = sorted({alias_map[t] for t in d.get("technologies", []) if t in alias_map})
-        writes.append(UpdateOne({"_id": d["_id"]},
-                                {"$set": {"technologies_resolved": resolved}}))
+    for d in docs.find({"technologies": {"$exists": True}},
+                       {"technologies": 1, "ignored_by": 1, "signals.technologies": 1}):
+        resolved = [] if d.get("ignored_by") else \
+            sorted({alias_map[t] for t in d.get("technologies", []) if t in alias_map})
+        update: dict = {"$set": {"technologies_resolved": resolved}}
+        for i, hit in enumerate(d.get("signals") or []):
+            if "technologies" not in hit:
+                continue
+            own = sorted({alias_map[t] for t in hit["technologies"] if t in alias_map})
+            if own:
+                update["$set"][f"signals.{i}.technologies_resolved"] = own
+            else:
+                update.setdefault("$unset", {})[f"signals.{i}.technologies_resolved"] = ""
+        writes.append(UpdateOne({"_id": d["_id"]}, update))
         stamped += 1
         if len(writes) >= 1000:
             docs.bulk_write(writes)

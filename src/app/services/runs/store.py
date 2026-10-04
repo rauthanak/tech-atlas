@@ -1,7 +1,9 @@
 """Run + document storage. Owns the two-collection schema:
 
-runs       — one small doc per run: status, timings, per-source stats.
-documents  — one doc per scraped page: text, summary, cross-run references.
+runs       — one small doc per run: status, timings, per-source stats, and
+             the snapshot it used (signal list + hash, crawl settings).
+documents  — one doc per collected page: text, summary, signals, cross-run
+             references.
 
 Dedupe: a page whose extracted text hash matches its latest stored version is
 saved as a stub referencing that document instead of storing the text again.
@@ -28,7 +30,9 @@ def now() -> str:
 
 # ── runs ─────────────────────────────────────────────────────────────
 
-def create_run(params: dict) -> str:
+def create_run(params: dict, snapshot: dict) -> str:
+    """`snapshot` is what the run uses throughout: signal_list,
+    signals_hash and crawl_settings (services/signals/snapshot.build)."""
     run_id = uuid.uuid4().hex[:12]
     get_collection("runs").insert_one({
         "_id": run_id,
@@ -41,8 +45,10 @@ def create_run(params: dict) -> str:
         "run_end_date_time": None,
         "heartbeat_at": now(),
         "error": None,
-        "totals": {"sources": 0, "pages_visited": 0, "documents": 0, "new_documents": 0},
+        "totals": {"sources": 0, "pages_visited": 0, "documents": 0, "new_documents": 0,
+                   "signals": 0, "other_signals": 0, "set_aside": 0},
         "sources": [],  # per-source stats only — the bulk lives in `documents`
+        **snapshot,
     })
     return run_id
 
@@ -96,15 +102,20 @@ def start_source(run_id: str, category: str, source: dict) -> None:
             "documents": 0,
             "new_documents": 0,
             "error": None,
+            "incomplete": False,
+            "incomplete_note": None,
         }},
         "$inc": {"totals.sources": 1},
     })
 
 
 def bump_source(run_id: str, source_id: str, pages: int = 0, docs: int = 0,
-                new_docs: int = 0) -> None:
+                new_docs: int = 0, signals: int = 0, other_signals: int = 0,
+                set_aside: int = 0) -> None:
     """Live per-page increment of a source's counters (and the run totals),
-    so the portal ticks while the crawl works. Doubles as a heartbeat."""
+    so the portal ticks while the crawl works. Doubles as a heartbeat. The
+    signal counts cover new or changed pages only: "signals in this run"
+    means signals that are new in this run."""
     get_collection("runs").update_one(
         {"_id": run_id, "sources.source_id": source_id},
         {"$inc": {
@@ -114,16 +125,31 @@ def bump_source(run_id: str, source_id: str, pages: int = 0, docs: int = 0,
             "totals.pages_visited": pages,
             "totals.documents": docs,
             "totals.new_documents": new_docs,
+            "totals.signals": signals,
+            "totals.other_signals": other_signals,
+            "totals.set_aside": set_aside,
         },
          "$set": {"heartbeat_at": now()}},
     )
 
 
+def signal_counts(analysis: dict | None) -> dict:
+    """bump_source's signal counters for one page's analysis (None: a stub)."""
+    if not analysis:
+        return {}
+    hits = analysis.get("signals") or []
+    other = sum(1 for h in hits if h.get("signal_id") == "other")
+    return {"signals": len(hits) - other, "other_signals": other,
+            "set_aside": int(bool(analysis.get("ignored_by")))}
+
+
 def finish_source(run_id: str, source_id: str, pages: int, docs: int, new_docs: int,
-                  error: str | None = None) -> None:
+                  error: str | None = None, incomplete_note: str | None = None) -> None:
     """Close a source's row. Counters accumulated live via bump_source; the
     scout's absolute counts reconcile the per-source row (totals keep the
-    live-accumulated values — any drift there would mean a missed bump)."""
+    live-accumulated values — any drift there would mean a missed bump).
+    `incomplete_note` says what was left for lack of budget, e.g. "didn't
+    finish: 120 links left" or "25 still to collect"."""
     get_collection("runs").update_one(
         {"_id": run_id, "sources.source_id": source_id},
         {"$set": {
@@ -132,6 +158,8 @@ def finish_source(run_id: str, source_id: str, pages: int, docs: int, new_docs: 
             "sources.$.documents": docs,
             "sources.$.new_documents": new_docs,
             "sources.$.error": error,
+            "sources.$.incomplete": bool(incomplete_note),
+            "sources.$.incomplete_note": incomplete_note,
         }},
     )
 
@@ -150,11 +178,15 @@ def reconcile_stale_runs() -> None:
 
 # ── documents ────────────────────────────────────────────────────────
 
+ANALYSIS_FIELDS = ("signals", "ignored_by", "signals_hash", "partial", "analysis_error")
+
+
 def save_document(run_id: str, category: str, source: dict, end_url: str,
                   extracted_text: str, summarize, depth: int = 0,
-                  meta: dict | None = None) -> bool:
-    """Store one scraped page; returns True when it carried new content.
-    `summarize(url, text)` is called only for new/changed content."""
+                  meta: dict | None = None) -> dict | None:
+    """Store one collected page. Returns its analysis when it carried new
+    content, None when it was unchanged (stored as a stub, with no model
+    call). `summarize(url, text)` returns the summarizing step's dict."""
     docs = get_collection("documents")
     meta = meta or {}
     content_hash = hashlib.sha256(extracted_text.encode()).hexdigest()
@@ -181,19 +213,28 @@ def save_document(run_id: str, category: str, source: dict, end_url: str,
 
     if previous and previous["content_hash"] == content_hash:
         # unchanged since last time — store a stub, not the text again
+        # (an unchanged page is never paid for twice, but still shows its signals)
         docs.insert_one({**base, "is_stub": True, "ref_doc_id": previous["_id"],
                          "extracted_text": None, "text_pruned": False,
                          "summary_text": previous.get("summary_text"),
                          "technologies": previous.get("technologies", []),
-                         "scout_take": previous.get("scout_take")})
-        return False
+                         "scout_take": previous.get("scout_take"),
+                         **{f: previous.get(f) for f in ANALYSIS_FIELDS}})
+        return None
 
-    summary, technologies, scout_take = summarize(end_url, extracted_text)
+    analysis = summarize(end_url, extracted_text)
     docs.insert_one({**base, "is_stub": False, "ref_doc_id": None,
                      "extracted_text": extracted_text, "text_pruned": False,
-                     "summary_text": summary, "technologies": technologies,
-                     "scout_take": scout_take})
-    return True
+                     "summary_text": analysis["summary"],
+                     "technologies": analysis["technologies"],
+                     "scout_take": analysis["scout_take"],
+                     "signals": analysis["signals"],
+                     "ignored_by": analysis["ignored_by"],
+                     "signals_hash": analysis["signals_hash"],
+                     "parts": analysis["parts"],
+                     "partial": analysis["partial"],
+                     "analysis_error": analysis.get("analysis_error")})
+    return analysis
 
 
 def prune_old_text() -> None:

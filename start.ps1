@@ -47,11 +47,8 @@ if ($LASTEXITCODE -ne 0) {
 # 4. .env
 if (-not (Test-Path ".env")) { Copy-Item ".env.example" ".env" }
 
-# 5. Database: create collections/indexes and seed sources + prompts
+# 5. Database: create collections and indexes (the API loads the seeding data at start)
 Run scripts\create_db.py
-Run scripts\seed_sources.py
-Run scripts\seed_prompts.py
-Run scripts\seed_scoring.py
 
 # 6. Serve (dev: auto-reload; host/port in main.py, PORT env overrides)
 Run main.py

@@ -7,7 +7,11 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://research.google/blog/rss"
+      ]
     },
     {
       "source_id": "microsoft_research",
@@ -16,7 +20,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "meta_ai",
@@ -25,7 +30,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "amazon_science",
@@ -34,7 +40,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": true,
+      "access": "crawl"
     },
     {
       "source_id": "ibm_research",
@@ -43,7 +50,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "nvidia_blog",
@@ -52,7 +60,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "intel_research",
@@ -61,7 +70,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "qualcomm_research",
@@ -70,7 +80,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "cisco_blogs",
@@ -79,7 +90,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true
+      "enabled": true,
+      "access": "crawl"
     },
     {
       "source_id": "juniper_research",
@@ -88,7 +100,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "cloudflare_radar",
@@ -97,7 +110,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "akamai_blog",
@@ -106,7 +120,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "aws_reinvent",
@@ -115,7 +130,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "google_cloud_next",
@@ -124,7 +140,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "microsoft_ignite",
@@ -133,7 +150,8 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "mckinsey",
@@ -142,7 +160,8 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "gartner",
@@ -151,7 +170,8 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "licensed",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "idc",
@@ -160,7 +180,8 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free_tier",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "forrester",
@@ -169,7 +190,8 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free_tier",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "cbinsights_research",
@@ -178,7 +200,8 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free_tier",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "rcr_wireless",
@@ -187,7 +210,11 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.rcrwireless.com/feed"
+      ]
     },
     {
       "source_id": "fierce_network",
@@ -196,7 +223,8 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "light_reading",
@@ -205,7 +233,8 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false
+      "enabled": true,
+      "access": "crawl"
     },
     {
       "source_id": "wballiance",
@@ -214,7 +243,8 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "verizon_innovation",
@@ -223,7 +253,8 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "att_innovation",
@@ -232,7 +263,8 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "crunchbase",
@@ -241,7 +273,9 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "licensed",
-      "enabled": false
+      "enabled": false,
+      "access": "none",
+      "note": "Terms ban scraping; no free API."
     },
     {
       "source_id": "pitchbook",
@@ -250,7 +284,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "licensed",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "dealroom",
@@ -259,7 +294,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "licensed",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "tracxn",
@@ -268,7 +304,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "licensed",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "cbinsights",
@@ -277,7 +314,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "licensed",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "ycombinator",
@@ -286,7 +324,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "techstars",
@@ -295,7 +334,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": true,
+      "access": "crawl"
     },
     {
       "source_id": "entrepreneur_first",
@@ -304,7 +344,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "alchemist",
@@ -313,7 +354,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "a16z",
@@ -322,7 +364,11 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://a16z.com/feed"
+      ]
     },
     {
       "source_id": "sequoia",
@@ -331,7 +377,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "lightspeed",
@@ -340,7 +387,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "greylock",
@@ -349,7 +397,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "index_ventures",
@@ -358,7 +407,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "nfx",
@@ -367,7 +417,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "github_trending",
@@ -376,7 +427,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "pypi",
@@ -385,7 +437,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "npm_trends",
@@ -394,7 +447,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "stackoverflow_trends",
@@ -403,7 +457,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "kaggle",
@@ -412,7 +467,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "hacker_news",
@@ -421,7 +477,9 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true
+      "enabled": true,
+      "access": "crawl",
+      "follow_outbound": true
     },
     {
       "source_id": "reddit_ml",
@@ -430,7 +488,9 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "follow_outbound": true
     },
     {
       "source_id": "reddit_networking",
@@ -439,7 +499,9 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "follow_outbound": true
     },
     {
       "source_id": "reddit_netsec",
@@ -448,7 +510,9 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "follow_outbound": true
     },
     {
       "source_id": "reddit_cloud",
@@ -457,7 +521,9 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "follow_outbound": true
     },
     {
       "source_id": "cncf_landscape",
@@ -466,7 +532,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "stac_research",
@@ -475,7 +542,8 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free_tier",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "arxiv",
@@ -484,7 +552,14 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free",
-      "enabled": true
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://arxiv.org/list/cs.NI/recent",
+        "https://arxiv.org/list/cs.CR/recent",
+        "https://arxiv.org/list/cs.DC/recent",
+        "https://arxiv.org/list/eess.SP/recent"
+      ]
     },
     {
       "source_id": "ieee_xplore",
@@ -493,7 +568,8 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "licensed",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "acm_dl",
@@ -502,7 +578,8 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "licensed",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "ssrn",
@@ -511,7 +588,8 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "nature",
@@ -520,7 +598,11 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free_tier",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.nature.com/nature.rss"
+      ]
     },
     {
       "source_id": "science",
@@ -529,7 +611,11 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free_tier",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.science.org/rss/news_current.xml"
+      ]
     },
     {
       "source_id": "pnas",
@@ -538,7 +624,11 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.pnas.org/rss/current.xml"
+      ]
     },
     {
       "source_id": "cacm",
@@ -547,7 +637,8 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free_tier",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "ieee_comsoc",
@@ -556,7 +647,8 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "licensed",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "mit_csail",
@@ -565,7 +657,8 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "stanford_ai",
@@ -574,7 +667,8 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "berkeley_bair",
@@ -583,7 +677,11 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://bair.berkeley.edu/blog/feed.xml"
+      ]
     },
     {
       "source_id": "cmu_ml",
@@ -592,7 +690,8 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "eth_inf",
@@ -601,7 +700,8 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "tsinghua_air",
@@ -610,7 +710,8 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "nus_computing",
@@ -619,7 +720,8 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "ntu_scse",
@@ -628,7 +730,8 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "iisc_csa",
@@ -637,7 +740,8 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "iitb_cse",
@@ -646,7 +750,8 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "iitm_rise",
@@ -655,7 +760,8 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "neurips",
@@ -664,7 +770,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "iclr",
@@ -673,7 +780,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "icml",
@@ -682,7 +790,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "sigcomm",
@@ -691,7 +800,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "usenix_nsdi",
@@ -700,7 +810,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "conext",
@@ -709,7 +820,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "hotnets",
@@ -718,7 +830,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "sosp",
@@ -727,7 +840,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "usenix_osdi",
@@ -736,7 +850,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "usenix_security",
@@ -745,7 +860,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "ieee_sp",
@@ -754,7 +870,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "ndss",
@@ -763,7 +880,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "acm_ccs",
@@ -772,7 +890,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "blackhat",
@@ -781,7 +900,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free_tier",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "mobicom",
@@ -790,7 +910,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "mobisys",
@@ -799,7 +920,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "edgesys",
@@ -808,7 +930,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "sensys",
@@ -817,7 +940,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "ipsn",
@@ -826,7 +950,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "acm_socc",
@@ -835,7 +960,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "eurosys",
@@ -844,7 +970,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "hotos",
@@ -853,7 +980,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "mwc_barcelona",
@@ -862,7 +990,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "mwc_exhibitors",
@@ -871,7 +1000,8 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "ietf",
@@ -880,7 +1010,11 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://datatracker.ietf.org/doc/recent"
+      ]
     },
     {
       "source_id": "irtf",
@@ -889,7 +1023,8 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "3gpp",
@@ -898,7 +1033,12 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.3gpp.org/dynareport/WI-List",
+        "https://www.3gpp.org/ftp/Specs"
+      ]
     },
     {
       "source_id": "gsma",
@@ -907,7 +1047,12 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.gsma.com/newsroom/",
+        "https://www.gsma.com/newsroom/feed/"
+      ]
     },
     {
       "source_id": "etsi",
@@ -916,7 +1061,8 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false
+      "enabled": true,
+      "access": "crawl"
     },
     {
       "source_id": "itu",
@@ -925,7 +1071,8 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free_tier",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "nist_pubs",
@@ -934,7 +1081,8 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "iso",
@@ -943,7 +1091,8 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free_tier",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "linux_foundation",
@@ -952,7 +1101,8 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "cncf",
@@ -961,7 +1111,8 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "lf_edge",
@@ -970,7 +1121,8 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "openapis",
@@ -979,7 +1131,8 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "onf",
@@ -988,7 +1141,8 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "apache",
@@ -997,7 +1151,11 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://incubator.apache.org/projects"
+      ]
     },
     {
       "source_id": "uspto_ppubs",
@@ -1006,7 +1164,9 @@
       "horizon": "H3",
       "cluster": "patents",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "none",
+      "note": "Web search only; sign-in required from 7 Nov 2026; automated use is blocked."
     },
     {
       "source_id": "uspto_odp",
@@ -1015,16 +1175,30 @@
       "horizon": "H3",
       "cluster": "patents",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "none",
+      "note": "Free API, but the key needs an ID.me identity check; adapter not built yet. EPO covers US patents."
     },
     {
       "source_id": "espacenet",
-      "name": "Espacenet / EPO OPS",
+      "name": "EPO Open Patent Services",
       "url": "https://worldwide.espacenet.com",
       "horizon": "H3",
       "cluster": "patents",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "query",
+      "adapter": "epo_ops",
+      "searches": [
+        "ta=\"quantum key distribution\"",
+        "ta=\"post-quantum cryptography\"",
+        "ta=\"coherent optical networks\"",
+        "ta=\"network slicing\"",
+        "ta=\"LEO satellite broadband\"",
+        "ta=\"zero trust network access\"",
+        "ta=\"edge AI inference\"",
+        "ta=\"network digital twin\""
+      ]
     },
     {
       "source_id": "wipo_patentscope",
@@ -1033,7 +1207,9 @@
       "horizon": "H3",
       "cluster": "patents",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "none",
+      "note": "Terms ban automated queries; the API is paid."
     },
     {
       "source_id": "darpa",
@@ -1042,7 +1218,12 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.darpa.mil/rss.xml",
+        "https://www.darpa.mil/rss/opportunities.xml"
+      ]
     },
     {
       "source_id": "nsf_awards",
@@ -1051,7 +1232,9 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "none",
+      "note": "Search tool; NSF grants arrive through OpenAlex grants."
     },
     {
       "source_id": "cordis",
@@ -1060,7 +1243,9 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "none",
+      "note": "Bulk files only; EU grants arrive through OpenAlex grants."
     },
     {
       "source_id": "ukri",
@@ -1069,7 +1254,12 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.ukri.org/news/feed/",
+        "https://www.ukri.org/opportunity/feed/"
+      ]
     },
     {
       "source_id": "dfg",
@@ -1078,7 +1268,12 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.dfg.de/service/rss/de/324312/feed.rss",
+        "https://www.dfg.de/service/rss/de/323556/feed.rss"
+      ]
     },
     {
       "source_id": "jst",
@@ -1087,7 +1282,13 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://sj.jst.go.jp/feed/rss.xml",
+        "https://www.jst.go.jp/rss/press.xml",
+        "https://www.jst.go.jp/rss/bosyu.xml"
+      ]
     },
     {
       "source_id": "meity",
@@ -1096,7 +1297,8 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "dst_india",
@@ -1105,7 +1307,8 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "nsm_india",
@@ -1114,7 +1317,8 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "enisa",
@@ -1123,7 +1327,8 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "cisa",
@@ -1132,7 +1337,8 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
     },
     {
       "source_id": "bis_india",
@@ -1141,7 +1347,294 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false
+      "enabled": false,
+      "access": "crawl"
+    },
+    {
+      "source_id": "openalex_works",
+      "name": "OpenAlex: papers",
+      "url": "https://openalex.org",
+      "horizon": "H3",
+      "cluster": "preprints_journals",
+      "cost": "free",
+      "enabled": false,
+      "access": "query",
+      "adapter": "openalex_works",
+      "searches": [
+        "quantum key distribution",
+        "post-quantum cryptography",
+        "coherent optical networks",
+        "network slicing",
+        "LEO satellite broadband",
+        "zero trust network access",
+        "edge AI inference",
+        "network digital twin"
+      ]
+    },
+    {
+      "source_id": "openalex_grants",
+      "name": "OpenAlex: grants",
+      "url": "https://openalex.org",
+      "horizon": "H3",
+      "cluster": "government_funding",
+      "cost": "free",
+      "enabled": false,
+      "access": "query",
+      "adapter": "openalex_awards",
+      "searches": [
+        "quantum key distribution",
+        "post-quantum cryptography",
+        "coherent optical networks",
+        "network slicing",
+        "LEO satellite broadband",
+        "zero trust network access",
+        "edge AI inference",
+        "network digital twin"
+      ]
+    },
+    {
+      "source_id": "sec_edgar_filings",
+      "name": "SEC EDGAR: company filings",
+      "url": "https://www.sec.gov/edgar/search/",
+      "horizon": "H1",
+      "cluster": "company_filings",
+      "cost": "free",
+      "enabled": false,
+      "access": "query",
+      "adapter": "sec_edgar",
+      "searches": [
+        "0000732712 Verizon",
+        "0000732717 AT&T",
+        "0000858877 Cisco",
+        "0000018926 Lumen"
+      ]
+    },
+    {
+      "source_id": "job_boards",
+      "name": "Company job boards",
+      "url": "https://job-boards.greenhouse.io",
+      "horizon": "H2",
+      "cluster": "talent",
+      "cost": "free",
+      "enabled": false,
+      "access": "query",
+      "adapter": "job_boards",
+      "searches": [
+        "greenhouse:cloudflare",
+        "greenhouse:databricks",
+        "greenhouse:anthropic",
+        "greenhouse:zscaler",
+        "greenhouse:astranis",
+        "greenhouse:netskope",
+        "greenhouse:ionq",
+        "greenhouse:psiquantum",
+        "greenhouse:fastly",
+        "lever:rigetti",
+        "ashby:openai",
+        "ashby:cohere",
+        "ashby:sandboxaq"
+      ]
+    },
+    {
+      "source_id": "usajobs",
+      "name": "USAJOBS",
+      "url": "https://www.usajobs.gov",
+      "horizon": "H2",
+      "cluster": "talent",
+      "cost": "free",
+      "enabled": false,
+      "access": "query",
+      "adapter": "usajobs",
+      "searches": [
+        "quantum",
+        "post-quantum cryptography",
+        "5G",
+        "optical networking",
+        "artificial intelligence",
+        "zero trust",
+        "satellite communications"
+      ]
+    },
+    {
+      "source_id": "nsf_news",
+      "name": "NSF news",
+      "url": "https://www.nsf.gov/news",
+      "horizon": "H3",
+      "cluster": "government_funding",
+      "cost": "free",
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.nsf.gov/rss/rss_www_news.xml",
+        "https://www.nsf.gov/rss/rss_www_funding_upcoming.xml"
+      ]
+    },
+    {
+      "source_id": "techcrunch_venture",
+      "name": "TechCrunch: venture",
+      "url": "https://techcrunch.com/category/venture/",
+      "horizon": "H2",
+      "cluster": "vc_startup_developer",
+      "cost": "free",
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://techcrunch.com/category/venture/feed/"
+      ]
+    },
+    {
+      "source_id": "inc42",
+      "name": "Inc42: funding round-up",
+      "url": "https://inc42.com/tag/funding-galore/",
+      "horizon": "H2",
+      "cluster": "vc_startup_developer",
+      "cost": "free",
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://inc42.com/tag/funding-galore/feed/"
+      ]
+    },
+    {
+      "source_id": "entrackr",
+      "name": "Entrackr",
+      "url": "https://entrackr.com",
+      "horizon": "H2",
+      "cluster": "vc_startup_developer",
+      "cost": "free",
+      "enabled": false,
+      "access": "crawl",
+      "entry_urls": [
+        "https://entrackr.com/rss"
+      ]
+    },
+    {
+      "source_id": "tcl_news",
+      "name": "Tata Communications News Centre",
+      "url": "https://www.tatacommunications.com/press-release",
+      "horizon": "H1",
+      "cluster": "corporate_research_vendor_events",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.tatacommunications.com/press-release/rss.xml"
+      ]
+    },
+    {
+      "source_id": "telegeography",
+      "name": "TeleGeography",
+      "url": "https://resources.telegeography.com",
+      "horizon": "H1",
+      "cluster": "analysts_trade_press",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://resources.telegeography.com/rss.xml"
+      ]
+    },
+    {
+      "source_id": "mplify",
+      "name": "Mplify (formerly MEF)",
+      "url": "https://www.mplify.net/news/",
+      "horizon": "H2",
+      "cluster": "standards_foundations",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.mplify.net/feed/"
+      ]
+    },
+    {
+      "source_id": "tm_forum",
+      "name": "TM Forum Inform",
+      "url": "https://inform.tmforum.org",
+      "horizon": "H2",
+      "cluster": "standards_foundations",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl"
+    },
+    {
+      "source_id": "cert_in",
+      "name": "CERT-In advisories",
+      "url": "https://www.cert-in.org.in/s2cMainServlet?pageid=PUBADVLIST",
+      "horizon": "H1",
+      "cluster": "government_funding",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl"
+    },
+    {
+      "source_id": "rbi",
+      "name": "Reserve Bank of India press releases",
+      "url": "https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx",
+      "horizon": "H1",
+      "cluster": "government_funding",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl"
+    },
+    {
+      "source_id": "sebi",
+      "name": "SEBI",
+      "url": "https://www.sebi.gov.in",
+      "horizon": "H1",
+      "cluster": "government_funding",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.sebi.gov.in/sebirss.xml"
+      ]
+    },
+    {
+      "source_id": "smpte",
+      "name": "SMPTE",
+      "url": "https://www.smpte.org",
+      "horizon": "H2",
+      "cluster": "standards_foundations",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl"
+    },
+    {
+      "source_id": "sports_video_group",
+      "name": "Sports Video Group",
+      "url": "https://www.sportsvideo.org",
+      "horizon": "H1",
+      "cluster": "analysts_trade_press",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.sportsvideo.org/feed/"
+      ]
+    },
+    {
+      "source_id": "cx_today",
+      "name": "CX Today",
+      "url": "https://cxtoday.com",
+      "horizon": "H1",
+      "cluster": "analysts_trade_press",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl"
+    },
+    {
+      "source_id": "iot_analytics",
+      "name": "IoT Analytics",
+      "url": "https://iot-analytics.com",
+      "horizon": "H2",
+      "cluster": "analysts_trade_press",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://iot-analytics.com/feed/"
+      ]
     }
   ]
 }

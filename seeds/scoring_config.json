@@ -48,7 +48,7 @@
         "far_mid": "P5",
         "far_low": "P6"
       },
-      "open_question": null,
+      "open_question": "Which priorities should trigger action at TCL, for example P1–P2 invest or pilot, P3–P4 watch closely, P5–P6 just watch? Confirm with TCL.",
       "version": 2
     },
     {

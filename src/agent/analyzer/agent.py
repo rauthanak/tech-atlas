@@ -11,6 +11,7 @@ from deepagents import create_deep_agent
 
 from agent.analyzer import engine
 from agent.analyzer.tools.workload import make_assess_tool, make_workload_tool
+from app.services import busy
 from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM
 from app.services.prompts.store import PromptStore
@@ -20,10 +21,15 @@ log = logging.getLogger(__name__)
 
 
 def start_scoring_run(params: dict) -> str | None:
-    """Start a scoring run in a background thread; None when one is active."""
-    if engine.active_scoring_run_id():
-        return None
-    run_id = engine.create_scoring_run(params)
+    """Start a scoring run in a background thread; None when one is active.
+    Raises busy.Busy while a re-check rewrites the summaries it would read."""
+    with busy.start_lock:
+        if engine.active_scoring_run_id():
+            return None
+        reason = busy.reason("recheck")
+        if reason:
+            raise busy.Busy(reason)
+        run_id = engine.create_scoring_run(params)
     threading.Thread(target=run_scoring, args=(run_id,),
                      name=f"scoring-{run_id}", daemon=True).start()
     return run_id
@@ -32,14 +38,19 @@ def start_scoring_run(params: dict) -> str | None:
 def resume_scoring_run(run_id: str) -> bool:
     """Re-open a failed or terminated run: existing assessments are kept (the
     per-fabric existence check skips them) and only the missing work is done.
-    False when the run is unknown, still active, or already completed."""
-    if engine.active_scoring_run_id():
-        return False
-    doc = get_collection("scoring_runs").find_one_and_update(
-        {"_id": run_id, "status": {"$in": ["failed", "terminated"]}},
-        {"$set": {"status": "running", "stage": "scoring", "error": None,
-                  "finished_at": None, "progress.techs_done": 0},
-         "$push": {"stage_history": {"stage": "resumed", "at": engine._now()}}})
+    False when the run is unknown, still active, or already completed.
+    Raises busy.Busy while a re-check runs."""
+    with busy.start_lock:
+        if engine.active_scoring_run_id():
+            return False
+        reason = busy.reason("recheck")
+        if reason:
+            raise busy.Busy(reason)
+        doc = get_collection("scoring_runs").find_one_and_update(
+            {"_id": run_id, "status": {"$in": ["failed", "terminated"]}},
+            {"$set": {"status": "running", "stage": "scoring", "error": None,
+                      "finished_at": None, "progress.techs_done": 0},
+             "$push": {"stage_history": {"stage": "resumed", "at": engine._now()}}})
     if doc is None:
         return False
     threading.Thread(target=run_scoring, args=(run_id,),

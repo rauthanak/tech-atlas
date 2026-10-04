@@ -76,6 +76,7 @@ def overview() -> dict:
 class FabricEdit(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     definition: str = Field(min_length=1, max_length=4000)
+    tcl_today: str | None = Field(default=None, max_length=4000)  # what TCL runs in it, with its source pages
     enabled: bool
     open_question: str | None = Field(default=None, max_length=1000)
 

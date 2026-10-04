@@ -31,11 +31,8 @@ python -m playwright install chromium >/dev/null 2>&1 || echo "warning: playwrig
 # 4. .env
 [ -f .env ] || cp .env.example .env
 
-# 5. Database: create collections/indexes and seed sources + prompts
+# 5. Database: create collections and indexes (the API loads the seeding data at start)
 python scripts/create_db.py
-python scripts/seed_sources.py
-python scripts/seed_prompts.py
-python scripts/seed_scoring.py
 
 # 6. Serve (dev: auto-reload; host/port in main.py, PORT env overrides)
 exec python main.py

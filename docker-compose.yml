@@ -39,6 +39,10 @@ services:
       HOST: 0.0.0.0
     ports:
       - "8100:8100"
+    volumes:
+      # "Update seeding data" in the portal writes these files; the mount
+      # lands them in the project folder, ready for git
+      - ./seeds:/app/seeds
     depends_on:
       mongo:
         condition: service_healthy

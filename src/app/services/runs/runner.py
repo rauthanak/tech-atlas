@@ -13,9 +13,11 @@ from concurrent.futures import ThreadPoolExecutor
 from agent.orchestrator.agent import run_orchestrator
 from agent.orchestrator.tools.categories import category_keys
 from agent.supervisor.agent import Supervisor
+from app.services import busy
 from app.services.db.mongo import get_collection
 from app.services.llm import LLM
 from app.services.runs import store
+from app.services.signals import snapshot
 from app.settings import get_settings
 
 log = logging.getLogger(__name__)
@@ -27,11 +29,15 @@ def active_run_id() -> str | None:
     return doc["_id"] if doc else None
 
 
-def start_run(params: dict) -> str | None:
-    """Start a run in a background thread; None when one is already active."""
-    if active_run_id():
-        return None
-    run_id = store.create_run(params)
+def start_run(params: dict) -> str:
+    """Start a run in a background thread. It records the signal list and
+    crawl settings it uses. Raises busy.Busy when a run or a re-check is
+    active (a re-check rewrites stored summaries)."""
+    with busy.start_lock:
+        reason = busy.reason("collection", "recheck")
+        if reason:
+            raise busy.Busy(reason)
+        run_id = store.create_run(params, snapshot.build())
     threading.Thread(target=_execute, args=(run_id, params),
                      name=f"run-{run_id}", daemon=True).start()
     return run_id
