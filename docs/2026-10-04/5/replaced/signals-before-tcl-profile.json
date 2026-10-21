@@ -1,0 +1,268 @@
+{
+  "signals": [
+    {
+      "signal_id": "funding-round",
+      "name": "Funding round",
+      "look_for": "A company raises money. Note the stage, the amount and the investors, including corporate venture arms and sovereign or pension funds. Significant: a disclosed amount, or a named top-tier, corporate or sovereign investor.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 1
+    },
+    {
+      "signal_id": "new-fund-or-theme",
+      "name": "New fund or investment theme",
+      "look_for": "An investor launches a fund, or publishes a thesis, aimed at an area of technology.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 2
+    },
+    {
+      "signal_id": "acquisition",
+      "name": "Acquisition or merger",
+      "look_for": "A company buys or merges with another. Note who, whom, the price if given, and why.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 3
+    },
+    {
+      "signal_id": "ipo",
+      "name": "IPO or listing",
+      "look_for": "A technology company lists publicly, or files to.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 4
+    },
+    {
+      "signal_id": "shutdown-or-failed-raise",
+      "name": "Shutdown or failed raise",
+      "look_for": "A company closes, cuts back sharply, cancels a product or project, or fails to raise money.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 5
+    },
+    {
+      "signal_id": "government-programme-or-grant",
+      "name": "Government programme or grant",
+      "look_for": "Public money for an area or a project: a national mission, a research programme, a grant or an award. Note the funder and the amount.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 6
+    },
+    {
+      "signal_id": "regulation-or-mandate",
+      "name": "Regulation or mandate",
+      "look_for": "A law, rule, required standard, deadline or ban that forces or blocks adoption.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 7
+    },
+    {
+      "signal_id": "security-advisory",
+      "name": "Security advisory",
+      "look_for": "An official warning, directive or vulnerability notice from a security agency (for example CISA, ENISA or CERT-In) that affects a technology.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 8
+    },
+    {
+      "signal_id": "public-tender",
+      "name": "Public tender",
+      "look_for": "A government or public body buying a technology, or inviting bids for it.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 9
+    },
+    {
+      "signal_id": "patent-filing-or-grant",
+      "name": "Patent filing or grant",
+      "look_for": "A patent filed or granted in a relevant area, especially by a competitor, a big technology company or a surprising new player, or filed in many countries.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 10
+    },
+    {
+      "signal_id": "research-breakthrough",
+      "name": "Research breakthrough",
+      "look_for": "A measurable step forward: a new record, a beaten benchmark, a first demonstration or an independent replication. Incremental results don't count.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 11
+    },
+    {
+      "signal_id": "top-conference-recognition",
+      "name": "Top-conference recognition",
+      "look_for": "A paper accepted at, or an award from, a leading venue such as NeurIPS, SIGCOMM, NSDI, USENIX Security, MobiCom or OFC.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 12
+    },
+    {
+      "signal_id": "prototype-or-field-trial",
+      "name": "Prototype or field trial",
+      "look_for": "The technology working outside the lab: a demo, pilot or field trial, with the parties named.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 13
+    },
+    {
+      "signal_id": "spin-out",
+      "name": "Spin-out",
+      "look_for": "A university or corporate lab spins out a company.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 14
+    },
+    {
+      "signal_id": "standard-milestone",
+      "name": "Standard milestone",
+      "look_for": "A standards body starts a work item or working group, adopts a draft, or ratifies or publishes a specification (for example 3GPP, IETF, ETSI, ITU, ISO or NIST).",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 15
+    },
+    {
+      "signal_id": "open-source-milestone",
+      "name": "Open-source milestone",
+      "look_for": "A project launches, joins a foundation, graduates (for example at CNCF or Apache), or reaches a 1.0 release.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 16
+    },
+    {
+      "signal_id": "alliance-formed",
+      "name": "Alliance formed",
+      "look_for": "Companies form a consortium, alliance or industry group around a technology.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 17
+    },
+    {
+      "signal_id": "product-launch",
+      "name": "Product launch",
+      "look_for": "A vendor or hyperscaler launches a product or makes it generally available. A preview counts only if customers can use it.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 18
+    },
+    {
+      "signal_id": "competitor-move",
+      "name": "Competitor move",
+      "look_for": "A carrier or direct competitor (for example Verizon, AT&T, Cisco or Juniper) launches, prices or invests in a technology, including in earnings calls or filings.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 19
+    },
+    {
+      "signal_id": "named-deployment",
+      "name": "Named deployment",
+      "look_for": "A named customer runs the technology in production.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 20
+    },
+    {
+      "signal_id": "partnership",
+      "name": "Partnership",
+      "look_for": "Companies team up to build, integrate or sell a technology.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 21
+    },
+    {
+      "signal_id": "price-change",
+      "name": "Price change",
+      "look_for": "A price cut or a new pricing model, a sign the technology is becoming a commodity or being pushed to market.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 22
+    },
+    {
+      "signal_id": "market-figure",
+      "name": "Market figure",
+      "look_for": "An analyst market size, forecast or survey figure, with its scope and date.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 23
+    },
+    {
+      "signal_id": "hiring-surge-or-new-team",
+      "name": "Hiring surge or new team",
+      "look_for": "Many open roles for a skill at a named employer, a sharp rise in such roles, a new team or lab, or a notable hire or departure.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 24
+    },
+    {
+      "signal_id": "employment-trend",
+      "name": "Employment trend",
+      "look_for": "Official or reputable data showing that jobs or skills in a field are growing or shrinking.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 25
+    },
+    {
+      "signal_id": "developer-adoption-jump",
+      "name": "Developer adoption jump",
+      "look_for": "A sharp rise in downloads, stars, contributors or usage of a technology's tools.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 26
+    },
+    {
+      "signal_id": "single-job-ad",
+      "name": "Single job ad",
+      "look_for": "A page that is just one job posting. A hiring surge is still caught as a signal.",
+      "mode": "can_ignore",
+      "enabled": true,
+      "order": 27
+    },
+    {
+      "signal_id": "event-promotion",
+      "name": "Event or webinar promotion",
+      "look_for": "Registration pages, agendas, speaker lists and webinar invitations with no new facts.",
+      "mode": "can_ignore",
+      "enabled": true,
+      "order": 28
+    },
+    {
+      "signal_id": "marketing-echo",
+      "name": "Marketing echo",
+      "look_for": "A page restating an already-known product or announcement with nothing new.",
+      "mode": "can_ignore",
+      "enabled": true,
+      "order": 29
+    },
+    {
+      "signal_id": "opinion-without-news",
+      "name": "Opinion without news",
+      "look_for": "Commentary or thought leadership that reports no new facts.",
+      "mode": "can_ignore",
+      "enabled": true,
+      "order": 30
+    },
+    {
+      "signal_id": "routine-update",
+      "name": "Routine update",
+      "look_for": "Patch notes, bug fixes and minor version releases.",
+      "mode": "can_ignore",
+      "enabled": true,
+      "order": 31
+    },
+    {
+      "signal_id": "award-marketing",
+      "name": "Award marketing",
+      "look_for": "Companies promoting awards, rankings or badges they received.",
+      "mode": "can_ignore",
+      "enabled": true,
+      "order": 32
+    },
+    {
+      "signal_id": "non-tech-corporate-news",
+      "name": "Non-technology corporate news",
+      "look_for": "Culture, CSR, office openings, or executive appointments unrelated to technology.",
+      "mode": "can_ignore",
+      "enabled": true,
+      "order": 33
+    }
+  ]
+}

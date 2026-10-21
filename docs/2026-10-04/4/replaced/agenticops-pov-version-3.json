@@ -1,0 +1,44 @@
+{
+  "_id": "536b15ec2302:agenticops",
+  "scoring_run_id": "536b15ec2302",
+  "tech_id": "agenticops",
+  "technology": "agenticops",
+  "sections": {
+    "headline": "Monitor AgenticOps; the evidence supports a controlled assessment, not investment yet.",
+    "summary": "AgenticOps uses AI agents, operational context and governed workflows to diagnose issues, resolve incidents and automate cloud and network operations. The evidence shows early commercial activity from Cisco, including more than 300 onboarded organizations, a 5,000-plus waitlist and expanding integrations, but it comes from six Cisco pages on one site. For TCL, the opportunity is relevant to Cloud and Network operations, while market size, independent production use and TCL’s right to compete are not yet established.",
+    "tora_analysis": {
+      "market_potential": "Market Potential scored 4.5 out of 10 for both Cloud and Network, but only for growth and use-case breadth; addressable market could not be assessed from the evidence. The pages show early commercial activity and several related operations uses, but they do not establish industry-wide growth or the size of the opportunity.",
+      "strategic_fit": "Strategic Fit scored 8 out of 10 for both Cloud and Network, but only for fit with the relevant fabric; TCL’s portfolio adjacency and right to play could not be assessed. AgenticOps aligns with cloud infrastructure, network management, observability, automation and security operations, based mainly on Cisco’s own product announcements.",
+      "adoption_readiness": "Adoption Readiness has no score because maturity, commercial adoption and deliverability could not be assessed from the evidence. The pages describe general availability and early onboarding, but do not establish independent production use, paying customers or carrier-scale delivery requirements."
+    },
+    "maturity": "The pages show a generally available Cisco offering with early onboarding, integrations and reusable workflows. They do not yet establish the depth of production use or the operating results needed to judge commercial maturity.",
+    "market_view": "The evidence does not size the AgenticOps market for either Cloud or Network. It shows early expansion activity, including more than 300 onboarded organizations, a 5,000-plus waitlist and more than 60 integration commitments, but these are Cisco-reported signals from a narrow period rather than independent market growth evidence.",
+    "placement_rationale": "No priority could be set: how soon could not be assessed because maturity and commercial adoption had no scored inputs, while how big was based on only one of four inputs in each fabric.",
+    "capability_gap": "The required capability set includes unified telemetry, inventory and topology, identity and permissions, governed agent actions, workflow automation, controller APIs and integrations across infrastructure and IT service-management tools. Cisco’s pages show much of this capability in its own products, but TCL would need to establish which of these assets, integrations, engineering skills and operating controls it already has before deciding what to build or buy.",
+    "evidence_gaps": [
+      {
+        "fabric": "Cloud",
+        "missing": [
+          "A dated production deployment with named customers and operating results would show whether AgenticOps is mature and commercially adopted beyond early onboarding.",
+          "An independent market estimate with clear scope and publication date would show the size of the Cloud opportunity.",
+          "Evidence of TCL’s current Cloud assets, named buyers, delivery capability and buying criteria would show whether TCL has a credible right to compete."
+        ]
+      },
+      {
+        "fabric": "Network",
+        "missing": [
+          "A dated carrier-scale production deployment with named customers, operating results, costs and support requirements would show whether AgenticOps can be delivered in network operations.",
+          "An independent market estimate covering agentic network operations and related services would show the size of the Network opportunity.",
+          "Evidence of TCL’s network assets, installed base, channels and buyer requirements would show whether TCL can compete with Cisco, hyperscalers and incumbent providers."
+        ]
+      }
+    ],
+    "recommendation": "Monitor; do not invest yet. The evidence is promising but narrow, vendor-reported and insufficient to establish market size, independent adoption or TCL’s ability to deliver and win. Reconsider a controlled Cloud or Network pilot if at least 1,000 organizations are independently confirmed as using Cloud Control in production, or if at least 10 non-Cisco integrations are generally available and used in production; a median investigation time below 30 minutes across at least 10 production workflows would also strengthen the case."
+  },
+  "assessment_ids": [
+    "536b15ec2302:agenticops:cloud",
+    "536b15ec2302:agenticops:network"
+  ],
+  "version": 3,
+  "composed_at": "2026-10-04T10:49:11.799909+00:00"
+}

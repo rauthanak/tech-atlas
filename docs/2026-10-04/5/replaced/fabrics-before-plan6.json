@@ -1,0 +1,37 @@
+{
+  "fabrics": [
+    {
+      "fabric_id": "network",
+      "name": "Network",
+      "definition": "Connectivity as a service — core, edge, subsea, satellite integration, network APIs, SDN/NFV, private networks, optical and photonic transport.",
+      "enabled": true,
+      "open_question": "Refine definition and included offerings with TCL stakeholders.",
+      "version": 2
+    },
+    {
+      "fabric_id": "cloud",
+      "name": "Cloud",
+      "definition": "Cloud, hosting and security — multi-cloud connect, edge compute, SASE/zero-trust, sovereign cloud, cloud-delivered security.",
+      "enabled": true,
+      "open_question": "Refine definition and included offerings with TCL stakeholders.",
+      "version": 1
+    },
+    {
+      "fabric_id": "interaction",
+      "name": "Interaction",
+      "definition": "How enterprises and their customers communicate — CPaaS, contact centre, conversational AI, video, messaging, collaboration.",
+      "enabled": true,
+      "open_question": "Refine definition and included offerings with TCL stakeholders.",
+      "version": 1
+    },
+    {
+      "fabric_id": "iot",
+      "name": "IoT",
+      "definition": "Connected things and the intelligence on them — connectivity management, industrial IoT, telemetry platforms, edge AI on devices.",
+      "enabled": true,
+      "open_question": "Refine definition and included offerings with TCL stakeholders.",
+      "version": 1
+    }
+  ],
+  "note": "A technology can touch several fabrics; it is assessed separately in each. Security and AI cross-cut all four — a cross-cutting technology is assessed in the fabric where its buyer sits."
+}

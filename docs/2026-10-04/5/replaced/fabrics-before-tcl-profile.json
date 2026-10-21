@@ -1,0 +1,53 @@
+{
+  "fabrics": [
+    {
+      "fabric_id": "network",
+      "name": "Network",
+      "definition": "Connectivity delivered as a service: TCL's Network Fabric (IZO). Global VPN and MPLS, internet access, private lines and IP transit over TCL's subsea and terrestrial fibre; SD-WAN and internet WAN; multi-cloud connectivity and networking; data-centre connectivity; managed Wi-Fi, LAN and enterprise broadband; network-as-a-service with on-demand, programmable control; network APIs, SDN/NFV, satellite integration, and optical and photonic transport.",
+      "enabled": true,
+      "open_question": "Refine definition and included offerings with TCL stakeholders.",
+      "version": 3
+    },
+    {
+      "fabric_id": "cloud",
+      "name": "Cloud",
+      "definition": "Enterprise cloud and AI infrastructure: TCL's Cloud Fabric (Vayu). AI cloud with on-demand GPUs and an AI development platform; private, hybrid, multi-cloud and edge computing; sovereign and industry clouds (government, financial services) that keep data in-country; compute, storage, backup and disaster recovery, databases, DevOps and observability; data platforms for integration, governance and analytics.",
+      "enabled": true,
+      "open_question": "Refine definition and included offerings with TCL stakeholders.",
+      "version": 2
+    },
+    {
+      "fabric_id": "security",
+      "name": "Security",
+      "definition": "Cyber security and resilience: TCL's Security Fabric. Secure access service edge (SASE), security service edge (SSE) and zero-trust network access; managed detection and response and security operations centres; cloud security; operational-technology (OT) security; DDoS protection and advanced network security; security assessment, governance, risk and compliance; threat intelligence.",
+      "enabled": true,
+      "open_question": "New on 4 Oct: TCL's site names a Security Fabric. Security moved here from Cloud's definition; confirm the scope with TCL stakeholders.",
+      "version": 1
+    },
+    {
+      "fabric_id": "interaction",
+      "name": "Interaction",
+      "definition": "How enterprises and their customers communicate: TCL's Interaction Fabric (Kaleyra and Commotion). Communications platforms as a service (messaging, voice and video APIs), contact centre as a service, unified communications and collaboration, cloud voice and SIP trunking; conversational and voice AI, AI agents that complete enterprise workflows, and customer-experience platforms.",
+      "enabled": true,
+      "open_question": "Refine definition and included offerings with TCL stakeholders.",
+      "version": 2
+    },
+    {
+      "fabric_id": "iot",
+      "name": "IoT",
+      "definition": "Connected devices and the intelligence on them: TCL's IoT Fabric (MOVE). Cellular IoT and eSIM / global SIM connectivity, LoRaWAN, private 4G/5G networks, embedded connectivity and MVNE services; device management, orchestration and IoT data analytics, including edge AI on devices; industry solutions for connected vehicles, logistics, aviation and manufacturing.",
+      "enabled": true,
+      "open_question": "Refine definition and included offerings with TCL stakeholders.",
+      "version": 2
+    },
+    {
+      "fabric_id": "media",
+      "name": "Media",
+      "definition": "Technology for media, sport and entertainment companies: TCL's Media Fabric. Contribution and distribution of live and on-demand video over fibre, IP, satellite and cloud, including alternatives to satellite; remote and cloud production, playout and master control; media cloud, edge and storage for content workflows; low-latency video delivery networks and CDNs; live event services; fan engagement; gaming and esports infrastructure.",
+      "enabled": true,
+      "open_question": "New on 4 Oct: TCL's site names a Media Fabric. Confirm the scope, and the label colour (their violet sits close to Interaction's purple), with TCL stakeholders.",
+      "version": 1
+    }
+  ],
+  "note": "A technology can touch several fabrics; it is assessed separately in each. Security and AI cross-cut all four — a cross-cutting technology is assessed in the fabric where its buyer sits."
+}

@@ -1,0 +1,72 @@
+{
+  "scoring_config": [
+    {
+      "name": "tora",
+      "axes": {
+        "market_potential": {
+          "label": "Market Potential"
+        },
+        "strategic_fit": {
+          "label": "Strategic Fit"
+        },
+        "adoption_readiness": {
+          "label": "Adoption Readiness"
+        }
+      },
+      "unscorable_policy": "An unscorable measure is EXCLUDED from its axis mean and the axis is marked partial — never substituted with zero.",
+      "open_question": null,
+      "version": 2
+    },
+    {
+      "name": "priority_grid",
+      "timeline_cutpoints": [
+        4.0,
+        7.0
+      ],
+      "potential_cutpoints": [
+        4.0,
+        7.0
+      ],
+      "timeline_from": [
+        "maturity-trl",
+        "commercial-adoption"
+      ],
+      "potential_from": [
+        "addressable-market",
+        "growth",
+        "disruption-threat",
+        "serviceable-capture"
+      ],
+      "grid": {
+        "near_high": "P1",
+        "near_mid": "P2",
+        "near_low": "P4",
+        "mid_high": "P2",
+        "mid_mid": "P3",
+        "mid_low": "P5",
+        "far_high": "P3",
+        "far_mid": "P5",
+        "far_low": "P6"
+      },
+      "open_question": null,
+      "version": 2
+    },
+    {
+      "name": "evidence",
+      "max_dossier_tokens": 300000,
+      "note": "Safety ceiling only — the full summarized dossier is sent; this guard exists for pathological cases.",
+      "open_question": null,
+      "version": 5
+    },
+    {
+      "name": "horizons",
+      "map": {
+        "near": "H1",
+        "mid": "H2",
+        "far": "H3"
+      },
+      "open_question": "Horizon mapping is our proposal (near→H1, mid→H2, far→H3) — confirm the timeline bands correspond to TCL's H1/H2/H3 definitions.",
+      "version": 1
+    }
+  ]
+}

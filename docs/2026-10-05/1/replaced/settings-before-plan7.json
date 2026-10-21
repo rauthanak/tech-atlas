@@ -1,0 +1,32 @@
+{
+  "settings": [
+    {
+      "name": "crawl",
+      "skip_url_patterns": [
+        "login",
+        "signin",
+        "signup",
+        "register",
+        "privacy",
+        "terms",
+        "cookie",
+        "mailto:",
+        "javascript:",
+        "/tag/",
+        "/tags/",
+        "/category/",
+        "/author/",
+        "facebook.com",
+        "twitter.com",
+        "x.com/",
+        "linkedin.com",
+        "youtube.com",
+        "instagram.com"
+      ],
+      "pages_per_source": 40,
+      "page_part_chars": 120000,
+      "page_part_concurrency": 4,
+      "lookback_days": 30
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+[
+ {
+  "metric": "Organizations using Cisco Cloud Control in production",
+  "current_value": "Cisco reports more than 300 organizations onboarded; production-use and paying-customer counts are not separately disclosed. Cloud Control is generally available only to U.S. customers. https://blogs.cisco.com/ai/cisco-cloud-control-us-general-availability/",
+  "inflection_threshold": "At least 1,000 paying organizations using Cloud Control in production, with general availability in at least three geographic regions",
+  "direction": "rising",
+  "implication": "Crossing this threshold would indicate repeatable commercial adoption rather than launch-stage validation; readiness rises and the technology moves from H3 toward H2."
+ },
+ {
+  "metric": "Generally available production integrations with non-Cisco systems",
+  "current_value": "Cisco names ServiceNow, BlueCat, Infoblox, and Atlassian as connected at launch, while describing more than 60 additional integration commitments; the number of generally available, customer-used integrations is not stated. https://blogs.cisco.com/ai/cisco-cloud-control-us-general-availability/",
+  "inflection_threshold": "At least 20 generally available integrations from at least five non-Cisco vendors, each confirmed as used by at least one production customer",
+  "direction": "rising",
+  "implication": "This would show that AgenticOps can operate across heterogeneous IT estates instead of mainly within one vendor stack; priority and readiness rise."
+ },
+ {
+  "metric": "Elapsed time to complete a recurring operational investigation",
+  "current_value": "Cisco reports one early-user investigation falling from more than 10 hours to under 10 minutes; this is a single vendor-reported example. https://blogs.cisco.com/ai/cisco-cloud-control-us-general-availability/",
+  "inflection_threshold": "Across at least 10 independently documented customer workflows, the median investigation time is 30 minutes or less and at least 50% below each customer's pre-AgenticOps baseline",
+  "direction": "falling",
+  "implication": "Replication of the time-saving result would convert a promotional proof point into evidence of material operational impact; readiness rises and H3 can move toward H2."
+ }
+]
