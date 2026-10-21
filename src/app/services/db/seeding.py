@@ -38,6 +38,14 @@ ID_FIELDS = {
     "fabrics": "fabric_id",
     "measures": "measure_id",
     "scoring_config": "name",
+    "recipes": "recipe_id",
+    "availability": "availability_id",
+    "domains": "domain_id",
+    "subdomains": "subdomain_id",
+    "trl_levels": "trl_id",
+    "path_steps": "step_id",
+    "mechanisms": "mechanism_id",
+    "assumptions": "assumption_id",
 }
 NOT_COMPARED = {"version"}  # the app's own counter: written with an item, never compared
 STATE_ID = "state"

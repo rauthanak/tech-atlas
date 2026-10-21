@@ -1,0 +1,4810 @@
+{
+  "subdomains": [
+    {
+      "subdomain_id": "ai--ai_agents",
+      "name": "AI Agents",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--ai_alignment",
+      "name": "AI Alignment",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--ai_safety",
+      "name": "AI Safety",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--ai_safety_interpretability",
+      "name": "AI Safety / Interpretability",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--ai_security",
+      "name": "AI Security",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--ai_theory",
+      "name": "AI Theory",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--ai_driven_eda",
+      "name": "AI-driven EDA",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--automated_machine_learning",
+      "name": "Automated Machine Learning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--automl",
+      "name": "AutoML",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--autonomous_space_systems",
+      "name": "Autonomous Space Systems",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--autonomous_systems",
+      "name": "Autonomous Systems",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--causal_ai",
+      "name": "Causal AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--causal_inference",
+      "name": "Causal Inference",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--cognitive_automation",
+      "name": "Cognitive Automation",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--collective_intelligence",
+      "name": "Collective Intelligence",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--computer_vision",
+      "name": "Computer Vision",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--computer_vision_3d_reconstruction",
+      "name": "Computer Vision / 3D Reconstruction",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--construction_ai",
+      "name": "Construction AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--decentralized_machine_learning",
+      "name": "Decentralized Machine Learning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--deep_learning",
+      "name": "Deep Learning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--deep_learning_architecture",
+      "name": "Deep Learning Architecture",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--deep_learning_theory",
+      "name": "Deep Learning Theory",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--design_automation",
+      "name": "Design Automation",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--distributed_ai",
+      "name": "Distributed AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--distributed_machine_learning",
+      "name": "Distributed Machine Learning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--edge_ai",
+      "name": "Edge AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--educational_ai",
+      "name": "Educational AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--efficient_transformers",
+      "name": "Efficient Transformers",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--embodied_intelligence",
+      "name": "Embodied Intelligence",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--emotional_ai",
+      "name": "Emotional AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--energy_ai",
+      "name": "Energy AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--entertainment_ai",
+      "name": "Entertainment AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--environmental_ai",
+      "name": "Environmental AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--federated_learning",
+      "name": "Federated Learning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--financial_ai",
+      "name": "Financial AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--foundation_models",
+      "name": "Foundation Models",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--generative_ai",
+      "name": "Generative AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--generative_modeling",
+      "name": "Generative Modeling",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--healthcare_ai",
+      "name": "Healthcare AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--industrial_ai",
+      "name": "Industrial AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--inference_scaling_reasoning",
+      "name": "Inference Scaling / Reasoning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--information_retrieval",
+      "name": "Information Retrieval",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--intelligent_automation",
+      "name": "Intelligent Automation",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--interpretable_ai",
+      "name": "Interpretable AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--knowledge_representation",
+      "name": "Knowledge Representation",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--legal_ai",
+      "name": "Legal AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--machine_learning",
+      "name": "Machine Learning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--meta_learning",
+      "name": "Meta-learning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--model_compression",
+      "name": "Model Compression",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--model_optimization",
+      "name": "Model Optimization",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--multimodal_ai",
+      "name": "Multimodal AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--multimodal_learning",
+      "name": "Multimodal Learning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--natural_language_processing",
+      "name": "Natural Language Processing",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--neural_networks",
+      "name": "Neural Networks",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--neural_symbolic_integration",
+      "name": "Neural-Symbolic Integration",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--neuromorphic_computing",
+      "name": "Neuromorphic Computing",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--neuromorphic_engineering",
+      "name": "Neuromorphic Engineering",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--parameter_efficient_fine_tuning",
+      "name": "Parameter-Efficient Fine-Tuning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--perception",
+      "name": "Perception",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--precision_agriculture",
+      "name": "Precision Agriculture",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--privacy_enhancing_technologies",
+      "name": "Privacy-Enhancing Technologies",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--prompt_engineering",
+      "name": "Prompt Engineering",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--reinforcement_learning",
+      "name": "Reinforcement Learning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--reinforcement_learning_ai_alignment",
+      "name": "Reinforcement Learning / AI Alignment",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--responsible_ai",
+      "name": "Responsible AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--retail_ai",
+      "name": "Retail AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--robotics",
+      "name": "Robotics",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--self_supervised_learning",
+      "name": "Self-supervised Learning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--simulation_ai",
+      "name": "Simulation AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--sports_ai",
+      "name": "Sports AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--supply_chain_ai",
+      "name": "Supply Chain AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--transfer_learning",
+      "name": "Transfer Learning",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--transportation_ai",
+      "name": "Transportation AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "ai--trustworthy_ai",
+      "name": "Trustworthy AI",
+      "domain_id": "ai",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--access_control_community_management",
+      "name": "Access Control / Community Management",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_applications",
+      "name": "Blockchain Applications",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_architecture",
+      "name": "Blockchain Architecture",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_architecture_data_structures",
+      "name": "Blockchain Architecture / Data Structures",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_architecture_mev",
+      "name": "Blockchain Architecture / MEV",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_development_frameworks",
+      "name": "Blockchain Development Frameworks",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_economics_mev",
+      "name": "Blockchain Economics / MEV",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_infrastructure_automation",
+      "name": "Blockchain Infrastructure / Automation",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_infrastructure_data_feeds",
+      "name": "Blockchain Infrastructure / Data Feeds",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_infrastructure_node_technology",
+      "name": "Blockchain Infrastructure / Node Technology",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_infrastructure_oracle_networks",
+      "name": "Blockchain Infrastructure / Oracle Networks",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_infrastructure_randomness",
+      "name": "Blockchain Infrastructure / Randomness",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_infrastructure_scalability",
+      "name": "Blockchain Infrastructure / Scalability",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--blockchain_security_staking",
+      "name": "Blockchain Security / Staking",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--consensus_mechanisms",
+      "name": "Consensus Mechanisms",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--creator_economy_content_distribution",
+      "name": "Creator Economy / Content Distribution",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--cryptography_privacy",
+      "name": "Cryptography / Privacy",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--cryptography_randomness",
+      "name": "Cryptography / Randomness",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--data_infrastructure",
+      "name": "Data Infrastructure",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--decentralized_infrastructure",
+      "name": "Decentralized Infrastructure",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--decentralized_infrastructure_depin",
+      "name": "Decentralized Infrastructure / DePIN",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--decentralized_storage",
+      "name": "Decentralized Storage",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--defi_lending",
+      "name": "DeFi Lending",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--depin_mapping",
+      "name": "DePIN / Mapping",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--digital_assets",
+      "name": "Digital Assets",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--digital_assets_tokenization",
+      "name": "Digital Assets / Tokenization",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--digital_currency",
+      "name": "Digital Currency",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--digital_currency_defi",
+      "name": "Digital Currency / DeFi",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--digital_currency_monetary_design",
+      "name": "Digital Currency / Monetary Design",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--digital_currency_monetary_technology",
+      "name": "Digital Currency / Monetary Technology",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--digital_identity",
+      "name": "Digital Identity",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--digital_identity_credentials",
+      "name": "Digital Identity / Credentials",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--digital_identity_wallets",
+      "name": "Digital Identity / Wallets",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--digital_identity_infrastructure",
+      "name": "Digital Identity Infrastructure",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--distributed_ledger",
+      "name": "Distributed Ledger",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--distributed_ledger_technology",
+      "name": "Distributed Ledger Technology",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--economic_design_mechanism_design",
+      "name": "Economic Design / Mechanism Design",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--enterprise_blockchain",
+      "name": "Enterprise Blockchain",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--financial_technology",
+      "name": "Financial Technology",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--financial_technology_derivatives",
+      "name": "Financial Technology / Derivatives",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--financial_technology_derivatives_trading",
+      "name": "Financial Technology / Derivatives Trading",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--financial_technology_insurance",
+      "name": "Financial Technology / Insurance",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--financial_technology_investment_strategies",
+      "name": "Financial Technology / Investment Strategies",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--financial_technology_lending",
+      "name": "Financial Technology / Lending",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--financial_technology_market_infrastructure",
+      "name": "Financial Technology / Market Infrastructure",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--financial_technology_prediction_markets",
+      "name": "Financial Technology / Prediction Markets",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--financial_technology_trading",
+      "name": "Financial Technology / Trading",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--financial_technology_trading_infrastructure",
+      "name": "Financial Technology / Trading Infrastructure",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--governance",
+      "name": "Governance",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--governance_organizational_technology",
+      "name": "Governance / Organizational Technology",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--governance_token_design",
+      "name": "Governance / Token Design",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--governance_infrastructure",
+      "name": "Governance Infrastructure",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--governance_mechanisms",
+      "name": "Governance Mechanisms",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--infrastructure_token_incentives",
+      "name": "Infrastructure / Token Incentives",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--internet_architecture",
+      "name": "Internet Architecture",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--interoperability",
+      "name": "Interoperability",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--interoperability_layer_0",
+      "name": "Interoperability / Layer 0",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--interoperability_trading",
+      "name": "Interoperability / Trading",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--legal_governance",
+      "name": "Legal / Governance",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--naming_infrastructure",
+      "name": "Naming Infrastructure",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--naming_infrastructure_dns",
+      "name": "Naming Infrastructure / DNS",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--payment_infrastructure_layer_2",
+      "name": "Payment Infrastructure / Layer 2",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--privacy_confidential_computing",
+      "name": "Privacy / Confidential Computing",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--privacy_cryptocurrency",
+      "name": "Privacy / Cryptocurrency",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--privacy_cryptography",
+      "name": "Privacy / Cryptography",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--scalability",
+      "name": "Scalability",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--scalability_layer_2",
+      "name": "Scalability / Layer 2",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--scalability_payment_channels",
+      "name": "Scalability / Payment Channels",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--scalability_zero_knowledge_proofs",
+      "name": "Scalability / Zero-Knowledge Proofs",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--scientific_research_open_science",
+      "name": "Scientific Research / Open Science",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--security_verification",
+      "name": "Security / Verification",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--smart_contract_platforms",
+      "name": "Smart Contract Platforms",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--social_media_content_ownership",
+      "name": "Social Media / Content Ownership",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--staking_infrastructure_defi",
+      "name": "Staking Infrastructure / DeFi",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--tokenization_real_world_assets",
+      "name": "Tokenization / Real-World Assets",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--transaction_infrastructure",
+      "name": "Transaction Infrastructure",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--transaction_privacy_mev_mitigation",
+      "name": "Transaction Privacy / MEV Mitigation",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--user_experience_cross_chain",
+      "name": "User Experience / Cross-Chain",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--user_experience_wallet_infrastructure",
+      "name": "User Experience / Wallet Infrastructure",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--verifiable_ai_zero_knowledge_proofs",
+      "name": "Verifiable AI / Zero-Knowledge Proofs",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--wallet_infrastructure",
+      "name": "Wallet Infrastructure",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "blockchain_web3--wallet_security_cryptography",
+      "name": "Wallet Security / Cryptography",
+      "domain_id": "blockchain_web3",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_architecture",
+      "name": "Cloud Architecture",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_automation",
+      "name": "Cloud Automation",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_blockchain_services",
+      "name": "Cloud Blockchain Services",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_compute",
+      "name": "Cloud Compute",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_computing_models",
+      "name": "Cloud Computing Models",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_data_architecture",
+      "name": "Cloud Data Architecture",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_data_management",
+      "name": "Cloud Data Management",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_data_services",
+      "name": "Cloud Data Services",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_financial_management",
+      "name": "Cloud Financial Management",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_governance",
+      "name": "Cloud Governance",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_operations",
+      "name": "Cloud Operations",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_operations_intelligent_automation",
+      "name": "Cloud Operations / Intelligent Automation",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_security",
+      "name": "Cloud Security",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_security_cloud_networking",
+      "name": "Cloud Security / Cloud Networking",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_security_confidential_computing",
+      "name": "Cloud Security / Confidential Computing",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_security_identity_management",
+      "name": "Cloud Security / Identity Management",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_service_models",
+      "name": "Cloud Service Models",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_storage_architecture",
+      "name": "Cloud Storage Architecture",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_strategy",
+      "name": "Cloud Strategy",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_ai_ml",
+      "name": "Cloud-Native AI/ML",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_application_architecture",
+      "name": "Cloud-Native Application Architecture",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_application_development",
+      "name": "Cloud-Native Application Development",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_architecture",
+      "name": "Cloud-Native Architecture",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_ci_cd",
+      "name": "Cloud-Native CI/CD",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_developer_experience",
+      "name": "Cloud-Native Developer Experience",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_infrastructure",
+      "name": "Cloud-Native Infrastructure",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_networking",
+      "name": "Cloud-Native Networking",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_observability",
+      "name": "Cloud-Native Observability",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_operations",
+      "name": "Cloud-Native Operations",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_orchestration",
+      "name": "Cloud-Native Orchestration",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_reliability",
+      "name": "Cloud-Native Reliability",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_runtime",
+      "name": "Cloud-Native Runtime",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--cloud_native_serverless",
+      "name": "Cloud-Native Serverless",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--edge_cloud_convergence",
+      "name": "Edge-Cloud Convergence",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cloud--sustainable_computing",
+      "name": "Sustainable Computing",
+      "domain_id": "cloud",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--access_control",
+      "name": "Access Control",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--access_control_zero_trust",
+      "name": "Access Control / Zero Trust",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--active_defense",
+      "name": "Active Defense",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--ai_security",
+      "name": "AI Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--ai_security_threat_detection",
+      "name": "AI Security / Threat Detection",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--api_security_application_security",
+      "name": "API Security / Application Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--application_security",
+      "name": "Application Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--application_security_software_development",
+      "name": "Application Security / Software Development",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--application_security_supply_chain_security",
+      "name": "Application Security / Supply Chain Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--authentication_federated_identity",
+      "name": "Authentication / Federated Identity",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--authentication_identity_security",
+      "name": "Authentication / Identity Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--authentication_standards",
+      "name": "Authentication Standards",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--authorization_api_security",
+      "name": "Authorization / API Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--biometric_security_privacy",
+      "name": "Biometric Security / Privacy",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--blockchain_security",
+      "name": "Blockchain Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--cloud_security",
+      "name": "Cloud Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--cloud_security_container_security",
+      "name": "Cloud Security / Container Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--cloud_security_identity_security",
+      "name": "Cloud Security / Identity Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--cloud_security_network_security",
+      "name": "Cloud Security / Network Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--cloud_security_observability",
+      "name": "Cloud Security / Observability",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--cloud_security_threat_detection",
+      "name": "Cloud Security / Threat Detection",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--critical_infrastructure_security",
+      "name": "Critical Infrastructure Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--cryptography_privacy",
+      "name": "Cryptography / Privacy",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--cryptography_privacy_enhancing_technology",
+      "name": "Cryptography / Privacy-Enhancing Technology",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--cryptography_randomness",
+      "name": "Cryptography / Randomness",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--cryptography_wallet_security",
+      "name": "Cryptography / Wallet Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--data_security",
+      "name": "Data Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--distributed_security",
+      "name": "Distributed Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--email_security",
+      "name": "Email Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--endpoint_security_threat_detection",
+      "name": "Endpoint Security / Threat Detection",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--hardware_security",
+      "name": "Hardware Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--hardware_security_confidential_computing",
+      "name": "Hardware Security / Confidential Computing",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--hardware_security_key_management",
+      "name": "Hardware Security / Key Management",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--human_security",
+      "name": "Human Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--identity_security",
+      "name": "Identity Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--identity_security_access_management",
+      "name": "Identity Security / Access Management",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--identity_security_analytics",
+      "name": "Identity Security / Analytics",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--identity_security_devsecops",
+      "name": "Identity Security / DevSecOps",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--identity_security_self_sovereign_identity",
+      "name": "Identity Security / Self-Sovereign Identity",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--identity_security_threat_detection",
+      "name": "Identity Security / Threat Detection",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--incident_response_digital_forensics",
+      "name": "Incident Response / Digital Forensics",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--key_infrastructure",
+      "name": "Key Infrastructure",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--managed_security_services",
+      "name": "Managed Security Services",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--network_security",
+      "name": "Network Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--network_security_cloud_security",
+      "name": "Network Security / Cloud Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--network_security_dns_security",
+      "name": "Network Security / DNS Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--network_security_threat_detection",
+      "name": "Network Security / Threat Detection",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--post_quantum_cryptography",
+      "name": "Post-Quantum Cryptography",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--post_quantum_cryptography_transport_security",
+      "name": "Post-Quantum Cryptography / Transport Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--privacy_enhancing_technology_data_security",
+      "name": "Privacy-Enhancing Technology / Data Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--quantum_cryptography",
+      "name": "Quantum Cryptography",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--quantum_security",
+      "name": "Quantum Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--remote_access_network_security",
+      "name": "Remote Access / Network Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--risk_management",
+      "name": "Risk Management",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--security_architecture",
+      "name": "Security Architecture",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--security_operations",
+      "name": "Security Operations",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--security_operations_ai_security",
+      "name": "Security Operations / AI Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--security_training_and_simulation",
+      "name": "Security Training and Simulation",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--security_validation",
+      "name": "Security Validation",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--software_supply_chain_security",
+      "name": "Software Supply Chain Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--supply_chain_security",
+      "name": "Supply Chain Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--threat_detection_active_defense",
+      "name": "Threat Detection / Active Defense",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--threat_detection_analytics",
+      "name": "Threat Detection / Analytics",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--threat_detection_data_security",
+      "name": "Threat Detection / Data Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--threat_detection_network_security",
+      "name": "Threat Detection / Network Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--threat_detection_proactive_security",
+      "name": "Threat Detection / Proactive Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--threat_detection_vulnerability_management",
+      "name": "Threat Detection / Vulnerability Management",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--threat_detection_and_response",
+      "name": "Threat Detection and Response",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--threat_intelligence",
+      "name": "Threat Intelligence",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--threat_intelligence_adversary_emulation",
+      "name": "Threat Intelligence / Adversary Emulation",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--threat_intelligence_sharing",
+      "name": "Threat Intelligence Sharing",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--threat_modeling_incident_response",
+      "name": "Threat Modeling / Incident Response",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--transport_security_cryptography",
+      "name": "Transport Security / Cryptography",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--vulnerability_management",
+      "name": "Vulnerability Management",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--vulnerability_management_offensive_security",
+      "name": "Vulnerability Management / Offensive Security",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "cybersecurity--zero_knowledge_proofs_cryptography",
+      "name": "Zero-Knowledge Proofs / Cryptography",
+      "domain_id": "cybersecurity",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--aerial_edge_uav_edge",
+      "name": "Aerial Edge / UAV Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--agriculture_edge_agtech_edge",
+      "name": "Agriculture Edge / AgTech Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--autonomous_edge_robotics_edge",
+      "name": "Autonomous Edge / Robotics Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--autonomous_edge_systems",
+      "name": "Autonomous Edge Systems",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--cloud_edge_hybrid",
+      "name": "Cloud-Edge Hybrid",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--construction_edge_building_edge",
+      "name": "Construction Edge / Building Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--decentralized_computing_web3_edge",
+      "name": "Decentralized Computing / Web3 Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--defense_edge_tactical_edge",
+      "name": "Defense Edge / Tactical Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--distributed_computing",
+      "name": "Distributed Computing",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--distributed_edge_infrastructure",
+      "name": "Distributed Edge Infrastructure",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_ai_video_intelligence",
+      "name": "Edge AI / Video Intelligence",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_ai_benchmarking",
+      "name": "Edge AI Benchmarking",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_ai_collaboration",
+      "name": "Edge AI Collaboration",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_ai_hardware",
+      "name": "Edge AI Hardware",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_ai_optimization",
+      "name": "Edge AI Optimization",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_ai_security_privacy_edge",
+      "name": "Edge AI Security / Privacy Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_application_management",
+      "name": "Edge Application Management",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_application_platform",
+      "name": "Edge Application Platform",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_automation",
+      "name": "Edge Automation",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_computing",
+      "name": "Edge Computing",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_container_orchestration",
+      "name": "Edge Container Orchestration",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_content_distribution",
+      "name": "Edge Content Distribution",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_cybersecurity",
+      "name": "Edge Cybersecurity",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_data_integrity",
+      "name": "Edge Data Integrity",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_data_management",
+      "name": "Edge Data Management",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_data_management_iot_edge",
+      "name": "Edge Data Management / IoT Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_data_processing",
+      "name": "Edge Data Processing",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_device_integration",
+      "name": "Edge Device Integration",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_devops",
+      "name": "Edge DevOps",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_governance_data_sovereignty",
+      "name": "Edge Governance / Data Sovereignty",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_hardware",
+      "name": "Edge Hardware",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_infrastructure",
+      "name": "Edge Infrastructure",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_infrastructure_thermal_management",
+      "name": "Edge Infrastructure / Thermal Management",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_infrastructure_management",
+      "name": "Edge Infrastructure Management",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_intelligence",
+      "name": "Edge Intelligence",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_intelligence_industrial_edge",
+      "name": "Edge Intelligence / Industrial Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_intelligence_privacy_preserving_ml",
+      "name": "Edge Intelligence / Privacy-Preserving ML",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_iot_framework",
+      "name": "Edge IoT Framework",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_iot_platform",
+      "name": "Edge IoT Platform",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_management",
+      "name": "Edge Management",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_messaging",
+      "name": "Edge Messaging",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_network_functions",
+      "name": "Edge Network Functions",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_networking",
+      "name": "Edge Networking",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_runtime",
+      "name": "Edge Runtime",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_runtime_edge_serverless",
+      "name": "Edge Runtime / Edge Serverless",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_security_edge_privacy",
+      "name": "Edge Security / Edge Privacy",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_serverless_computing",
+      "name": "Edge Serverless Computing",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_software_architecture",
+      "name": "Edge Software Architecture",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_stream_processing",
+      "name": "Edge Stream Processing",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--edge_virtualization",
+      "name": "Edge Virtualization",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--education_edge_edtech_edge",
+      "name": "Education Edge / EdTech Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--emergency_edge_humanitarian_edge",
+      "name": "Emergency Edge / Humanitarian Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--energy_edge_industrial_edge",
+      "name": "Energy Edge / Industrial Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--energy_edge_nuclear_edge",
+      "name": "Energy Edge / Nuclear Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--energy_edge_renewable_edge",
+      "name": "Energy Edge / Renewable Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--energy_edge_utility_edge",
+      "name": "Energy Edge / Utility Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--environmental_edge",
+      "name": "Environmental Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--financial_edge_fintech_edge",
+      "name": "Financial Edge / FinTech Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--government_edge_public_sector_edge",
+      "name": "Government Edge / Public Sector Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--healthcare_edge",
+      "name": "Healthcare Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--healthcare_edge_pharma_edge",
+      "name": "Healthcare Edge / Pharma Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--healthcare_edge_telemedicine_edge",
+      "name": "Healthcare Edge / Telemedicine Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--hybrid_distributed_computing",
+      "name": "Hybrid Distributed Computing",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--industrial_edge_automotive_edge",
+      "name": "Industrial Edge / Automotive Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--industrial_edge_cement_edge",
+      "name": "Industrial Edge / Cement Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--industrial_edge_food_edge",
+      "name": "Industrial Edge / Food Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--industrial_edge_manufacturing_edge",
+      "name": "Industrial Edge / Manufacturing Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--industrial_edge_metals_edge",
+      "name": "Industrial Edge / Metals Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--industrial_edge_process_edge",
+      "name": "Industrial Edge / Process Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--industrial_edge_real_time_edge",
+      "name": "Industrial Edge / Real-Time Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--industrial_edge_semiconductor_edge",
+      "name": "Industrial Edge / Semiconductor Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--industrial_edge_textile_edge",
+      "name": "Industrial Edge / Textile Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--infrastructure_edge_dc_operations",
+      "name": "Infrastructure Edge / DC Operations",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--insurance_edge_claims_edge",
+      "name": "Insurance Edge / Claims Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--insurtech_edge",
+      "name": "InsurTech Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--legal_edge_enterprise_edge",
+      "name": "Legal Edge / Enterprise Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--logistics_edge_cold_chain_edge",
+      "name": "Logistics Edge / Cold Chain Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--logistics_edge_warehouse_edge",
+      "name": "Logistics Edge / Warehouse Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--maritime_edge_transportation_edge",
+      "name": "Maritime Edge / Transportation Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--media_edge_entertainment_edge",
+      "name": "Media Edge / Entertainment Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--real_estate_edge_proptech_edge",
+      "name": "Real Estate Edge / PropTech Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--residential_edge_smart_home_edge",
+      "name": "Residential Edge / Smart Home Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--resources_edge_industrial_edge",
+      "name": "Resources Edge / Industrial Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--retail_edge_commerce_edge",
+      "name": "Retail Edge / Commerce Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--robotics_edge_autonomous_systems",
+      "name": "Robotics Edge / Autonomous Systems",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--space_edge_deep_space_edge",
+      "name": "Space Edge / Deep Space Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--space_edge_computing",
+      "name": "Space Edge Computing",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--sports_edge_live_events_edge",
+      "name": "Sports Edge / Live Events Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--telecom_edge",
+      "name": "Telecom Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--telecom_edge_5g_edge",
+      "name": "Telecom Edge / 5G Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--telecom_edge_industrial_edge",
+      "name": "Telecom Edge / Industrial Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--telecom_edge_network_operations",
+      "name": "Telecom Edge / Network Operations",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--telecom_edge_open_ran",
+      "name": "Telecom Edge / Open RAN",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--transportation_edge",
+      "name": "Transportation Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--transportation_edge_aviation_edge",
+      "name": "Transportation Edge / Aviation Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--transportation_edge_logistics_edge",
+      "name": "Transportation Edge / Logistics Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--transportation_edge_railway_edge",
+      "name": "Transportation Edge / Railway Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--transportation_edge_v2x_edge",
+      "name": "Transportation Edge / V2X Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--ultra_distributed_edge",
+      "name": "Ultra-Distributed Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--urban_edge_smart_city_edge",
+      "name": "Urban Edge / Smart City Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--utilities_edge_water_edge",
+      "name": "Utilities Edge / Water Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "edge_computing--xr_edge_immersive_edge",
+      "name": "XR Edge / Immersive Edge",
+      "domain_id": "edge_computing",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--agricultural_robotics",
+      "name": "Agricultural Robotics",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--agriculture_iot",
+      "name": "Agriculture IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--agriculture_iot_smart_landscape",
+      "name": "Agriculture IoT / Smart Landscape",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--ambient_intelligence",
+      "name": "Ambient Intelligence",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--aquaculture_iot",
+      "name": "Aquaculture IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--asset_tracking",
+      "name": "Asset Tracking",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--building_automation",
+      "name": "Building Automation",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--building_automation_digital_twin",
+      "name": "Building Automation / Digital Twin",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--building_automation_protocols",
+      "name": "Building Automation Protocols",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--cellular_iot",
+      "name": "Cellular IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--cellular_iot_private_networks",
+      "name": "Cellular IoT / Private Networks",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--connected_vehicles",
+      "name": "Connected Vehicles",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--connected_vehicles_v2x",
+      "name": "Connected Vehicles / V2X",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--consumer_iot",
+      "name": "Consumer IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--edge_ai",
+      "name": "Edge AI",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--edge_computing",
+      "name": "Edge Computing",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--energy_harvesting",
+      "name": "Energy Harvesting",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--energy_harvesting_wireless_protocols",
+      "name": "Energy Harvesting Wireless Protocols",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--energy_iot",
+      "name": "Energy IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--environmental_iot",
+      "name": "Environmental IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--food_safety_iot",
+      "name": "Food Safety IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--healthcare_iot",
+      "name": "Healthcare IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--industrial_iot",
+      "name": "Industrial IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--industrial_iot_smart_manufacturing",
+      "name": "Industrial IoT / Smart Manufacturing",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--industrial_iot_worker_safety",
+      "name": "Industrial IoT / Worker Safety",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--industrial_iot_platforms",
+      "name": "Industrial IoT Platforms",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--industrial_iot_protocols",
+      "name": "Industrial IoT Protocols",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--infrastructure_iot",
+      "name": "Infrastructure IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_analytics",
+      "name": "IoT Analytics",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_communication_protocols",
+      "name": "IoT Communication Protocols",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_device_management",
+      "name": "IoT Device Management",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_fundamentals",
+      "name": "IoT Fundamentals",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_identification",
+      "name": "IoT Identification",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_identification_asset_tracking",
+      "name": "IoT Identification / Asset Tracking",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_infrastructure",
+      "name": "IoT Infrastructure",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_mesh_networking",
+      "name": "IoT Mesh Networking",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_middleware",
+      "name": "IoT Middleware",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_networking",
+      "name": "IoT Networking",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_platforms",
+      "name": "IoT Platforms",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_positioning",
+      "name": "IoT Positioning",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_protocols",
+      "name": "IoT Protocols",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_security",
+      "name": "IoT Security",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_sensing",
+      "name": "IoT Sensing",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--iot_standards",
+      "name": "IoT Standards",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--last_mile_delivery",
+      "name": "Last-Mile Delivery",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--lpwan",
+      "name": "LPWAN",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--lpwan_decentralized_wireless",
+      "name": "LPWAN / Decentralized Wireless",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--lpwan_iot_platforms",
+      "name": "LPWAN / IoT Platforms",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--mesh_networking",
+      "name": "Mesh Networking",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--non_terrestrial_networks_ntn",
+      "name": "Non-Terrestrial Networks (NTN)",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--precision_livestock_farming",
+      "name": "Precision Livestock Farming",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--retail_iot",
+      "name": "Retail IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--retail_iot_smart_city",
+      "name": "Retail IoT / Smart City",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--safety_iot",
+      "name": "Safety IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--security_iot",
+      "name": "Security IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--short_range_wireless",
+      "name": "Short-Range Wireless",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--short_range_wireless_communication",
+      "name": "Short-Range Wireless Communication",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_city",
+      "name": "Smart City",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_city_digital_twin",
+      "name": "Smart City / Digital Twin",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_city_environmental_iot",
+      "name": "Smart City / Environmental IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_city_retail_iot",
+      "name": "Smart City / Retail IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_city_transportation_iot",
+      "name": "Smart City / Transportation IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_city_iot",
+      "name": "Smart City IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_city_transportation",
+      "name": "Smart City Transportation",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_grid",
+      "name": "Smart Grid",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_grid_edge_computing",
+      "name": "Smart Grid / Edge Computing",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_grid_energy_harvesting",
+      "name": "Smart Grid / Energy Harvesting",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_grid_analytics",
+      "name": "Smart Grid Analytics",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_home",
+      "name": "Smart Home",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_home_protocols",
+      "name": "Smart Home Protocols",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_home_safety",
+      "name": "Smart Home Safety",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_home_security",
+      "name": "Smart Home Security",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_metering",
+      "name": "Smart Metering",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_port",
+      "name": "Smart Port",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--smart_water",
+      "name": "Smart Water",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--supply_chain_iot",
+      "name": "Supply Chain IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--supply_chain_iot_asset_tracking",
+      "name": "Supply Chain IoT / Asset Tracking",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--ultra_low_power_iot",
+      "name": "Ultra-Low Power IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--ultra_low_power_iot_energy_harvesting",
+      "name": "Ultra-Low Power IoT / Energy Harvesting",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--wearable_iot",
+      "name": "Wearable IoT",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "iot--wearable_technology",
+      "name": "Wearable Technology",
+      "domain_id": "iot",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_advanced",
+      "name": "5G Advanced",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_core",
+      "name": "5G Core",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_core_networks",
+      "name": "5G Core Networks",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_enterprise",
+      "name": "5G Enterprise",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_evolution",
+      "name": "5G Evolution",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_iot",
+      "name": "5G IoT",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_location_services",
+      "name": "5G Location Services",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_networks",
+      "name": "5G Networks",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_radio",
+      "name": "5G Radio",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_radio_access",
+      "name": "5G Radio Access",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_services",
+      "name": "5G Services",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--5g_v2x",
+      "name": "5G V2X",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--6g_technology",
+      "name": "6G Technology",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--application_layer",
+      "name": "Application Layer",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--cloud_native_networking",
+      "name": "Cloud-Native Networking",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--copper_access",
+      "name": "Copper Access",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--data_center_networking",
+      "name": "Data Center Networking",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--deterministic_networking",
+      "name": "Deterministic Networking",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--fixed_network",
+      "name": "Fixed Network",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--internet_protocol",
+      "name": "Internet Protocol",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--iot_networking",
+      "name": "IoT Networking",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--ip_routing",
+      "name": "IP Routing",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_apis",
+      "name": "Network APIs",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_architecture",
+      "name": "Network Architecture",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_automation",
+      "name": "Network Automation",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_hardware",
+      "name": "Network Hardware",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_management",
+      "name": "Network Management",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_operating_system",
+      "name": "Network Operating System",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_operations",
+      "name": "Network Operations",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_programmability",
+      "name": "Network Programmability",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_security",
+      "name": "Network Security",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_service_model",
+      "name": "Network Service Model",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_telemetry",
+      "name": "Network Telemetry",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--network_virtualization",
+      "name": "Network Virtualization",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--next_generation_wireless",
+      "name": "Next-Generation Wireless",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--non_terrestrial_networks",
+      "name": "Non-Terrestrial Networks",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--optical_access",
+      "name": "Optical Access",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--optical_networking",
+      "name": "Optical Networking",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--optical_wireless",
+      "name": "Optical Wireless",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--optical_wireless_communication",
+      "name": "Optical Wireless Communication",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--radio_access_network",
+      "name": "Radio Access Network",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--ran_radio_access_network",
+      "name": "RAN (Radio Access Network)",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--routing_security",
+      "name": "Routing Security",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--satellite_communications",
+      "name": "Satellite Communications",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--shared_spectrum",
+      "name": "Shared Spectrum",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--transport_protocol",
+      "name": "Transport Protocol",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--vpn_technology",
+      "name": "VPN Technology",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--wan",
+      "name": "WAN",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--wireless_lan",
+      "name": "Wireless LAN",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--wireless_sensing",
+      "name": "Wireless Sensing",
+      "domain_id": "networking",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "quantum--post_quantum_cryptography",
+      "name": "Post-Quantum Cryptography",
+      "domain_id": "quantum",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "quantum--quantum_algorithms",
+      "name": "Quantum Algorithms",
+      "domain_id": "quantum",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "quantum--quantum_communications",
+      "name": "Quantum Communications",
+      "domain_id": "quantum",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "quantum--quantum_computing",
+      "name": "Quantum Computing",
+      "domain_id": "quantum",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "quantum--quantum_computing_applications",
+      "name": "Quantum Computing Applications",
+      "domain_id": "quantum",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "quantum--quantum_computing_hardware",
+      "name": "Quantum Computing Hardware",
+      "domain_id": "quantum",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "quantum--quantum_machine_learning",
+      "name": "Quantum Machine Learning",
+      "domain_id": "quantum",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "quantum--quantum_sensing",
+      "name": "Quantum Sensing",
+      "domain_id": "quantum",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "quantum--quantum_sensing_and_imaging",
+      "name": "Quantum Sensing and Imaging",
+      "domain_id": "quantum",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "quantum--quantum_sensing_and_metrology",
+      "name": "Quantum Sensing and Metrology",
+      "domain_id": "quantum",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "quantum--quantum_simulation",
+      "name": "Quantum Simulation",
+      "domain_id": "quantum",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--aerial_delivery",
+      "name": "Aerial Delivery",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--aerial_robotics",
+      "name": "Aerial Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--aerial_robotics_multi_uav_systems",
+      "name": "Aerial Robotics / Multi-UAV Systems",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--agricultural_automation",
+      "name": "Agricultural Automation",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--agricultural_robotics_autonomous_vehicles",
+      "name": "Agricultural Robotics / Autonomous Vehicles",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--assistive_robotics_medical_robotics",
+      "name": "Assistive Robotics / Medical Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--bio_inspired_robotics",
+      "name": "Bio-inspired Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--bio_inspired_robotics_flexible_manipulation",
+      "name": "Bio-inspired Robotics / Flexible Manipulation",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--bio_inspired_robotics_locomotion",
+      "name": "Bio-inspired Robotics / Locomotion",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--brain_inspired_computing_robot_intelligence",
+      "name": "Brain-Inspired Computing / Robot Intelligence",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--construction_robotics",
+      "name": "Construction Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--delivery_robotics",
+      "name": "Delivery Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--embedded_ai_robot_intelligence",
+      "name": "Embedded AI / Robot Intelligence",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--human_robot_interaction",
+      "name": "Human-Robot Interaction",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--human_robot_interaction_general_purpose_robotics",
+      "name": "Human-Robot Interaction / General Purpose Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--human_robot_interaction_teleoperation",
+      "name": "Human-Robot Interaction / Teleoperation",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--industrial_robotics",
+      "name": "Industrial Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--locomotion_robotics",
+      "name": "Locomotion Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--marine_robotics",
+      "name": "Marine Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--medical_robotics",
+      "name": "Medical Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--medical_robotics_assistive_technology",
+      "name": "Medical Robotics / Assistive Technology",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--miniature_robotics",
+      "name": "Miniature Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--molecular_robotics",
+      "name": "Molecular Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--multi_robot_coordination",
+      "name": "Multi-Robot Coordination",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--multi_robot_systems",
+      "name": "Multi-Robot Systems",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--neural_robotics_human_robot_interaction",
+      "name": "Neural Robotics / Human-Robot Interaction",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--reconfigurable_robotics",
+      "name": "Reconfigurable Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--remote_robot_control",
+      "name": "Remote Robot Control",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--robot_control_navigation",
+      "name": "Robot Control / Navigation",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--robot_learning_ai_for_robotics",
+      "name": "Robot Learning / AI for Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--robot_manipulation",
+      "name": "Robot Manipulation",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--robot_navigation_computer_vision",
+      "name": "Robot Navigation / Computer Vision",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--robot_navigation_perception",
+      "name": "Robot Navigation / Perception",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--robot_perception",
+      "name": "Robot Perception",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--robot_perception_haptics",
+      "name": "Robot Perception / Haptics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--robot_perception_navigation",
+      "name": "Robot Perception / Navigation",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--robotics_middleware_software_framework",
+      "name": "Robotics Middleware / Software Framework",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--robotics_software_operations",
+      "name": "Robotics Software / Operations",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--service_robotics",
+      "name": "Service Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--simulation_robotics_software",
+      "name": "Simulation / Robotics Software",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--software_robotics_process_automation",
+      "name": "Software Robotics / Process Automation",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--space_exploration_robotics",
+      "name": "Space Exploration Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--warehouse_logistics_robotics",
+      "name": "Warehouse & Logistics Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "robotics--wearable_robotics",
+      "name": "Wearable Robotics",
+      "domain_id": "robotics",
+      "status": "seeded"
+    },
+    {
+      "subdomain_id": "networking--semantic_communications",
+      "name": "Semantic Communications",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "quantum--quantum_networking",
+      "name": "Quantum Networking",
+      "domain_id": "quantum",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--generative_design",
+      "name": "Generative Design",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--new_calling_services",
+      "name": "New Calling Services",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "iot--iot_provisioning",
+      "name": "IoT Provisioning",
+      "domain_id": "iot",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "ai--ai_data_center_hardware",
+      "name": "AI Data Center Hardware",
+      "domain_id": "ai",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--digital_identity",
+      "name": "Digital Identity",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--non_terrestrial_networks_control",
+      "name": "Non-Terrestrial Networks Control",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--energy_aware_network_management",
+      "name": "Energy-Aware Network Management",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--wireless_mac_protocols",
+      "name": "Wireless MAC Protocols",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--wake_up_radio",
+      "name": "Wake-Up Radio",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--dnn_partitioning_for_distributed_inference",
+      "name": "DNN Partitioning for Distributed Inference",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--non_terrestrial_scheduling",
+      "name": "Non-Terrestrial Scheduling",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--encrypted_traffic_analysis",
+      "name": "Encrypted Traffic Analysis",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--messaging_standards",
+      "name": "Messaging Standards",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--radar_sensing",
+      "name": "Radar Sensing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--oam_wireless_communication",
+      "name": "OAM Wireless Communication",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "quantum--quantum_random_number_generation",
+      "name": "Quantum Random Number Generation",
+      "domain_id": "quantum",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--application_security_software_supply_chain_security",
+      "name": "Application Security / Software Supply Chain Security",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--split_computing",
+      "name": "Split Computing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--high_performance_computing",
+      "name": "High-Performance Computing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--grid_power_flow_computing",
+      "name": "Grid Power-Flow Computing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--beamforming",
+      "name": "Beamforming",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--augmented_reality_inspection",
+      "name": "Augmented Reality Inspection",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--esg_reporting",
+      "name": "ESG Reporting",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--cyber_resilience_compliance",
+      "name": "Cyber Resilience Compliance",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--nuclear_fuel",
+      "name": "Nuclear Fuel",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--b2b_marketplaces",
+      "name": "B2B Marketplaces",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--ai_pc_hardware",
+      "name": "AI PC Hardware",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--intralogistics_automation",
+      "name": "Intralogistics Automation",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--web_interoperability",
+      "name": "Web Interoperability",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--web_front_end_css",
+      "name": "Web Front-End (CSS)",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--web_front_end_styling",
+      "name": "Web Front-End Styling",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--web_standards_css",
+      "name": "Web Standards / CSS",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--web_standards_css_layout",
+      "name": "Web Standards / CSS Layout",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--web_front_end_standards",
+      "name": "Web Front-End Standards",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--web_standards_css",
+      "name": "Web Standards / CSS",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--web_front_end_standards",
+      "name": "Web Front-End Standards",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--nuclear_energy",
+      "name": "Nuclear Energy",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--code_quality_analysis",
+      "name": "Code Quality Analysis",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--ai_pc_computing",
+      "name": "AI PC Computing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--ai_infrastructure_hardware",
+      "name": "AI Infrastructure Hardware",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--developer_tooling",
+      "name": "Developer Tooling",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--solid_state_radar_sensing",
+      "name": "Solid-State Radar Sensing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--build_systems",
+      "name": "Build Systems",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--flight_software",
+      "name": "Flight Software",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--programming_languages_and_compilers",
+      "name": "Programming Languages and Compilers",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "ai--ai_hardware_acceleration",
+      "name": "AI Hardware Acceleration",
+      "domain_id": "ai",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--sports_broadcasting_video_production",
+      "name": "Sports Broadcasting Video Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--distributed_matrix_computing",
+      "name": "Distributed Matrix Computing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--wi_fi_offloading",
+      "name": "Wi-Fi Offloading",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "robotics--reusable_launch_vehicles",
+      "name": "Reusable Launch Vehicles",
+      "domain_id": "robotics",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--broadcast_audio_production",
+      "name": "Broadcast Audio Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--broadcast_graphics_and_animation",
+      "name": "Broadcast Graphics and Animation",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--media_streaming_delivery",
+      "name": "Media Streaming Delivery",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--cloud_media_distribution",
+      "name": "Cloud Media Distribution",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--creator_partnership_platforms",
+      "name": "Creator Partnership Platforms",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--geo_location_tap_to_watch_linking",
+      "name": "Geo-Location Tap-to-Watch Linking",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--live_sports_analytics",
+      "name": "Live Sports Analytics",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--semiconductor_memory",
+      "name": "Semiconductor Memory",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--streaming_protocols",
+      "name": "Streaming Protocols",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--software_defined_video_production",
+      "name": "Software-Defined Video Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--media_production_infrastructure",
+      "name": "Media Production Infrastructure",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--image_sensors",
+      "name": "Image Sensors",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "ai--business_intelligence",
+      "name": "Business Intelligence",
+      "domain_id": "ai",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--gpu_security",
+      "name": "GPU Security",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--media_transport_networking",
+      "name": "Media Transport Networking",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--live_sports_data_visualization",
+      "name": "Live Sports Data Visualization",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--secure_communications",
+      "name": "Secure Communications",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--programmatic_advertising",
+      "name": "Programmatic Advertising",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--ip_media_transport",
+      "name": "IP Media Transport",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--video_compression_for_broadcast_transport",
+      "name": "Video Compression for Broadcast Transport",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--networked_media_interoperability",
+      "name": "Networked Media Interoperability",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--edge_networking",
+      "name": "Edge Networking",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--agent_attachment_protocols",
+      "name": "Agent Attachment Protocols",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "quantum--quantum_state_preparation",
+      "name": "Quantum State Preparation",
+      "domain_id": "quantum",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "iot--ai_ar_wearable_glasses",
+      "name": "AI+AR Wearable Glasses",
+      "domain_id": "iot",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "iot--drone_medical_delivery",
+      "name": "Drone Medical Delivery",
+      "domain_id": "iot",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--healthcare_digital_twins",
+      "name": "Healthcare Digital Twins",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "ai--small_language_models",
+      "name": "Small Language Models",
+      "domain_id": "ai",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--rcs_messaging",
+      "name": "RCS Messaging",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--healthcare_infrastructure",
+      "name": "Healthcare Infrastructure",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--database_systems",
+      "name": "Database Systems",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--interoperable_messaging_and_video_calling",
+      "name": "Interoperable Messaging and Video Calling",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--rcs_business_messaging",
+      "name": "RCS Business Messaging",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--security_language_models",
+      "name": "Security Language Models",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--healthcare_records_systems",
+      "name": "Healthcare Records Systems",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--healthcare_extended_reality",
+      "name": "Healthcare Extended Reality",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--audio_codecs",
+      "name": "Audio Codecs",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--device_homologation",
+      "name": "Device Homologation",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "iot--device_compliance_data_sharing",
+      "name": "Device Compliance Data Sharing",
+      "domain_id": "iot",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--scientific_workflow_scheduling",
+      "name": "Scientific Workflow Scheduling",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "ai--edge_ai_hardware",
+      "name": "Edge AI Hardware",
+      "domain_id": "ai",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--compiler_infrastructure",
+      "name": "Compiler Infrastructure",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--distributed_consensus_protocols",
+      "name": "Distributed Consensus Protocols",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--wireless_physical_layer_foundation_models",
+      "name": "Wireless Physical-Layer Foundation Models",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--agentic_rf_intelligence",
+      "name": "Agentic RF Intelligence",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--mobile_devices_and_affordability",
+      "name": "Mobile Devices and Affordability",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--cross_facility_data_leasing",
+      "name": "Cross-Facility Data Leasing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--signal_processing",
+      "name": "Signal Processing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--distributed_computing",
+      "name": "Distributed Computing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--cluster_computing",
+      "name": "Cluster Computing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "iot--iot_connectivity",
+      "name": "IoT Connectivity",
+      "domain_id": "iot",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--it_ot_integration",
+      "name": "IT/OT Integration",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--software_defined_manufacturing",
+      "name": "Software-Defined Manufacturing",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--cloud_ai_services",
+      "name": "Cloud AI Services",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--industrial_software",
+      "name": "Industrial Software",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--data_center_electrical_systems",
+      "name": "Data Center Electrical Systems",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--data_center_control_software",
+      "name": "Data Center Control Software",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--superconducting_power_transmission",
+      "name": "Superconducting Power Transmission",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "edge_computing--data_center_power_distribution",
+      "name": "Data Center Power Distribution",
+      "domain_id": "edge_computing",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--electric_marine_propulsion",
+      "name": "Electric Marine Propulsion",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--advanced_nuclear_reactors",
+      "name": "Advanced Nuclear Reactors",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--grid_scale_energy_storage",
+      "name": "Grid-Scale Energy Storage",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--wind_power_generation",
+      "name": "Wind Power Generation",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--non_terrestrial_networks_ntn",
+      "name": "Non-Terrestrial Networks (NTN)",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--electric_grid_infrastructure",
+      "name": "Electric Grid Infrastructure",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--data_center_power_distribution",
+      "name": "Data Center Power Distribution",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--orbital_cloud_computing",
+      "name": "Orbital Cloud Computing",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--data_center_power_distribution",
+      "name": "Data Center Power Distribution",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--data_center_cooling",
+      "name": "Data Center Cooling",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--ar_glasses_connectivity",
+      "name": "AR Glasses Connectivity",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--offshore_wind_power",
+      "name": "Offshore Wind Power",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--data_center_grid_interconnection",
+      "name": "Data Center Grid Interconnection",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--supply_chain_sustainability",
+      "name": "Supply Chain Sustainability",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--carbon_management_platforms",
+      "name": "Carbon Management Platforms",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--esg_management_and_reporting",
+      "name": "ESG Management and Reporting",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--automotive_digital_twins",
+      "name": "Automotive Digital Twins",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--advanced_nuclear_fuel",
+      "name": "Advanced Nuclear Fuel",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--energy_infrastructure",
+      "name": "Energy Infrastructure",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--energy_storage",
+      "name": "Energy Storage",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--long_duration_energy_storage",
+      "name": "Long-Duration Energy Storage",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--solar_power",
+      "name": "Solar Power",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--cloud_platform_services",
+      "name": "Cloud Platform Services",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--shift_left_engineering",
+      "name": "Shift-Left Engineering",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--computer_aided_design",
+      "name": "Computer-Aided Design",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--model_based_systems_engineering",
+      "name": "Model-Based Systems Engineering",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "iot--satellite_iot",
+      "name": "Satellite IoT",
+      "domain_id": "iot",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--software_defined_vehicles",
+      "name": "Software-Defined Vehicles",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--geothermal_drilling",
+      "name": "Geothermal Drilling",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--application_lifecycle_management",
+      "name": "Application Lifecycle Management",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--geothermal_energy",
+      "name": "Geothermal Energy",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--enterprise_software",
+      "name": "Enterprise Software",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "robotics--autonomous_systems",
+      "name": "Autonomous Systems",
+      "domain_id": "robotics",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--image_file_management",
+      "name": "Image File Management",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--command_line_photo_management",
+      "name": "Command-Line Photo Management",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--photo_metadata_tooling",
+      "name": "Photo Metadata Tooling",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--semiconductor_manufacturing",
+      "name": "Semiconductor Manufacturing",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--open_source_hardware",
+      "name": "Open-Source Hardware",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--industrial_maintenance_knowledge_management",
+      "name": "Industrial Maintenance Knowledge Management",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--digital_twin_software",
+      "name": "Digital Twin Software",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "quantum--spintronic_materials",
+      "name": "Spintronic Materials",
+      "domain_id": "quantum",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--in_app_commerce",
+      "name": "In-App Commerce",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--spintronics",
+      "name": "Spintronics",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "quantum--quantum_system_deployment",
+      "name": "Quantum System Deployment",
+      "domain_id": "quantum",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "quantum--quantum_device_fabrication",
+      "name": "Quantum Device Fabrication",
+      "domain_id": "quantum",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "robotics--robotics",
+      "name": "Robotics",
+      "domain_id": "robotics",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--embedded_software_toolchains",
+      "name": "Embedded Software Toolchains",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--spacecraft_flight_software",
+      "name": "Spacecraft Flight Software",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--situational_awareness",
+      "name": "Situational Awareness",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--web_search_apis_for_ai_agents",
+      "name": "Web Search APIs for AI Agents",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--contact_center_as_a_service_ccaas",
+      "name": "Contact Center as a Service (CCaaS)",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--telecom_consolidation",
+      "name": "Telecom Consolidation",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "quantum--quantum_strategy_and_policy",
+      "name": "Quantum Strategy and Policy",
+      "domain_id": "quantum",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--it_service_management",
+      "name": "IT Service Management",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--crm_native_contact_center",
+      "name": "CRM-native Contact Center",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "ai--conversational_commerce",
+      "name": "Conversational Commerce",
+      "domain_id": "ai",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--social_messaging_platforms",
+      "name": "Social Messaging Platforms",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--social_customer_service",
+      "name": "Social Customer Service",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "ai--ai_interfaces",
+      "name": "AI Interfaces",
+      "domain_id": "ai",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--stadium_lighting_control",
+      "name": "Stadium Lighting Control",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--spatial_audio",
+      "name": "Spatial Audio",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--live_video_production",
+      "name": "Live Video Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--broadcast_production_infrastructure",
+      "name": "Broadcast Production Infrastructure",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--hdr_video_production",
+      "name": "HDR Video Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--data_quality_management",
+      "name": "Data Quality Management",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--stadium_audio_systems",
+      "name": "Stadium Audio Systems",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--led_video_displays",
+      "name": "LED Video Displays",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--media_asset_management",
+      "name": "Media Asset Management",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--contact_center_ai_voice_translation",
+      "name": "Contact Center AI Voice Translation",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--media_production_software",
+      "name": "Media Production Software",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--in_memory_media_transport",
+      "name": "In-Memory Media Transport",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--cellular_tower_infrastructure",
+      "name": "Cellular Tower Infrastructure",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--sports_broadcast_analytics",
+      "name": "Sports Broadcast Analytics",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--broadcast_automation",
+      "name": "Broadcast Automation",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "ai--customer_data_platforms",
+      "name": "Customer Data Platforms",
+      "domain_id": "ai",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--data_center_energy_efficiency",
+      "name": "Data Center Energy Efficiency",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--social_listening",
+      "name": "Social Listening",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--virtual_production_broadcast_media",
+      "name": "Virtual Production (Broadcast/Media)",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--ai_broadcast_monitoring",
+      "name": "AI Broadcast Monitoring",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--cybersecurity_controls_for_msmes",
+      "name": "Cybersecurity Controls for MSMEs",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--space_cybersecurity",
+      "name": "Space Cybersecurity",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--sports_data_visualization",
+      "name": "Sports Data Visualization",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--broadcast_video_production",
+      "name": "Broadcast Video Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--sdi_to_fiber_video_transport",
+      "name": "SDI-to-Fiber Video Transport",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--broadcast_production_equipment",
+      "name": "Broadcast Production Equipment",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--broadcast_audio_hardware",
+      "name": "Broadcast Audio Hardware",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--rugged_defense_communications_devices",
+      "name": "Rugged Defense Communications Devices",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--semiconductor_supply_chain",
+      "name": "Semiconductor Supply Chain",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--renewable_energy",
+      "name": "Renewable Energy",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--remote_production_video_transport",
+      "name": "Remote Production Video Transport",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--broadcast_video_transmission",
+      "name": "Broadcast Video Transmission",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--remote_broadcast_production",
+      "name": "Remote Broadcast Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--ai_native_networking",
+      "name": "AI-Native Networking",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--small_modular_reactor_power_systems",
+      "name": "Small Modular Reactor Power Systems",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--data_center_power_infrastructure",
+      "name": "Data Center Power Infrastructure",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--sports_broadcast_tracking",
+      "name": "Sports Broadcast Tracking",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--ip_based_media_production",
+      "name": "IP-based Media Production",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cybersecurity--cloud_security_identity_management",
+      "name": "Cloud Security / Identity Management",
+      "domain_id": "cybersecurity",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--sports_broadcast_graphics",
+      "name": "Sports Broadcast Graphics",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--broadcast_graphics_playout",
+      "name": "Broadcast Graphics Playout",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--push_to_talk_interoperability",
+      "name": "Push-to-Talk Interoperability",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--semantic_interoperability",
+      "name": "Semantic Interoperability",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--crm_api_integration",
+      "name": "CRM API Integration",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--marketing_platform_integration",
+      "name": "Marketing Platform Integration",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--broadcast_production",
+      "name": "Broadcast Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--mobile_production_units",
+      "name": "Mobile Production Units",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--telecom_edge_industrial_edge",
+      "name": "Telecom Edge / Industrial Edge",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--wi_fi_and_mobile_network_convergence",
+      "name": "Wi-Fi and Mobile Network Convergence",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--live_sports_broadcast_production",
+      "name": "Live Sports Broadcast Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--sports_broadcast_production",
+      "name": "Sports Broadcast Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--remote_production",
+      "name": "Remote Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--over_the_top_communications",
+      "name": "Over-the-Top Communications",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--telecom_edge_network_operations",
+      "name": "Telecom Edge / Network Operations",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--broadcast_graphics",
+      "name": "Broadcast Graphics",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--mobile_television_production",
+      "name": "Mobile Television Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--live_media_production",
+      "name": "Live Media Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--live_video_streaming",
+      "name": "Live Video Streaming",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--remote_media_production",
+      "name": "Remote Media Production",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--ai_workload_routing",
+      "name": "AI Workload Routing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--live_sports_broadcasting",
+      "name": "Live Sports Broadcasting",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--sports_broadcast_data_integration",
+      "name": "Sports Broadcast Data Integration",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--underwater_sports_broadcasting",
+      "name": "Underwater Sports Broadcasting",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--immersive_audio",
+      "name": "Immersive Audio",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--data_center_interconnection",
+      "name": "Data Center Interconnection",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--omnichannel_contact_center_routing",
+      "name": "Omnichannel Contact Center Routing",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--messaging_services",
+      "name": "Messaging Services",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--network_services",
+      "name": "Network Services",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--digital_partyline_intercom",
+      "name": "Digital Partyline Intercom",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--broadcast_intercom_systems",
+      "name": "Broadcast Intercom Systems",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "cloud--cloud_infrastructure",
+      "name": "Cloud Infrastructure",
+      "domain_id": "cloud",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--broadcast_distribution",
+      "name": "Broadcast Distribution",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--sports_media_streaming",
+      "name": "Sports Media Streaming",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "networking--ip_audio_transport",
+      "name": "IP Audio Transport",
+      "domain_id": "networking",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--sports_analytics",
+      "name": "Sports Analytics",
+      "domain_id": "other",
+      "status": "new"
+    },
+    {
+      "subdomain_id": "other--sports_data_analytics",
+      "name": "Sports Data Analytics",
+      "domain_id": "other",
+      "status": "new"
+    }
+  ]
+}

@@ -17,7 +17,7 @@ class FakeLLM:
     def initialize(cls, *args, **kwargs):
         return cls()
 
-    def ask(self, prompt, system=None):
+    def ask(self, prompt, system=None, **kw):
         groups = [{"name": "alpha tech", "members": ["alpha technology"]}] \
             if '"alpha technology"' in prompt else []
         return json.dumps({"groups": groups})
@@ -43,7 +43,7 @@ def test_a_renamed_technology_stays_one_technology(organizer):
     resolver.run_resolve_sync()
     assert [t["_id"] for t in db["technologies"].find()] == ["post-quantum-crypto"]
 
-    update_technology("post-quantum-crypto", TechEdit(name="post-quantum cryptography", enabled=True))
+    update_technology("post-quantum-crypto", TechEdit(name="post-quantum cryptography", enabled=True), "America/Chicago")
     resolver.run_resolve_sync()                 # organizing again after the rename
 
     techs = list(db["technologies"].find())
@@ -57,7 +57,7 @@ def test_a_new_name_whose_id_is_taken_gets_a_number(organizer):
     db = organizer
     _pages(db, "alpha tech")
     resolver.run_resolve_sync()
-    update_technology("alpha-tech", TechEdit(name="beta tech", enabled=True))
+    update_technology("alpha-tech", TechEdit(name="beta tech", enabled=True), "America/Chicago")
 
     _pages(db, "alpha technology")              # the model names this new group "alpha tech"
     resolver.run_resolve_sync()
@@ -70,7 +70,7 @@ class LabelLLM(FakeLLM):
     """Writes labels: QUIC in capitals, "edge ai" with changed words (ignored)."""
     asked: list[list[str]] = []
 
-    def ask(self, prompt, system=None):
+    def ask(self, prompt, system=None, **kw):
         if "Names:\n" not in prompt:                # the technology_resolve skill
             return super().ask(prompt, system)
         names = json.loads(prompt.rsplit("Names:\n", 1)[1])
@@ -118,10 +118,10 @@ def test_a_rename_typed_with_capitals_is_how_the_name_shows(organizer):
     db = organizer
     _pages(db, "quic")
     resolver.run_resolve_sync()
-    update_technology("quic", TechEdit(name="QUIC", enabled=True))
+    update_technology("quic", TechEdit(name="QUIC", enabled=True), "America/Chicago")
     t = db["technologies"].find_one({"_id": "quic"})
     assert (t["name"], t["label"]) == ("quic", "QUIC")
-    update_technology("quic", TechEdit(name="quic", enabled=False))          # switching off keeps it
+    update_technology("quic", TechEdit(name="quic", enabled=False), "America/Chicago")          # switching off keeps it
     assert db["technologies"].find_one({"_id": "quic"})["label"] == "QUIC"
-    update_technology("quic", TechEdit(name="quic protocol", enabled=True))  # renamed in lowercase
+    update_technology("quic", TechEdit(name="quic protocol", enabled=True), "America/Chicago")  # renamed in lowercase
     assert "label" not in db["technologies"].find_one({"_id": "quic"})

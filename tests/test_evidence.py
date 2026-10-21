@@ -22,7 +22,7 @@ def new_urls(tech_id: str = "edge-ai") -> list[str]:
 class FakeLLM:
     """One reply that serves the gate (cloud only), every measure and the
     watch metrics."""
-    def ask(self, prompt, system=None):
+    def ask(self, prompt, system=None, **kw):
         return '{"fabrics": ["cloud"], "score": 5, "justification": "j", "evidence_urls": ["u"]}'
 
 
@@ -34,7 +34,7 @@ def test_an_assessment_records_the_page_versions_it_read(db):
     a1 = page(db, "a", 1, summary_text="s")
     page(db, "a", 3, stub_of=a1)  # an unchanged revisit counts as the version it repeats
     b1 = page(db, "b", 2, summary_text="s")
-    run_id = engine.create_scoring_run({"technologies": ["edge-ai"]})
+    run_id = engine.create_scoring_run({"technologies": ["edge-ai"], "engine": "per_measure"})
     with ThreadPoolExecutor(max_workers=2) as pool:
         engine.assess_technology(run_id, "edge-ai", FakeLLM(), pool)
     row = db["assessments"].find_one({"scoring_run_id": run_id})
@@ -115,7 +115,7 @@ def test_reassessed_after_its_pov_it_is_ready_for_a_new_one_everywhere(db, monke
     assert [u["scoring_run_id"] for u in client.get("/api/scoring/povs").json()["uncomposed"]] == ["r2"]
     started = []
     monkeypatch.setattr(pov_composer, "start_compose_all",
-                        lambda targets, recompose=False: started.append(targets) or "job")
+                        lambda targets, recompose=False, tz=None: started.append(targets) or "job")
     assert client.post("/api/scoring/povs/compose_all", json={}).status_code == 202
     assert started == [[{"scoring_run_id": "r2", "tech_id": "edge-ai"}]]
 

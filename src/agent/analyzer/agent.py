@@ -11,10 +11,12 @@ from deepagents import create_deep_agent
 
 from agent.analyzer import engine
 from agent.analyzer.tools.workload import make_assess_tool, make_workload_tool
+from app.services.llm.context import with_context
 from app.services import busy
 from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM
 from app.services.prompts.store import PromptStore
+from app.services.timezone import now_utc
 from app.settings import get_settings
 
 log = logging.getLogger(__name__)
@@ -50,7 +52,7 @@ def resume_scoring_run(run_id: str) -> bool:
             {"_id": run_id, "status": {"$in": ["failed", "terminated"]}},
             {"$set": {"status": "running", "stage": "scoring", "error": None,
                       "finished_at": None, "progress.techs_done": 0},
-             "$push": {"stage_history": {"stage": "resumed", "at": engine._now()}}})
+             "$push": {"stage_history": {"stage": "resumed", "at": now_utc()}}})
     if doc is None:
         return False
     threading.Thread(target=run_scoring, args=(run_id,),
@@ -63,21 +65,28 @@ def run_scoring(run_id: str) -> None:
     try:
         llm = LLM.initialize()
         engine.set_stage(run_id, "scoring")
+        if engine.engine_mode(run_id) == "stacked":
+            _sweep_in_parallel(run_id, llm)
+            status = "terminated" if engine.cancelled(run_id) else "completed"
+            engine.finish(run_id, status, "terminated by user" if status == "terminated" else None)
+            log.info("scoring run %s %s", run_id, status)
+            return
         with ThreadPoolExecutor(max_workers=get_settings().scoring_concurrency,
                                 thread_name_prefix="measure") as executor:
             try:
-                agent = create_deep_agent(
-                    model=llm.chat_model(),
-                    tools=[make_workload_tool(run_id),
-                           make_assess_tool(run_id, llm, executor)],
-                    system_prompt=PromptStore.get("analyzer").render(),
-                    name="analyzer",
-                )
-                agent.invoke(
-                    {"messages": [{"role": "user",
-                                   "content": "Assess every technology in this scoring run."}]},
-                    {"recursion_limit": 60},
-                )
+                with with_context(run_kind="scoring", run_id=run_id, skills=["analyzer"]):
+                    agent = create_deep_agent(
+                        model=llm.chat_model(),
+                        tools=[make_workload_tool(run_id),
+                               make_assess_tool(run_id, llm, executor)],
+                        system_prompt=PromptStore.get("analyzer").render(),
+                        name="analyzer",
+                    )
+                    agent.invoke(
+                        {"messages": [{"role": "user",
+                                       "content": "Assess every technology in this scoring run."}]},
+                        {"recursion_limit": 60},
+                    )
             except Exception:  # the sweep below guarantees completion regardless
                 log.exception("analyzer agent failed; deterministic sweep continues")
 
@@ -101,3 +110,25 @@ def run_scoring(run_id: str) -> None:
     except Exception as exc:
         log.exception("scoring run %s crashed", run_id)
         engine.finish(run_id, "failed", str(exc)[:500])
+
+
+def _sweep_in_parallel(run_id: str, llm) -> None:
+    """The stacked engine's run: technologies assessed several at a time (each
+    makes one technology call, then its fabric calls together), every one owed
+    covered. A technology's calls are few and large, so the deep agent's
+    one-at-a-time plan is left out here: it would only slow the run."""
+    from app.services.llm.context import carry
+    n = get_settings().scoring_concurrency
+    run = get_collection("scoring_runs").find_one({"_id": run_id})
+    skipped = {s["tech_id"] for s in run.get("skipped", [])}
+    owed = [t["tech_id"] for t in run["technologies"] if t["tech_id"] not in skipped]
+    with ThreadPoolExecutor(max_workers=n, thread_name_prefix="fabric") as fabrics, \
+            ThreadPoolExecutor(max_workers=n, thread_name_prefix="technology") as techs:
+        futures = [techs.submit(carry(engine.assess_technology), run_id, t, llm, fabrics) for t in owed]
+        for f in futures:
+            if engine.cancelled(run_id):
+                break
+            try:
+                f.result()
+            except Exception:  # one technology must not sink the run; the others go on
+                log.exception("assessing a technology failed in run %s", run_id)

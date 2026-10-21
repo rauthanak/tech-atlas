@@ -7,17 +7,21 @@ Nothing is cut: a page longer than the page-part size is split on paragraph
 boundaries, the parts are summarized in parallel with the same prompt, and
 the results are merged.
 
+The prompt's opening, up to the page's address, is the same for every page
+of a run, so it's sent as a block the provider reuses (split_fixed).
+
 A page that couldn't be analysed, wholly or in part, says why:
 analysis_error = {reason, detail, at}."""
 
 import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 
+from app.services.llm.context import carry, with_context
 from app.services.llm import call_with_backoff, parse_json
 from app.services.prompts import PromptStore
 from app.services.signals.snapshot import prompt_lines
+from app.services.timezone import now_utc
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +50,7 @@ def summarize_page(llm, url: str, text: str, snapshot: dict, cancelled=None) -> 
 
     workers = max(1, int(settings.get("page_part_concurrency") or 4))
     with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="part") as pool:
-        results = list(pool.map(analyse, parts))
+        results = [f.result() for f in [pool.submit(carry(analyse), part) for part in parts]]
     done = [r for r in results if "failed" not in r]
     if not done:
         return _unavailable(results[0], parts=len(parts))
@@ -108,15 +112,41 @@ def split_text(text: str, size: int) -> list[str]:
     return [p for p in parts if p.strip()]
 
 
+def article_summary_values(url: str, text: str, lines: dict) -> dict:
+    """The page-summary skill's blanks; `lines` is prompt_lines(signal list).
+    The Skills page's preview fills them with this same function, so it shows
+    exactly what a run sends."""
+    return {"url": url, "text": text, "never_miss": lines["never_miss"], "can_ignore": lines["can_ignore"]}
+
+
+MARK = "per-call"  # wrapped in private-use characters: no prompt or page holds it
+
+
+def split_fixed(prompt, values: dict, per_call: tuple[str, ...]) -> tuple[str, str]:
+    """The rendered prompt cut at the start of the line holding the first of
+    the `per_call` blanks: (the fixed opening, the same for every call in a
+    run, the rest). Joined, they are exactly prompt.render(**values). The
+    opening (the instructions and the signal list, about 2,300 tokens) goes
+    in `blocks` for the provider to reuse; it's over Anthropic's 512-token
+    minimum for Haiku 5.5, below which nothing would be reused."""
+    marked = prompt.render(**{**values, **{k: MARK + values[k] for k in per_call}})
+    at = marked.find(MARK)
+    if at < 0:  # the skill doesn't use them: nothing is fixed
+        return "", prompt.render(**values)
+    cut = marked.rfind("\n", 0, at) + 1
+    return marked[:cut], marked[cut:].replace(MARK, "")
+
+
 def _analyse(llm, prompt, lines: dict, rows: list[dict], url: str, text: str, cancelled) -> dict:
     """One call (a bad reply gets one retry). Returns the normalized result,
     or {"failed": ...} with the error or the unparseable reply."""
-    rendered = prompt.render(url=url, text=text, never_miss=lines["never_miss"],
-                             can_ignore=lines["can_ignore"])
+    fixed, rest = split_fixed(prompt, article_summary_values(url, text, lines), ("url", "text"))
     reply = ""
     for attempt in (1, 2):
         try:
-            reply = call_with_backoff(lambda: llm.ask(rendered), cancelled)
+            with with_context(skills=["article_summary"]):
+                reply = call_with_backoff(lambda: llm.ask(rest, blocks=[fixed] if fixed.strip() else None),
+                                          cancelled)
         except Exception as exc:  # a failed summary must not lose the document
             log.warning("summary failed for %s: %s", url, exc)
             return {"failed": "call", "error": str(exc)[:300]}
@@ -151,7 +181,7 @@ def _error(failure: dict) -> dict:
     else:
         reason, detail = "reply not in the expected format", failure.get("reply") or "empty reply"
     return {"reason": reason, "detail": " ".join(detail.split())[:200],
-            "at": datetime.now(timezone.utc).isoformat()}
+            "at": now_utc()}
 
 
 def _text(value) -> str | None:

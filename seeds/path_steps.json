@@ -1,0 +1,72 @@
+{
+  "path_steps": [
+    {
+      "step_id": "evaluation",
+      "name": "Evaluation",
+      "order": 1,
+      "evidence_needed": "A named lever and a plausible chain from the technology to its financial effect.",
+      "decision": "Monitor; assign a fabric owner.",
+      "needs": [
+        "lever"
+      ]
+    },
+    {
+      "step_id": "customer_zero",
+      "name": "Customer zero",
+      "order": 2,
+      "evidence_needed": "Measured cost per outcome against the current process, including running costs, when Tata uses the capability internally.",
+      "decision": "Fund a proof of concept.",
+      "needs": [
+        "cost_per_outcome"
+      ]
+    },
+    {
+      "step_id": "proof_of_concept",
+      "name": "Proof of concept",
+      "order": 3,
+      "evidence_needed": "A named buyer, a budget or willingness to pay and an indicative price; for protection levers, the exposed contracts and their renewal dates.",
+      "decision": "Seek a first customer.",
+      "needs": [
+        "buyer",
+        "budget",
+        "price",
+        "exposed_contracts"
+      ]
+    },
+    {
+      "step_id": "one_customer",
+      "name": "One customer",
+      "order": 4,
+      "evidence_needed": "Positive contribution after fully loaded delivery costs, and a payback estimate.",
+      "decision": "Commit business-unit investment and scale.",
+      "needs": [
+        "positive_contribution",
+        "payback"
+      ]
+    },
+    {
+      "step_id": "beta",
+      "name": "Beta",
+      "order": 5,
+      "evidence_needed": "For Tata to define.",
+      "decision": "For Tata to define.",
+      "needs": []
+    },
+    {
+      "step_id": "roadmap",
+      "name": "Roadmap",
+      "order": 6,
+      "evidence_needed": "For Tata to define.",
+      "decision": "For Tata to define.",
+      "needs": []
+    },
+    {
+      "step_id": "investment",
+      "name": "Investment",
+      "order": 7,
+      "evidence_needed": "For Tata to define.",
+      "decision": "For Tata to define.",
+      "needs": []
+    }
+  ]
+}

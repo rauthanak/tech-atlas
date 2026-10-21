@@ -49,7 +49,8 @@ def test_an_older_point_of_view_and_the_pages_new_since_it(db):
     assert povs["povs"][0]["new_since_written"] == 2
     assert povs["povs"][0]["assessed_at"] == at(2)  # the assessment it was written from, not the newest
     assert povs["povs"][0]["placements"] == [{"fabric_id": "cloud", "fabric": "Cloud",
-                                              "priority": "P2", "horizon": "H1"}]
+                                              "priority": "P2", "computed_priority": "P2", "override": None,
+                                              "horizon": "H1"}]
     assert povs["uncomposed"] == [] and povs["assessed"] == 1  # waits to be assessed, not written
 
 
@@ -107,3 +108,23 @@ def test_never_assessed_technologies_that_reached_the_last_page_bar(db):
 
     run(db, "r2", 4, status="running", techs=("quic",), params={"technologies": ["quic"]})
     assert client.get("/api/technologies").json()["over_floor"] is None  # being assessed now
+
+
+def test_the_register_says_what_each_assessment_came_to(db):
+    tech(db)
+    tech(db, "quic", "quic")                            # never assessed: nothing to say
+    run(db, "r1", 2, gates={"edge-ai": ["cloud", "network"]}, fabrics=("cloud", "network"))
+    a1 = page(db, "a", 1)
+    assessment(db, "r1", 2, pages=[a1], scores=[7, None, 5])                      # placed
+    assessment(db, "r1", 2, pages=[a1], fabric="network", scores=[None, None, 4], priority=None)
+    rows = {t["_id"]: t for t in client.get("/api/technologies").json()["technologies"]}
+    assert rows["edge-ai"]["measures"] == {"scored": 3, "of": 6}
+    assert rows["edge-ai"]["priorities"] == [{"fabric_id": "cloud", "fabric": "Cloud", "priority": "P2", "override": False},
+                                             {"fabric_id": "network", "fabric": "Network", "priority": None, "override": False}]
+    assert rows["quic"]["measures"] is None and rows["quic"]["priorities"] == []
+    assert client.get("/api/technologies").json()["no_priority_counts"] == {}  # placed in cloud
+    db["assessments"].update_one({"_id": "r1:edge-ai:cloud"}, {"$set": {"placement.priority": None}})
+    assert client.get("/api/technologies").json()["no_priority_counts"] == {"no_pov": 1}
+    summary = client.get("/api/technologies/edge-ai/summary").json()["assessment"]
+    assert summary["measures"] == {"scored": 3, "of": 6}
+    assert [f["measures"] for f in summary["fabrics"]] == [{"scored": 2, "of": 3}, {"scored": 1, "of": 3}]

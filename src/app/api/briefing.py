@@ -10,14 +10,17 @@ from fastapi import APIRouter, HTTPException
 from app.api.signals import scope as page_scope
 from app.api.signals import tally
 from app.services.db.mongo import get_collection
+from app.services.runs.store import COLLECTIONS
 
 router = APIRouter()
 
 
 def _freshness() -> dict | None:
-    """The latest finished collection."""
+    """The latest finished collection (a Find evidence run stores its pages
+    under a run too, but it isn't a collection)."""
     run = get_collection("runs").find_one(
-        {"run_end_date_time": {"$ne": None}}, sort=[("run_start_date_time", -1)],
+        {"run_end_date_time": {"$ne": None}, **COLLECTIONS},
+        sort=[("run_start_date_time", -1)],
         projection={"totals": 1, "run_end_date_time": 1})
     if run is None:
         return None

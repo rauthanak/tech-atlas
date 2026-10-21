@@ -26,6 +26,7 @@ from pypdf import PdfReader
 
 from agent.scout.tools.browser import BrowserFetcher
 from agent.scout.tools.context import Context, Outcome
+from app.services.llm.context import with_context
 from app.services.prompts import PromptStore
 from app.services.signals.snapshot import prompt_lines
 from app.settings import get_settings
@@ -192,6 +193,29 @@ def _feed_pages(client: httpx.Client, candidates: list[str], limit: int) -> list
     return pages
 
 
+# ── link selection ───────────────────────────────────────────────────
+
+def link_selection_values(links: list[str], budget: int, never_miss_names: str) -> dict:
+    """The link-selection skill's blanks. The Skills page's preview fills them
+    with this same function, so it shows exactly what a crawl sends."""
+    return {"budget": str(budget), "links": "\n".join(links), "never_miss_names": never_miss_names}
+
+
+def select_links(llm, prompt, links: list[str], budget: int, never_miss_names: str) -> list[str]:
+    """The LLM picks the links most likely to carry tech updates and signals."""
+    try:
+        with with_context(skills=["link_selection"]):
+            reply = llm.ask(prompt.render(**link_selection_values(links, budget, never_miss_names)))
+        offered = set(links)
+        chosen = list(dict.fromkeys(line.strip() for line in reply.splitlines()
+                                    if line.strip() in offered))
+        if chosen:
+            return chosen[:budget]
+    except Exception as exc:
+        log.warning("link selection failed, keeping crawl order: %s", exc)
+    return links[:budget]
+
+
 # ── the crawl ────────────────────────────────────────────────────────
 
 def crawl(ctx: Context, source: dict) -> Outcome:
@@ -228,20 +252,6 @@ def crawl(ctx: Context, source: dict) -> Outcome:
         if browser is None:
             browser = BrowserFetcher(USER_AGENT)
         return browser.fetch(url, clicks=clicks)
-
-    def select_links(links: list[str], budget: int) -> list[str]:
-        """The LLM picks the links most likely to carry tech updates and signals."""
-        try:
-            reply = ctx.llm.ask(link_prompt.render(
-                budget=str(budget), links="\n".join(links), never_miss_names=never_miss_names))
-            offered = set(links)
-            chosen = list(dict.fromkeys(line.strip() for line in reply.splitlines()
-                                        if line.strip() in offered))
-            if chosen:
-                return chosen[:budget]
-        except Exception as exc:
-            log.warning("link selection failed, keeping crawl order: %s", exc)
-        return links[:budget]
 
     def allowed(client: httpx.Client, url: str) -> bool:
         parts = urlparse(url)
@@ -357,7 +367,9 @@ def crawl(ctx: Context, source: dict) -> Outcome:
                     continue
                 width = min(remaining, LINK_SELECTION_WIDTH)
                 if len(next_frontier) > width:
-                    next_frontier = select_links(next_frontier, width)
+                    with with_context(run_kind="collection", run_id=ctx.run_id):
+                        next_frontier = select_links(ctx.llm, link_prompt, next_frontier, width,
+                                                     never_miss_names)
                 frontier = next_frontier
     except InterruptedError:
         outcome.error = "run cancelled"
@@ -372,3 +384,41 @@ def crawl(ctx: Context, source: dict) -> Outcome:
     if unvisited and outcome.error is None:
         outcome.incomplete_note = f"didn't finish: {unvisited} links left"
     return outcome
+
+
+# ── one page, on its own (Find evidence, Add a link) ─────────────────
+
+def fetch_page(url: str) -> tuple[str | None, dict, str | None]:
+    """(text, meta, why not): one page read the way the crawler reads it —
+    the page itself, a PDF's text, or the headless browser when the page is
+    a script shell or blocks a plain fetch."""
+    text, meta, why = None, {}, None
+    try:
+        with httpx.Client(timeout=20, follow_redirects=True, headers={"User-Agent": USER_AGENT}) as client:
+            response = client.get(url)
+        if response.status_code >= 400:
+            why = f"the site answered {response.status_code}"
+        else:
+            content_type = response.headers.get("content-type", "")
+            if "pdf" in content_type or str(response.url).lower().endswith(".pdf"):
+                text, meta = _extract_pdf(response.content), {"kind": "pdf", "title": None, "published_date": None}
+            elif "html" in content_type or "xml" in content_type:
+                text, _, meta = _extract_html(response.text, str(response.url))
+            else:
+                why = f"not a page or a PDF ({content_type or 'unknown type'})"
+    except httpx.HTTPError as exc:
+        why = f"the site couldn't be reached ({type(exc).__name__})"
+    if (not text or len(text.strip()) < MIN_TEXT_CHARS) and meta.get("kind") != "pdf" and get_settings().use_playwright:
+        browser = BrowserFetcher(USER_AGENT)
+        try:
+            html, final_url = browser.fetch(url, clicks=0)
+            rtext, _, rmeta = _extract_html(html, final_url)
+            if rtext and len(rtext) > len(text or ""):
+                text, meta, why = rtext, {**rmeta, **{k: v for k, v in meta.items() if v}}, None
+        except Exception as exc:
+            why = why or f"the page couldn't be rendered ({type(exc).__name__})"
+        finally:
+            browser.close()
+    if text and len(text.strip()) >= MIN_TEXT_CHARS:
+        return text.strip(), meta, None
+    return None, meta, why or "too little text on the page"

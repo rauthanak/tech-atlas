@@ -1,0 +1,16 @@
+{
+  "assumptions": [
+    {
+      "assumption_id": "ai-infrastructure-investment-stays-high-through-fy27",
+      "name": "AI infrastructure investment stays high through FY27.",
+      "date": "2026-09-26",
+      "order": 1
+    },
+    {
+      "assumption_id": "nist-post-quantum-migration-deadlines-2030-2035-hold",
+      "name": "NIST post-quantum migration deadlines (2030, 2035) hold.",
+      "date": "2026-09-26",
+      "order": 2
+    }
+  ]
+}

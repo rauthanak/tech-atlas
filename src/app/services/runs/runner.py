@@ -13,11 +13,13 @@ from concurrent.futures import ThreadPoolExecutor
 from agent.orchestrator.agent import run_orchestrator
 from agent.orchestrator.tools.categories import category_keys
 from agent.supervisor.agent import Supervisor
+from app.services.llm.context import with_context
 from app.services import busy
 from app.services.db.mongo import get_collection
 from app.services.llm import LLM
 from app.services.runs import store
 from app.services.signals import snapshot
+from app.services.timezone import now_utc
 from app.settings import get_settings
 
 log = logging.getLogger(__name__)
@@ -56,7 +58,8 @@ def _execute(run_id: str, params: dict) -> None:
         store.set_stage(run_id, "orchestrating")
         store.set_substage(run_id, "orchestrating", "planning")
         try:
-            report = run_orchestrator(llm)
+            with with_context(run_kind="collection", run_id=run_id, skills=["orchestrator"]):
+                report = run_orchestrator(llm)
             log.info("orchestrator: %s", report[:200])
         except Exception:  # placeholder-prompt agent; the fan-out is deterministic anyway
             log.exception("orchestrator agent failed; continuing with deterministic categories")
@@ -88,6 +91,20 @@ def _execute(run_id: str, params: dict) -> None:
             except Exception:  # resolution can be re-run any time from the portal
                 log.exception("resolve stage failed; run continues to completion")
 
+        # then Classify the technologies with new pages (radar setting classify_after_collection)
+        if not store.cancelled(run_id):
+            from app.services.settings_store import radar_settings
+            if radar_settings().get("classify_after_collection"):
+                store.set_stage(run_id, "classifying")
+                try:
+                    from agent.classifier import classify
+                    ids = classify.pending()
+                    classify_id = classify.start(ids, trigger=f"after collection {run_id}", wait=True) if ids else None
+                    if classify_id:
+                        get_collection("runs").update_one({"_id": run_id}, {"$set": {"classify_id": classify_id}})
+                except Exception:  # Classify can be run again from Operations
+                    log.exception("classify stage failed; run continues to completion")
+
         status = "terminated" if store.cancelled(run_id) else "completed"
         store.set_stage(run_id, "done")
         store.finish_run(run_id, status, "terminated by user" if status == "terminated" else None)
@@ -104,6 +121,6 @@ def shutdown() -> None:
     result = get_collection("runs").update_many(
         {"status": {"$in": list(store.RUNNING_STATES)}},
         {"$set": {"status": "terminated", "error": "interrupted — service shutdown",
-                  "run_end_date_time": store.now()}})
+                  "run_end_date_time": now_utc()}})
     if result.modified_count:
         log.warning("shutdown: marked %d running run(s) terminated", result.modified_count)

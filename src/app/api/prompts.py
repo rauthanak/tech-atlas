@@ -3,15 +3,18 @@
 recomputed from the {placeholder} slots in the prompt text on every save, so
 the stored list can't drift from the template. A save whose placeholders
 differ from what the stage fills in is refused (422), so an edit can never
-break a stage at run time."""
+break a stage at run time. The preview shows what a skill turns into when it
+runs — saved text or an unsaved draft — and never calls a model."""
 
-from datetime import datetime, timezone
 from string import Formatter
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.services.db.mongo import get_collection
+from app.services.prompts import preview as skill_preview
+from app.services.timezone import now_utc
 
 router = APIRouter()
 
@@ -23,12 +26,20 @@ EXPECTED_VARIABLES: dict[str, set[str]] = {
     "article_summary": {"url", "text", "never_miss", "can_ignore"},
     "link_selection": {"budget", "links", "never_miss_names"},
     "technology_resolve": {"known_list", "tech_list"},
+    "technology_label": {"names"},
     "analyzer": set(),
     "measure_scoring": {"measure_name", "definition", "anchors", "required_evidence",
                         "technology", "fabric_name", "fabric_definition", "tcl_today", "evidence"},
     "watch_metrics": {"technology", "evidence"},
     "fabric_relevance": {"technology", "fabrics", "evidence"},
     "pov": {"technology", "assessment_data"},
+    "evidence_strength": {"technology", "evidence", "facts"},
+    "domain_subdomain": {"technology", "evidence", "domains", "subdomains"},
+    "commercial_availability": {"technology", "evidence", "availability_values"},
+    "trl_level": {"technology", "evidence", "trl_levels"},
+    "possible_nascent": {"technology", "evidence"},
+    "value_levers": {"technology", "fabric_name", "fabric_definition", "tcl_today", "fabric_levers", "mechanisms",
+                     "fabric_cautions", "fabric_blockers", "evidence"},
 }
 
 
@@ -72,6 +83,7 @@ class PromptEdit(BaseModel):
     system: str | None = Field(default=None, max_length=20000)
     prompt: str = Field(min_length=1, max_length=40000)
     enabled: bool
+    reasoning: Literal["on", "off"] | None = None  # None: left as it is
 
 
 @router.get("/prompts")
@@ -81,10 +93,11 @@ def list_prompts() -> dict:
 
 @router.put("/prompts/{name}")
 def update_prompt(name: str, edit: PromptEdit) -> dict:
-    changes = edit.model_dump()
+    changes = edit.model_dump(exclude_none=True)
+    changes.setdefault("system", None)
     changes["variables"] = _extract_variables(changes["prompt"])
     _check_variables(name, changes["variables"])
-    changes["updated_at"] = datetime.now(timezone.utc).isoformat()
+    changes["updated_at"] = now_utc()
     updated = get_collection("prompts").find_one_and_update(
         {"_id": name},
         {"$set": changes, "$inc": {"version": 1}},
@@ -93,3 +106,44 @@ def update_prompt(name: str, edit: PromptEdit) -> dict:
     if updated is None:
         raise HTTPException(status_code=404, detail=f"unknown prompt {name!r}")
     return updated
+
+
+class PreviewDraft(BaseModel):
+    """Unsaved skill text, plus the same switches the GET takes."""
+    system: str | None = Field(default=None, max_length=20000)
+    prompt: str = Field(min_length=1, max_length=40000)
+    technology: str | None = None
+    fabric: str | None = None
+    measure: str | None = None
+    source: str | None = None
+    page: str | None = None
+    horizon: str | None = None
+
+
+@router.get("/prompts/{name}/preview")
+def preview_prompt(name: str, technology: str | None = None, fabric: str | None = None,
+                   measure: str | None = None, source: str | None = None,
+                   page: str | None = None, horizon: str | None = None) -> dict:
+    """What a skill turns into: how many versions of it a run sends, where its
+    blanks are filled from, and one real example built from today's settings."""
+    return _preview(name, {"technology": technology, "fabric": fabric, "measure": measure,
+                           "source": source, "page": page, "horizon": horizon})
+
+
+@router.post("/prompts/{name}/preview")
+def preview_draft(name: str, draft: PreviewDraft) -> dict:
+    """The same, built from unsaved text — refused exactly as Save would refuse it."""
+    variables = _extract_variables(draft.prompt)
+    _check_variables(name, variables)
+    text = {"system": draft.system or None, "prompt": draft.prompt, "variables": variables}
+    return _preview(name, draft.model_dump(exclude={"system", "prompt"}), text)
+
+
+def _preview(name: str, choices: dict, draft: dict | None = None) -> dict:
+    try:
+        out = skill_preview.preview(name, choices, draft)
+    except skill_preview.BadChoice as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    if out is None:
+        raise HTTPException(status_code=404, detail=f"unknown skill {name!r}")
+    return out

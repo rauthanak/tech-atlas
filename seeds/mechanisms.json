@@ -1,0 +1,24 @@
+{
+  "mechanisms": [
+    {
+      "mechanism_id": "protect",
+      "name": "Protect existing contribution",
+      "definition": "Keep contribution Tata already earns, such as a contract renewed because the technology meets a requirement. The value is the difference in loss rates with and without it, not the whole installed base: customers who would have stayed anyway, or left anyway, aren't protected by it."
+    },
+    {
+      "mechanism_id": "earn",
+      "name": "Earn additional contribution",
+      "definition": "New paid use, new customers or a separately paid service, after delivery costs, discounts and any revenue it displaces. A large market creates an opportunity; it doesn't show how much Tata can capture."
+    },
+    {
+      "mechanism_id": "reduce_cost",
+      "name": "Reduce the cost of an equivalent outcome",
+      "definition": "Deliver the same outcome, at comparable quality, for less, counting implementation, integration, monitoring, exceptions and support. Hours saved count only when spending is avoided or capacity is productively redeployed."
+    },
+    {
+      "mechanism_id": "less_capital",
+      "name": "Serve demand with less capital",
+      "definition": "Meet the same paid demand with less new investment, such as higher utilisation of capacity, equipment or inventory Tata owns. It improves returns only if the demand exists and quality stays acceptable."
+    }
+  ]
+}

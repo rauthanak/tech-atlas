@@ -3,15 +3,15 @@ collection stores just the horizon key."""
 
 HORIZONS: dict[str, dict[str, str]] = {
     "H1": {
-        "label": "Known Knowns — misses",
-        "meaning": "The market already has it. If TCL does not, that is a miss.",
+        "label": "Already on the market",
+        "meaning": "If TCL does not have it, that is a miss.",
     },
     "H2": {
-        "label": "Known Unknowns — catchable inflections",
-        "meaning": "Capital is moving ahead of market consensus.",
+        "label": "Money is moving before the market",
+        "meaning": "Early signs: capital moves ahead of market consensus.",
     },
     "H3": {
-        "label": "Unknown Unknowns — blind spots",
-        "meaning": "Not yet visible to the market.",
+        "label": "Not yet visible to the market",
+        "meaning": "Research and blind spots.",
     },
 }

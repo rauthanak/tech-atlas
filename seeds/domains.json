@@ -1,0 +1,74 @@
+{
+  "domains": [
+    {
+      "domain_id": "ai",
+      "name": "AI",
+      "definition": "Artificial intelligence: models, agents, and the tools to build and run them.",
+      "order": 1,
+      "catch_all": false
+    },
+    {
+      "domain_id": "cloud",
+      "name": "Cloud",
+      "definition": "Cloud platforms, services and the way they are run.",
+      "order": 2,
+      "catch_all": false
+    },
+    {
+      "domain_id": "cybersecurity",
+      "name": "Cybersecurity",
+      "definition": "Protecting networks, systems, data and identities.",
+      "order": 3,
+      "catch_all": false
+    },
+    {
+      "domain_id": "edge_computing",
+      "name": "Edge Computing",
+      "definition": "Computing close to where data is made, outside central clouds.",
+      "order": 4,
+      "catch_all": false
+    },
+    {
+      "domain_id": "iot",
+      "name": "IoT",
+      "definition": "Connected devices and sensors, and the networks and platforms that serve them.",
+      "order": 5,
+      "catch_all": false
+    },
+    {
+      "domain_id": "networking",
+      "name": "Networking",
+      "definition": "Networks and the technologies that carry, manage and secure traffic.",
+      "order": 6,
+      "catch_all": false
+    },
+    {
+      "domain_id": "quantum",
+      "name": "Quantum",
+      "definition": "Quantum computing, communication and sensing, and quantum-safe security.",
+      "order": 7,
+      "catch_all": false
+    },
+    {
+      "domain_id": "robotics",
+      "name": "Robotics and Autonomous Systems",
+      "definition": "Robots, drones and autonomous machines.",
+      "order": 8,
+      "catch_all": false
+    },
+    {
+      "domain_id": "blockchain_web3",
+      "name": "Blockchain/Web3",
+      "definition": "Distributed ledgers, digital assets and decentralised applications.",
+      "order": 9,
+      "catch_all": false
+    },
+    {
+      "domain_id": "other",
+      "name": "Other",
+      "definition": "Fits none of the domains above.",
+      "order": 99,
+      "catch_all": true
+    }
+  ]
+}

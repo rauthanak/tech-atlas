@@ -40,7 +40,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true,
+      "enabled": false,
       "access": "crawl"
     },
     {
@@ -90,7 +90,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true,
+      "enabled": false,
       "access": "crawl"
     },
     {
@@ -334,7 +334,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": true,
+      "enabled": false,
       "access": "crawl"
     },
     {
@@ -1033,7 +1033,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true,
+      "enabled": false,
       "access": "crawl",
       "entry_urls": [
         "https://www.3gpp.org/dynareport/WI-List",
@@ -1061,7 +1061,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true,
+      "enabled": false,
       "access": "crawl"
     },
     {
@@ -1378,7 +1378,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "query",
       "adapter": "openalex_awards",
       "searches": [
@@ -1416,7 +1416,7 @@
       "horizon": "H2",
       "cluster": "talent",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "query",
       "adapter": "job_boards",
       "searches": [
@@ -1476,7 +1476,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://techcrunch.com/category/venture/feed/"
@@ -1515,7 +1515,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": true,
+      "enabled": false,
       "access": "crawl",
       "entry_urls": [
         "https://www.tatacommunications.com/press-release/rss.xml"
@@ -1541,7 +1541,7 @@
       "horizon": "H2",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true,
+      "enabled": false,
       "access": "crawl",
       "entry_urls": [
         "https://www.mplify.net/feed/"
@@ -1554,7 +1554,7 @@
       "horizon": "H2",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true,
+      "enabled": false,
       "access": "crawl"
     },
     {
@@ -1574,7 +1574,7 @@
       "horizon": "H1",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true,
+      "enabled": false,
       "access": "crawl"
     },
     {
@@ -1584,7 +1584,7 @@
       "horizon": "H1",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": true,
+      "enabled": false,
       "access": "crawl",
       "entry_urls": [
         "https://www.sebi.gov.in/sebirss.xml"
@@ -1597,7 +1597,7 @@
       "horizon": "H2",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": true,
+      "enabled": false,
       "access": "crawl"
     },
     {
@@ -1635,6 +1635,17 @@
       "entry_urls": [
         "https://iot-analytics.com/feed/"
       ]
+    },
+    {
+      "source_id": "web_search",
+      "name": "Web search",
+      "url": "https://web-search",
+      "horizon": "H2",
+      "cluster": "web_search",
+      "cost": "free",
+      "enabled": false,
+      "access": "none",
+      "entry_urls": []
     }
   ]
 }

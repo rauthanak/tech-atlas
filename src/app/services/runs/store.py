@@ -14,18 +14,18 @@ pruned; the latest full text per end_url and every summary are kept forever.
 import hashlib
 import logging
 import uuid
-from datetime import datetime, timezone
 
 from app.services.db.mongo import get_collection
+from app.services.timezone import now_utc
 from app.settings import get_settings
 
 log = logging.getLogger(__name__)
 
 RUNNING_STATES = ("running", "terminating")
 
-
-def now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+# A Find evidence job stores its pages under a run too, but it isn't a
+# collection: every "latest collection" lookup filters with this.
+COLLECTIONS = {"params.kind": {"$ne": "find_evidence"}}
 
 
 # ── runs ─────────────────────────────────────────────────────────────
@@ -41,9 +41,9 @@ def create_run(params: dict, snapshot: dict) -> str:
         "stage_history": [],
         "substage_history": [],
         "params": params,
-        "run_start_date_time": now(),
+        "run_start_date_time": now_utc(),
         "run_end_date_time": None,
-        "heartbeat_at": now(),
+        "heartbeat_at": now_utc(),
         "error": None,
         "totals": {"sources": 0, "pages_visited": 0, "documents": 0, "new_documents": 0,
                    "signals": 0, "other_signals": 0, "set_aside": 0},
@@ -58,7 +58,7 @@ def set_stage(run_id: str, stage: str) -> None:
     get_collection("runs").update_one(
         {"_id": run_id},
         {"$set": {"stage": stage},
-         "$push": {"stage_history": {"stage": stage, "at": now()}}})
+         "$push": {"stage_history": {"stage": stage, "at": now_utc()}}})
 
 
 def set_substage(run_id: str, stage: str, substage: str) -> None:
@@ -66,11 +66,11 @@ def set_substage(run_id: str, stage: str, substage: str) -> None:
     drill-down timeline. Append-only; the parent stage stays in `stage`."""
     get_collection("runs").update_one(
         {"_id": run_id},
-        {"$push": {"substage_history": {"stage": stage, "substage": substage, "at": now()}}})
+        {"$push": {"substage_history": {"stage": stage, "substage": substage, "at": now_utc()}}})
 
 
 def heartbeat(run_id: str) -> None:
-    get_collection("runs").update_one({"_id": run_id}, {"$set": {"heartbeat_at": now()}})
+    get_collection("runs").update_one({"_id": run_id}, {"$set": {"heartbeat_at": now_utc()}})
 
 
 def run_status(run_id: str) -> str | None:
@@ -85,7 +85,7 @@ def cancelled(run_id: str) -> bool:
 def finish_run(run_id: str, status: str, error: str | None = None) -> None:
     get_collection("runs").update_one(
         {"_id": run_id},
-        {"$set": {"status": status, "error": error, "run_end_date_time": now()}},
+        {"$set": {"status": status, "error": error, "run_end_date_time": now_utc()}},
     )
 
 
@@ -96,7 +96,7 @@ def start_source(run_id: str, category: str, source: dict) -> None:
             "source_id": source["source_id"],
             "source_url": source["url"],
             "source_name": source["name"],
-            "source_start_date_time": now(),
+            "source_start_date_time": now_utc(),
             "source_end_date_time": None,
             "pages_visited": 0,
             "documents": 0,
@@ -129,7 +129,7 @@ def bump_source(run_id: str, source_id: str, pages: int = 0, docs: int = 0,
             "totals.other_signals": other_signals,
             "totals.set_aside": set_aside,
         },
-         "$set": {"heartbeat_at": now()}},
+         "$set": {"heartbeat_at": now_utc()}},
     )
 
 
@@ -153,7 +153,7 @@ def finish_source(run_id: str, source_id: str, pages: int, docs: int, new_docs: 
     get_collection("runs").update_one(
         {"_id": run_id, "sources.source_id": source_id},
         {"$set": {
-            "sources.$.source_end_date_time": now(),
+            "sources.$.source_end_date_time": now_utc(),
             "sources.$.pages_visited": pages,
             "sources.$.documents": docs,
             "sources.$.new_documents": new_docs,
@@ -170,7 +170,7 @@ def reconcile_stale_runs() -> None:
     result = get_collection("runs").update_many(
         {"status": {"$in": list(RUNNING_STATES)}},
         {"$set": {"status": "terminated", "error": "interrupted — service restarted",
-                  "run_end_date_time": now()}},
+                  "run_end_date_time": now_utc()}},
     )
     if result.modified_count:
         log.warning("reconciled %d stale running run(s) to terminated", result.modified_count)
@@ -207,7 +207,7 @@ def save_document(run_id: str, category: str, source: dict, end_url: str,
         "title": meta.get("title"),
         "published_date": meta.get("published_date"),
         "content_hash": content_hash,
-        "scraped_at": now(),
+        "scraped_at": now_utc(),
         "summary_from_previous_runs": previous.get("summary_text") if previous else None,
     }
 

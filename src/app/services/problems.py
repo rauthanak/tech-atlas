@@ -8,6 +8,7 @@ from agent.analyzer import pov as pov_composer
 from agent.scout.tools.adapters import REGISTRY
 from agent.supervisor.tools.sources import collectable_query
 from app.services.db.mongo import get_collection
+from app.services.runs.store import COLLECTIONS
 
 USER_STOP = "terminated by user"  # a person stopped it: not a problem
 
@@ -76,7 +77,7 @@ def _failed_jobs(run: dict | None) -> list[dict]:
 
 
 def _latest_run() -> dict | None:
-    return get_collection("runs").find_one(sort=[("run_start_date_time", -1)],
+    return get_collection("runs").find_one(COLLECTIONS, sort=[("run_start_date_time", -1)],
                                            projection={"sources": 1, "status": 1, "error": 1})
 
 

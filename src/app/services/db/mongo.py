@@ -15,6 +15,10 @@ COLLECTIONS = frozenset({
     "technologies", "resolves",
     "scoring_runs", "assessments", "povs", "pov_compose_jobs",
     "signals", "settings", "recheck_jobs", "seeding",
+    "llm_calls", "recipes", "decisions",
+    "availability", "domains", "subdomains", "trl_levels", "path_steps", "mechanisms",
+    "classify_runs", "imports", "find_evidence_jobs",
+    "assumptions", "editions", "edition_povs",
 })
 
 

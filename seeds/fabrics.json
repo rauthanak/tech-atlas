@@ -6,8 +6,34 @@
       "definition": "Connectivity delivered as a service: TCL's Network Fabric (IZO). Global VPN and MPLS, internet access, private lines and IP transit over TCL's subsea and terrestrial fibre; SD-WAN and internet WAN; multi-cloud connectivity and networking; data-centre connectivity; managed Wi-Fi, LAN and enterprise broadband; network-as-a-service with on-demand, programmable control; network APIs, SDN/NFV, satellite integration, and optical and photonic transport.",
       "tcl_today": "IZO network services, sold globally: global VPN and MPLS, internet access, private lines, IP transit, SD-WAN and internet WAN, multi-cloud connectivity and multi-cloud networking, data-centre connectivity, managed Wi-Fi and LAN, enterprise broadband in India, and network-as-a-service. Assets: 1,500+ PoPs; 500,000+ km of subsea and 200,000+ km of terrestrial fibre; about 35% of global internet traffic routed on its network; ISP partners in 230+ countries. Wholesale carrier services: IPX, roaming, voice termination; 15% of global voice traffic and 1 in 7 international calls. Recognition: a leader in Gartner's Magic Quadrant for Global WAN Services for 13 years; IDC, Avasant and ISG leader for managed SD-WAN/SASE and network services. Customers include Seaco, Noble Resources and Clariant. Sources: https://www.tatacommunications.com/izo, https://www.tatacommunications.com/carrier-services Company-wide: about 5,000 enterprise customers, including 300 of the Fortune 500, in 190+ countries; part of the Tata Group.",
       "enabled": true,
-      "open_question": "Confirm this definition and the TCL-today profile, both taken from tatacommunications.com on 4 Oct 2026, with TCL stakeholders.",
-      "version": 4
+      "open_question": "Confirm this definition and the \"what Tata has today\" text, both taken from tatacommunications.com on 4 Oct 2026, with Tata.",
+      "version": 4,
+      "levers": [
+        {
+          "lever_id": "network_contribution",
+          "name": "Contribution",
+          "mechanism_id": "protect",
+          "text": "Contract contribution protected or won where stronger security or a required performance level qualifies Tata for a renewal or new contract"
+        },
+        {
+          "lever_id": "network_delivery_cost",
+          "name": "Delivery cost",
+          "mechanism_id": "reduce_cost",
+          "text": "Lower cost per delivered service through automated provisioning, assurance or transport"
+        }
+      ],
+      "key_metrics": "Engineering hours per connection; incidents per service; cost per comparable traffic unit",
+      "bottlenecks": [
+        "Compatibility with the installed network and vendors",
+        "Customer qualification and procurement"
+      ],
+      "cautions": "",
+      "finance_defaults": {
+        "margin_low": null,
+        "margin_high": null,
+        "loss_without": null,
+        "loss_with": null
+      }
     },
     {
       "fabric_id": "cloud",
@@ -15,8 +41,34 @@
       "definition": "Enterprise cloud and AI infrastructure: TCL's Cloud Fabric (Vayu). AI cloud with on-demand GPUs and an AI development platform; private, hybrid, multi-cloud and edge computing; sovereign and industry clouds (government, financial services) that keep data in-country; compute, storage, backup and disaster recovery, databases, DevOps and observability; data platforms for integration, governance and analytics.",
       "tcl_today": "Vayu Cloud, sold in India only: AI cloud with on-demand NVIDIA GPUs and the Vayu AI Studio platform; private, hybrid and multi-cloud; edge (Vayu Edge); a government community cloud and a financial-services cloud; compute (virtual machines, Kubernetes), storage, backup and disaster recovery, managed databases, DevOps and observability; the Vayu Data Platform. Claims: sovereign by design (data and metadata stay in India), compliance with RBI, IRDAI, SEBI and MeitY rules, ISO/IEC 42001, about 30% lower total cost (IDC). Recognition: ISG leader for private/hybrid cloud and data-centre services. Customers include Tata CLiQ, InterGlobe and BACL. Partners: AWS, Microsoft, NVIDIA. Source: https://www.tatacommunications.com/cloud Company-wide: about 5,000 enterprise customers, including 300 of the Fortune 500, in 190+ countries; part of the Tata Group.",
       "enabled": true,
-      "open_question": "Confirm this definition and the TCL-today profile, both taken from tatacommunications.com on 4 Oct 2026, with TCL stakeholders.",
-      "version": 3
+      "open_question": "Confirm this definition and the \"what Tata has today\" text, both taken from tatacommunications.com on 4 Oct 2026, with Tata.",
+      "version": 3,
+      "levers": [
+        {
+          "lever_id": "cloud_contribution",
+          "name": "Contribution",
+          "mechanism_id": "earn",
+          "text": "Contribution from paid workloads or managed services, measured on actual paid use rather than reserved capacity"
+        },
+        {
+          "lever_id": "cloud_delivery_cost",
+          "name": "Delivery cost",
+          "mechanism_id": "reduce_cost",
+          "text": "Lower cost per comparable workload; where Tata owns infrastructure, higher utilisation that avoids new investment"
+        }
+      ],
+      "key_metrics": "Paid utilisation; margin after infrastructure, licences and support",
+      "bottlenecks": [
+        "Migration and data integration",
+        "Access to capacity and a proposition customers will pay for"
+      ],
+      "cautions": "",
+      "finance_defaults": {
+        "margin_low": null,
+        "margin_high": null,
+        "loss_without": null,
+        "loss_with": null
+      }
     },
     {
       "fabric_id": "security",
@@ -25,7 +77,34 @@
       "tcl_today": "Security Fabric: managed and hosted SASE (hosted SASE powered by Versa), security service edge, zero-trust network access, managed detection and response with security operations centres, cloud security, OT security, advanced network security and DDoS protection, security assessment and governance, risk and compliance consulting, quarterly threat advisories, and an Edge Distribution Platform combining CDN, security and compute. Scale: 9.5 billion events screened a day, 3.5 TBps of traffic screened, 900+ threat-detection use cases. Recognition: KuppingerCole overall leader for MDR (2026); IDC MarketScape leader for Asia/Pacific managed SD-WAN/SASE. Customers include OSN, Liberty General Insurance and vHealth by Aetna. Source: https://www.tatacommunications.com/cyber-security-solutions Company-wide: about 5,000 enterprise customers, including 300 of the Fortune 500, in 190+ countries; part of the Tata Group.",
       "enabled": true,
       "open_question": "New on 4 Oct: TCL's site names a Security Fabric. Security moved here from Cloud's definition; confirm the scope with TCL stakeholders.",
-      "version": 2
+      "version": 2,
+      "levers": [
+        {
+          "lever_id": "security_contribution",
+          "name": "Contribution",
+          "mechanism_id": "earn",
+          "text": "Contribution from paid security adoption, sold new or attached to network and cloud contracts"
+        },
+        {
+          "lever_id": "security_delivery_cost",
+          "name": "Delivery cost",
+          "mechanism_id": "reduce_cost",
+          "text": "Lower analyst effort per effectively resolved case"
+        }
+      ],
+      "key_metrics": "Attach rate; incremental price; cost per resolved case; false-positive and escalation rates",
+      "bottlenecks": [
+        "Integration and telemetry quality",
+        "Demonstrable effectiveness",
+        "Specialist delivery capacity"
+      ],
+      "cautions": "A customer's avoided breach loss isn't Tata revenue: count it only through a fee, more demand or retention.",
+      "finance_defaults": {
+        "margin_low": null,
+        "margin_high": null,
+        "loss_without": null,
+        "loss_with": null
+      }
     },
     {
       "fabric_id": "interaction",
@@ -33,8 +112,35 @@
       "definition": "How enterprises and their customers communicate: TCL's Interaction Fabric (Kaleyra and Commotion). Communications platforms as a service (messaging, voice and video APIs), contact centre as a service, unified communications and collaboration, cloud voice and SIP trunking; conversational and voice AI, AI agents that complete enterprise workflows, and customer-experience platforms.",
       "tcl_today": "Kaleyra and Commotion: communications platforms as a service (messaging, voice and video APIs, business messaging), contact centre as a service (TX Hub), unified communications (Microsoft Teams calling, cloud voice and SIP trunking, Kaleyra Phone), and the Commotion AI platform: Voice AI (under 250 ms latency), AI Workers (200+ templates, 500+ integrations with CRM, ERP, ITSM and HR systems) and a customer-experience platform. Scale: 60 billion+ interactions a year, 4,000+ customers, a voice network in 190+ countries. Recognition: Gartner Magic Quadrant niche player for CPaaS; Juniper Research established leader for contact centre as a service, conversational AI and mobile messaging; Omdia contact-centre leader. Customers include Flipkart, AirAsia and Yinson. Partners: Cisco, Microsoft. Sources: https://www.tatacommunications.com/kaleyra, https://www.tatacommunications.com/commotion-ai-platform Company-wide: about 5,000 enterprise customers, including 300 of the Fortune 500, in 190+ countries; part of the Tata Group.",
       "enabled": true,
-      "open_question": "Confirm this definition and the TCL-today profile, both taken from tatacommunications.com on 4 Oct 2026, with TCL stakeholders.",
-      "version": 3
+      "open_question": "Confirm this definition and the \"what Tata has today\" text, both taken from tatacommunications.com on 4 Oct 2026, with Tata.",
+      "version": 3,
+      "levers": [
+        {
+          "lever_id": "interaction_contribution",
+          "name": "Contribution",
+          "mechanism_id": "earn",
+          "text": "Contribution from paid adoption or expansion, net of any billable minutes or seats the automation removes"
+        },
+        {
+          "lever_id": "interaction_delivery_cost",
+          "name": "Delivery cost",
+          "mechanism_id": "reduce_cost",
+          "text": "Lower cost per successfully resolved task, including carrier, model, cloud, escalation and repeat-contact costs"
+        }
+      ],
+      "key_metrics": "Resolution rate; repeat contacts; fully loaded cost per resolved task",
+      "bottlenecks": [
+        "Reliable task completion in real workflows",
+        "Integration effort",
+        "Pricing that covers ongoing costs"
+      ],
+      "cautions": "Automation can remove billable minutes or seats Tata already earns on: net that displacement off any gain.",
+      "finance_defaults": {
+        "margin_low": null,
+        "margin_high": null,
+        "loss_without": null,
+        "loss_with": null
+      }
     },
     {
       "fabric_id": "iot",
@@ -42,8 +148,34 @@
       "definition": "Connected devices and the intelligence on them: TCL's IoT Fabric (MOVE). Cellular IoT and eSIM / global SIM connectivity, LoRaWAN, private 4G/5G networks, embedded connectivity and MVNE services; device management, orchestration and IoT data analytics, including edge AI on devices; industry solutions for connected vehicles, logistics, aviation and manufacturing.",
       "tcl_today": "MOVE: cellular IoT and eSIM / global SIM connectivity, embedded connectivity, MVNE services for mobile operators, LoRaWAN networks in India, private 4G/5G networks, device management and IoT data analytics; industry solutions for automotive (connected cars with JLR, and 5G in Tata Motors' Sierra.ev), logistics, aviation and manufacturing. Scale: 13 million+ SIMs managed, 160+ countries served, 600+ mobile-operator relationships. Recognition: Juniper Research leader for cellular IoT; Kaleido Intelligence champion for eSIM connectivity; 2024 AutoTech Breakthrough award. Customers include SATEL, Convergia and Fonus. Source: https://www.tatacommunications.com/move Company-wide: about 5,000 enterprise customers, including 300 of the Fortune 500, in 190+ countries; part of the Tata Group.",
       "enabled": true,
-      "open_question": "Confirm this definition and the TCL-today profile, both taken from tatacommunications.com on 4 Oct 2026, with TCL stakeholders.",
-      "version": 3
+      "open_question": "Confirm this definition and the \"what Tata has today\" text, both taken from tatacommunications.com on 4 Oct 2026, with Tata.",
+      "version": 3,
+      "levers": [
+        {
+          "lever_id": "iot_contribution",
+          "name": "Contribution",
+          "mechanism_id": "earn",
+          "text": "Contribution from activated, paying devices rather than devices shipped or registered"
+        },
+        {
+          "lever_id": "iot_delivery_cost",
+          "name": "Delivery cost",
+          "mechanism_id": "reduce_cost",
+          "text": "Lower lifecycle servicing cost through remote provisioning, diagnosis and updates"
+        }
+      ],
+      "key_metrics": "Active paying devices; paid lifetime; field visits avoided where Tata bears the cost",
+      "bottlenecks": [
+        "Device and network interoperability",
+        "Enterprise rollout across the device lifecycle"
+      ],
+      "cautions": "",
+      "finance_defaults": {
+        "margin_low": null,
+        "margin_high": null,
+        "loss_without": null,
+        "loss_with": null
+      }
     },
     {
       "fabric_id": "media",
@@ -52,7 +184,33 @@
       "tcl_today": "Media Fabric, for broadcasters, sports bodies, content owners, streaming and gaming companies: media cloud and media edge, a video CDN, fibre and IP video contribution and distribution (Media Switch), remote and studio production, playout and channel origination, uplink and downlink and alternatives to satellite, live event services, fan engagement, and gaming and esports infrastructure. Scale: 70+ media cloud, edge and CDN locations; 200+ media edge compute nodes; 100,000+ events delivered, including 5,000+ remote productions; 1,000+ media hotspots in 400+ cities; 27 PB of media storage. Customers include Formula 1 (official broadcast connectivity partner), United Rugby Championship and SailGP. Recognition: Frost & Sullivan CDN radar; IDC MarketScape for commercial edge delivery and media cloud services. Source: https://www.tatacommunications.com/media-entertainment Company-wide: about 5,000 enterprise customers, including 300 of the Fortune 500, in 190+ countries; part of the Tata Group.",
       "enabled": true,
       "open_question": "New on 4 Oct: TCL's site names a Media Fabric. Confirm the scope, and the label colour (their violet sits close to Interaction's purple), with TCL stakeholders.",
-      "version": 2
+      "version": 2,
+      "levers": [
+        {
+          "lever_id": "media_contribution",
+          "name": "Contribution",
+          "mechanism_id": "earn",
+          "text": "Contribution from paid events or customers, with no assumed price premium"
+        },
+        {
+          "lever_id": "media_delivery_cost",
+          "name": "Delivery cost",
+          "mechanism_id": "reduce_cost",
+          "text": "Lower cost per comparable event through remote production or reusable infrastructure"
+        }
+      ],
+      "key_metrics": "Contract value; cost per event at comparable reliability and latency",
+      "bottlenecks": [
+        "Reliability under peak event demand",
+        "Integration with customer and partner production workflows"
+      ],
+      "cautions": "",
+      "finance_defaults": {
+        "margin_low": null,
+        "margin_high": null,
+        "loss_without": null,
+        "loss_with": null
+      }
     }
   ],
   "note": "A technology can touch several fabrics; it is assessed separately in each. Security and AI cross-cut all four — a cross-cutting technology is assessed in the fabric where its buyer sits."

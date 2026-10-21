@@ -6,7 +6,6 @@ the Briefing lists findings in; it isn't part of the signals hash, so
 reordering marks no page as not yet checked."""
 
 import re
-from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
@@ -15,7 +14,9 @@ from pymongo import ReturnDocument
 
 from app.services import busy
 from app.services.db.mongo import get_collection
+from app.services.runs.store import COLLECTIONS
 from app.services.signals import recheck, snapshot
+from app.services.timezone import now_utc
 
 router = APIRouter()
 
@@ -31,10 +32,6 @@ class SignalEdit(BaseModel):
 
 class SignalOrder(BaseModel):
     ids: list[str] = Field(min_length=1, max_length=500)  # every never-miss signal, in its new order
-
-
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 def _slug(name: str) -> str:
@@ -79,7 +76,7 @@ def _counts(run_id: str | None = None) -> dict[str, int]:
 @router.get("/signals")
 def list_signals() -> dict:
     rows = list(get_collection("signals").find().sort([("mode", -1), ("order", 1), ("name", 1)]))
-    latest = get_collection("runs").find_one(sort=[("run_start_date_time", -1)], projection={"_id": 1})
+    latest = get_collection("runs").find_one(COLLECTIONS, sort=[("run_start_date_time", -1)], projection={"_id": 1})
     total, last = _counts(), (_counts(latest["_id"]) if latest else {})
     current = snapshot.current_hash()
     return {"signals": [{**r, "hits_total": total.get(r["_id"], 0),
@@ -99,7 +96,7 @@ def add_signal(edit: SignalEdit) -> dict:
     last = get_collection("signals").find_one(sort=[("order", -1)], projection={"order": 1})
     doc = {"_id": signal_id, "signal_id": signal_id, "name": name,
            "look_for": edit.look_for.strip(), "mode": edit.mode, "enabled": edit.enabled,
-           "order": ((last or {}).get("order") or 0) + 1, "updated_at": _now()}
+           "order": ((last or {}).get("order") or 0) + 1, "updated_at": now_utc()}
     get_collection("signals").insert_one(doc)
     return doc
 
@@ -113,7 +110,7 @@ def reorder_signals(params: SignalOrder) -> dict:
     if len(params.ids) != len(set(params.ids)) or set(params.ids) != set(current):
         raise HTTPException(status_code=422,
                             detail="Send every never-miss signal exactly once, in the new order.")
-    now = _now()
+    now = now_utc()
     for position, signal_id in enumerate(params.ids, start=1):
         if current[signal_id] != position:
             coll.update_one({"_id": signal_id}, {"$set": {"order": position, "updated_at": now}})
@@ -126,7 +123,7 @@ def update_signal(signal_id: str, edit: SignalEdit) -> dict:
     updated = get_collection("signals").find_one_and_update(
         {"_id": signal_id},
         {"$set": {"name": name, "look_for": edit.look_for.strip(), "mode": edit.mode,
-                  "enabled": edit.enabled, "updated_at": _now()}},
+                  "enabled": edit.enabled, "updated_at": now_utc()}},
         return_document=ReturnDocument.AFTER)
     if updated is None:
         raise HTTPException(status_code=404, detail=f"unknown signal {signal_id!r}")

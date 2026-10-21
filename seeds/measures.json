@@ -13,8 +13,9 @@
         "high": "8–10: reshapes a multi-billion category or creates one."
       },
       "required_evidence": "At least one analyst or primary market figure WITH its scope and date recorded. One TAM figure is thin support — say so.",
-      "open_question": "Anchor thresholds ($100M / $1B) to be confirmed with the client.",
-      "version": 1
+      "open_question": "The $100M and $1B marks for a low and a high score: to confirm with Tata.",
+      "version": 1,
+      "scope": "technology"
     },
     {
       "measure_id": "growth",
@@ -30,7 +31,8 @@
       },
       "required_evidence": "Dated series or repeated events across the evidence window (funding, launches, adoptions), not a single enthusiastic article.",
       "open_question": null,
-      "version": 1
+      "version": 1,
+      "scope": "technology"
     },
     {
       "measure_id": "use-case-breadth",
@@ -46,7 +48,8 @@
       },
       "required_evidence": "Distinct named use cases, each with at least one piece of evidence; hypothetical uses do not count.",
       "open_question": null,
-      "version": 1
+      "version": 1,
+      "scope": "fabric"
     },
     {
       "measure_id": "fabric-fit",
@@ -62,7 +65,8 @@
       },
       "required_evidence": "Technical descriptions concrete enough to map onto the fabric's services; at least one piece of evidence naming a use in this fabric's domain.",
       "open_question": null,
-      "version": 1
+      "version": 1,
+      "scope": "fabric"
     },
     {
       "measure_id": "portfolio-adjacency",
@@ -78,7 +82,8 @@
       },
       "required_evidence": "What the technology needs to operate (infrastructure, data, distribution), mappable against the TCL portfolio.",
       "open_question": "Depends on the TCL portfolio description, pending stakeholder interviews.",
-      "version": 1
+      "version": 1,
+      "scope": "fabric"
     },
     {
       "measure_id": "right-to-play",
@@ -94,7 +99,8 @@
       },
       "required_evidence": "Who buys it, from whom today, and what the buying criteria are.",
       "open_question": null,
-      "version": 1
+      "version": 1,
+      "scope": "fabric"
     },
     {
       "measure_id": "maturity-trl",
@@ -110,7 +116,8 @@
       },
       "required_evidence": "Dated evidence of demonstrations, trials, deployments or ratified standards — a vendor claim alone does not raise TRL.",
       "open_question": null,
-      "version": 1
+      "version": 1,
+      "scope": "technology"
     },
     {
       "measure_id": "commercial-adoption",
@@ -126,7 +133,8 @@
       },
       "required_evidence": "Named deployments, revenue disclosures, procurement or operator announcements — repeated coverage of the SAME deal counts once.",
       "open_question": null,
-      "version": 1
+      "version": 1,
+      "scope": "fabric"
     },
     {
       "measure_id": "deliverability",
@@ -142,7 +150,8 @@
       },
       "required_evidence": "What deployments actually required (skills, capex, timelines, dependencies); regulatory posture where relevant.",
       "open_question": null,
-      "version": 1
+      "version": 1,
+      "scope": "fabric"
     },
     {
       "measure_id": "disruption-threat",
@@ -158,7 +167,8 @@
       },
       "required_evidence": "Evidence of substitution actually happening or being sold — competitor positioning, customer pilots replacing incumbent services.",
       "open_question": "Depends on the TCL portfolio description, pending stakeholder interviews.",
-      "version": 1
+      "version": 1,
+      "scope": "tata"
     },
     {
       "measure_id": "serviceable-capture",
@@ -174,7 +184,8 @@
       },
       "required_evidence": "Market shape by segment/geography against TCL's footprint. Depends on addressable-market being scorable; inherit its thinness.",
       "open_question": null,
-      "version": 1
+      "version": 1,
+      "scope": "tata"
     },
     {
       "measure_id": "capability-gap",
@@ -190,7 +201,8 @@
       },
       "required_evidence": "What delivering requires versus what the portfolio shows TCL operates; hiring or acquisition signals where present.",
       "open_question": "Depends on the TCL portfolio description, pending stakeholder interviews.",
-      "version": 1
+      "version": 1,
+      "scope": "fabric"
     }
   ]
 }

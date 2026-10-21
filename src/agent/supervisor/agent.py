@@ -10,11 +10,18 @@ from deepagents import create_deep_agent
 
 from agent.scout.agent import run_scout
 from agent.supervisor.tools.sources import fetch_sources, make_sources_tool
+from app.services.llm.context import with_context
 from app.services.prompts import PromptStore
 from app.services.runs import store
 from app.settings import get_settings
 
 log = logging.getLogger(__name__)
+
+
+def supervisor_values(category: str) -> dict:
+    """The supervisor skill's blanks. The Skills page's preview fills them
+    with this same function, so it shows exactly what a run sends."""
+    return {"category": category}
 
 
 class Supervisor:
@@ -26,16 +33,17 @@ class Supervisor:
         return create_deep_agent(
             model=self.llm.chat_model(),
             tools=[make_sources_tool(self.category)],
-            system_prompt=PromptStore.get("supervisor").render(category=self.category),
+            system_prompt=PromptStore.get("supervisor").render(**supervisor_values(self.category)),
             name=f"supervisor-{self.category.lower()}",
         )
 
     def run(self, run_id: str, executor: Executor, params: dict) -> None:
         try:
-            self.build_agent().invoke(
-                {"messages": [{"role": "user", "content": "Survey your category's sources."}]},
-                {"recursion_limit": 20},
-            )
+            with with_context(run_kind="collection", run_id=run_id, skills=["supervisor"]):
+                self.build_agent().invoke(
+                    {"messages": [{"role": "user", "content": "Survey your category's sources."}]},
+                    {"recursion_limit": 20},
+                )
         except Exception:  # placeholder-prompt agent; scouting proceeds regardless
             log.exception("supervisor agent failed for %s", self.category)
 

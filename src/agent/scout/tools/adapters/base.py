@@ -19,13 +19,14 @@ summary page per company or keyword, with the previous run's count."""
 
 import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta
 
 import httpx
 
 from agent.scout.tools.context import Context, Outcome
 from app.services.db.mongo import get_collection
 from app.services.llm import call_with_backoff
+from app.services.timezone import now_utc
 
 log = logging.getLogger(__name__)
 
@@ -101,10 +102,6 @@ class Adapter:
         raise NotImplementedError
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
 def collect(ctx: Context, source: dict, registry: dict) -> Outcome:
     outcome = Outcome()
     adapter = registry.get(source.get("adapter") or "")
@@ -141,7 +138,7 @@ def collect(ctx: Context, source: dict, registry: dict) -> Outcome:
             log.warning("%s search %r failed: %s", source["source_id"], query, exc)
             entry["error"] = str(exc)[:300]
             errors.append(f"{query}: {str(exc)[:200]}")
-        entry["checked_at"] = _now()
+        entry["checked_at"] = now_utc()
         progress[query] = entry
         # the app's own note — never part of the seeding data, no updated_at
         get_collection("sources").update_one(

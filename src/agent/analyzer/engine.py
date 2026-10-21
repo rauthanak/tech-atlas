@@ -12,25 +12,20 @@ marked partial. Roll-ups are recomputable later from stored scores without
 any LLM call."""
 
 import logging
-import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 
 from agent.analyzer.placement import compute_placement
+from app.services.llm.context import carry, with_context
 from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM, call_with_backoff, parse_json
 from app.services.prompts.store import PromptStore
-from app.settings import get_settings
+from app.services.timezone import now_utc
 
 log = logging.getLogger(__name__)
 
 RUNNING_STATES = {"running", "terminating"}
 TORA_AXES = ("market_potential", "strategic_fit", "adoption_readiness")
-
-
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 # ── run lifecycle ────────────────────────────────────────────────────
@@ -49,19 +44,20 @@ def create_scoring_run(params: dict) -> str:
         "measures": list(get_collection("measures").find()),
         "fabrics": list(get_collection("fabrics").find({"enabled": True})),
         "scoring_config": list(get_collection("scoring_config").find()),
+        "recipes": list(get_collection("recipes").find()),
     }
     techs = _select_technologies(params)
     get_collection("scoring_runs").insert_one({
         "_id": run_id,
         "status": "running",
         "stage": "preparing",
-        "stage_history": [{"stage": "preparing", "at": _now()}],
+        "stage_history": [{"stage": "preparing", "at": now_utc()}],
         "params": params,
         "snapshot": snapshot,
         "technologies": [{"tech_id": t["_id"], "name": t["name"],
                           "doc_count": t.get("doc_count", 0)} for t in techs],
         "progress": {"techs_total": len(techs), "techs_done": 0, "llm_calls": 0},
-        "started_at": _now(),
+        "started_at": now_utc(),
     })
     return run_id
 
@@ -94,20 +90,20 @@ def set_stage(run_id: str, stage: str) -> None:
     get_collection("scoring_runs").update_one(
         {"_id": run_id},
         {"$set": {"stage": stage},
-         "$push": {"stage_history": {"stage": stage, "at": _now()}}})
+         "$push": {"stage_history": {"stage": stage, "at": now_utc()}}})
 
 
 def finish(run_id: str, status: str, error: str | None = None) -> None:
     set_stage(run_id, "done")
     get_collection("scoring_runs").update_one({"_id": run_id}, {"$set": {
-        "status": status, "error": error, "finished_at": _now()}})
+        "status": status, "error": error, "finished_at": now_utc()}})
 
 
 def _bump(run_id: str, **inc) -> None:
     get_collection("scoring_runs").update_one(
         {"_id": run_id},
         {"$inc": {f"progress.{k}": v for k, v in inc.items()},
-         "$set": {"heartbeat": _now()}})
+         "$set": {"heartbeat": now_utc()}})
 
 
 def reconcile_stale_scoring_runs() -> None:
@@ -115,7 +111,7 @@ def reconcile_stale_scoring_runs() -> None:
     result = get_collection("scoring_runs").update_many(
         {"status": {"$in": list(RUNNING_STATES)}},
         {"$set": {"status": "terminated", "error": "interrupted — found running at start-up",
-                  "finished_at": _now()}})
+                  "finished_at": now_utc()}})
     if result.modified_count:
         log.warning("reconciled %d stale scoring run(s)", result.modified_count)
 
@@ -124,18 +120,20 @@ def shutdown() -> None:
     result = get_collection("scoring_runs").update_many(
         {"status": {"$in": list(RUNNING_STATES)}},
         {"$set": {"status": "terminated", "error": "interrupted — service shutdown",
-                  "finished_at": _now()}})
+                  "finished_at": now_utc()}})
     if result.modified_count:
         log.warning("shutdown: marked %d scoring run(s) terminated", result.modified_count)
 
 
 # ── evidence dossier ─────────────────────────────────────────────────
 
-def build_dossier(tech_name: str, max_tokens: int) -> dict:
+def build_dossier(tech_name: str, max_tokens: int, signals_first: bool = False) -> dict:
     """Every stamped document's summary — full dossier, no doc cap. Deduped by
-    URL keeping the newest visit. The token ceiling is a guard for
-    pathological volume only: oldest entries drop first, and the dossier says
-    so. Returns the `text` with what it read: `pages`, the page versions (an
+    URL keeping the newest visit. With `signals_first`, pages carrying a kept
+    finding about this technology come first, then the rest, each group
+    newest first. The token ceiling is a guard for pathological volume only:
+    the last entries drop first (the oldest, after the findings), and the
+    dossier says so. Returns the `text` with what it read: `pages`, the page versions (an
     unchanged revisit counts as the version it repeats); `runs`, the
     collection runs those visits came from; and `from`, the newest-visit time
     of the oldest page read, set only when the guard dropped pages."""
@@ -144,12 +142,20 @@ def build_dossier(tech_name: str, max_tokens: int) -> dict:
             {"technologies_resolved": tech_name},
             {"end_url": 1, "title": 1, "kind": 1, "published_date": 1,
              "scraped_at": 1, "summary_text": 1, "scout_take": 1,
-             "source_id": 1, "run_id": 1, "is_stub": 1, "ref_doc_id": 1}).sort("scraped_at", -1):
+             "source_id": 1, "run_id": 1, "is_stub": 1, "ref_doc_id": 1,
+             "signals.technologies_resolved": 1, "ignored_by": 1}).sort("scraped_at", -1):
         seen.setdefault(d.get("end_url") or str(d["_id"]), d)
+    if signals_first:
+        def has_finding(d: dict) -> bool:
+            return not d.get("ignored_by") and any(tech_name in (s.get("technologies_resolved") or [])
+                                                  for s in d.get("signals") or [])
+        ordered = sorted(seen.items(), key=lambda kv: not has_finding(kv[1]))  # stable: newest first within each
+        seen = dict(ordered)
     kept, pages, runs, cutoff, last_visit = [], [], set(), None, None
     total_chars, budget = 0, max_tokens * 4  # ~4 chars per token
     for d in seen.values():  # newest first; oldest fall off if the guard trips
-        lines = [f"- [{d.get('kind') or 'article'}] {d.get('title') or d.get('end_url')}",
+        mark = f"[{len(pages) + 1}]" if signals_first else "-"  # numbered: answers can cite pages by number
+        lines = [f"{mark} [{d.get('kind') or 'article'}] {d.get('title') or d.get('end_url')}",
                  f"  url: {d.get('end_url')} · source: {d.get('source_id')}"
                  f" · published: {d.get('published_date') or 'n/a'}"
                  f" · extracted: {str(d.get('scraped_at'))[:10]}"]
@@ -170,6 +176,47 @@ def build_dossier(tech_name: str, max_tokens: int) -> dict:
         if d.get("run_id"):
             runs.add(d["run_id"])
     return {"text": "\n\n".join(kept), "pages": pages, "runs": sorted(runs), "from": cutoff}
+
+
+# ── the skills' blanks ───────────────────────────────────────────────
+# The Skills page's preview fills them with these same functions, so it
+# shows exactly what a run sends.
+
+def dossier_limit(scoring_config: list[dict]) -> int:
+    """The evidence ceiling, in tokens."""
+    evidence_cfg = next((c for c in scoring_config if c["_id"] == "evidence"), {})
+    return int(evidence_cfg.get("max_dossier_tokens", 300000))
+
+
+def fabric_list(fabrics: list[dict]) -> str:
+    return "\n".join(f"- {f['_id']}: {f['name']} — {f['definition']}" for f in fabrics)
+
+
+def fabric_values(fabric: dict) -> dict:
+    """A fabric's blanks, wherever a skill is about one fabric."""
+    return {"fabric_name": fabric.get("name", ""), "fabric_definition": fabric.get("definition", ""),
+            "tcl_today": fabric.get("tcl_today") or "Not described."}  # TCL's side of the TCL-position measures
+
+
+def fabric_relevance_values(technology: str, fabrics: list[dict], dossier: str) -> dict:
+    return {"technology": technology, "fabrics": fabric_list(fabrics), "evidence": dossier}
+
+
+def measure_scoring_values(measure: dict, technology: str, fabric: dict, dossier: str) -> dict:
+    anchors = measure.get("anchors", {})
+    return {
+        "measure_name": f"{measure.get('code')} {measure.get('name')}",
+        "definition": measure.get("definition", ""),
+        "anchors": "\n".join(f"{k}: {v}" for k, v in anchors.items()),
+        "required_evidence": measure.get("required_evidence", ""),
+        "technology": technology,
+        **fabric_values(fabric),
+        "evidence": dossier,
+    }
+
+
+def watch_metrics_values(technology: str, dossier: str) -> dict:
+    return {"technology": technology, "evidence": dossier}
 
 
 # ── scoring ──────────────────────────────────────────────────────────
@@ -197,9 +244,9 @@ def _relevant_fabrics(llm: LLM, run_id: str, tech_name: str,
     all enabled fabrics — a gate failure must widen scoring, never narrow it."""
     try:
         prompt = PromptStore.get("fabric_relevance")
-        listing = "\n".join(f"- {f['_id']}: {f['name']} — {f['definition']}" for f in fabrics)
-        data = _ask_json(llm, prompt.render(
-            technology=tech_name, fabrics=listing, evidence=dossier), run_id)
+        with with_context(skills=["fabric_relevance"]):
+            data = _ask_json(llm, prompt.render(
+                **fabric_relevance_values(tech_name, fabrics, dossier)), run_id)
         ids = set(data.get("fabrics", [])) if isinstance(data, dict) else set()
         chosen = [f for f in fabrics if f["_id"] in ids]
         if chosen:
@@ -211,23 +258,24 @@ def _relevant_fabrics(llm: LLM, run_id: str, tech_name: str,
 
 def _score_measure(llm: LLM, run_id: str, measure: dict, tech_name: str,
                    fabric: dict, dossier: str) -> dict:
-    anchors = measure.get("anchors", {})
     rendered = PromptStore.get("measure_scoring").render(
-        measure_name=f"{measure.get('code')} {measure.get('name')}",
-        definition=measure.get("definition", ""),
-        anchors="\n".join(f"{k}: {v}" for k, v in anchors.items()),
-        required_evidence=measure.get("required_evidence", ""),
-        technology=tech_name,
-        fabric_name=fabric.get("name", ""),
-        fabric_definition=fabric.get("definition", ""),
-        tcl_today=fabric.get("tcl_today") or "Not described.",  # TCL's side of the TCL-position measures
-        evidence=dossier,
-    )
-    data = _ask_json(llm, rendered, run_id)
+        **measure_scoring_values(measure, tech_name, fabric, dossier))
+    with with_context(skills=["measure_scoring"], fabric_id=fabric.get("_id")):
+        data = _ask_json(llm, rendered, run_id)
     if not isinstance(data, dict):
-        return {"score": None, "unscorable": True,
-                "missing": "scoring call failed — re-score to retry",
-                "justification": None, "evidence_urls": [], "counter_case": None}
+        return unscored("the reply wasn't a JSON object, twice")
+    return measure_result(data)
+
+
+def unscored(why: str) -> dict:
+    """A measure whose call failed, saying why."""
+    return {"score": None, "unscorable": True, "missing": f"scoring call failed ({why}) — re-score to retry",
+            "justification": None, "evidence_urls": [], "counter_case": None}
+
+
+def measure_result(data: dict) -> dict:
+    """A measure's answer under the scoring rules: the score clamped to 0–10,
+    and a score that cites no pages doesn't count."""
     score = data.get("score")
     if isinstance(score, (int, float)):
         score = max(0, min(10, round(float(score), 1)))
@@ -270,28 +318,86 @@ def rollup_tora(measure_results: dict[str, dict], measures: list[dict]) -> dict:
     return tora
 
 
-def assess_technology(run_id: str, tech_id: str, llm: LLM,
-                      executor: ThreadPoolExecutor) -> str:
-    """Score one technology across its relevant fabrics — the unit of work the
-    analyzer agent (and the deterministic sweep) invokes."""
+def rollup(measure_results: dict[str, dict], measures: list[dict], config: list[dict], basis: str) -> dict:
+    """What an assessment stores from its measures' scores: the TORA roll-up,
+    the placement, and how they were reached."""
+    return {"tora": rollup_tora(measure_results, measures),
+            "placement": compute_placement(measure_results, config), "tora_basis": basis}
+
+
+def _load(run_id: str, tech_id: str, signals_first: bool = False) -> tuple[dict, dict, dict] | str:
+    """(the run, the technology's entry in it, its evidence dossier), or what
+    to say instead when there's nothing to assess (no evidence is recorded as
+    a skip)."""
     run = get_collection("scoring_runs").find_one({"_id": run_id})
     if run is None:
         return f"unknown scoring run {run_id}"
     entry = next((t for t in run["technologies"] if t["tech_id"] == tech_id), None)
     if entry is None:
         return f"{tech_id} is not part of this scoring run"
-    snapshot = run["snapshot"]
-    measures = snapshot["measures"]
-    fabrics = snapshot["fabrics"]
-    evidence_cfg = next((c for c in snapshot["scoring_config"]
-                         if c["_id"] == "evidence"), {})
-    max_tokens = int(evidence_cfg.get("max_dossier_tokens", 300000))
-
-    built = build_dossier(entry["name"], max_tokens)
-    dossier = built["text"]
-    if not dossier:
+    built = build_dossier(entry["name"], dossier_limit(run["snapshot"]["scoring_config"]), signals_first)
+    if not built["text"]:
         _record_skip(run_id, entry, "no evidence — no documents stamped with this technology")
         return f"{entry['name']}: skipped, no evidence"
+    return run, entry, built
+
+
+def assessment_doc(run: dict, entry: dict, fabric: dict, built: dict, results: dict[str, dict], **extra) -> dict:
+    """A technology's assessment in one fabric, as stored: each measure's
+    result, rolled up and placed under the run's frozen method, with the
+    evidence it read."""
+    measures, config = run["snapshot"]["measures"], run["snapshot"]["scoring_config"]
+    return {
+        "_id": f"{run['_id']}:{entry['tech_id']}:{fabric['_id']}",
+        "scoring_run_id": run["_id"],
+        "tech_id": entry["tech_id"],
+        "technology": entry["name"],
+        "fabric_id": fabric["_id"],
+        "fabric": fabric.get("name"),
+        "doc_count": len(built["pages"]),  # pages actually read, after the size guard
+        "evidence_runs": built["runs"],  # the collection runs whose pages the scorer read
+        "dossier_pages": built["pages"],  # the page versions read: new evidence is any other
+        **({"dossier_from": built["from"]} if built["from"] else {}),
+        "measures": {mid: {**r, "code": next((m.get("code") for m in measures if m["_id"] == mid), mid)}
+                     for mid, r in results.items()},
+        # compact copy of the outside-TORA scores so list views can show
+        # them without shipping the full measure payloads
+        "extras": {m["code"]: results[m["_id"]]["score"]
+                   for m in measures if str(m.get("code", "")).startswith("X") and m["_id"] in results},
+        **extra,
+        **rollup(results, measures, config, "scored"),
+        "created_at": now_utc(),
+    }
+
+
+def assess_technology(run_id: str, tech_id: str, llm: LLM,
+                      executor: ThreadPoolExecutor) -> str:
+    """Score one technology across its relevant fabrics — the unit of work the
+    analyzer agent (and the deterministic sweep) invokes."""
+    with with_context(run_kind="scoring", run_id=run_id, tech_id=tech_id):
+        if engine_mode(run_id) == "stacked":
+            from agent.analyzer import stacked
+            return stacked.assess(run_id, tech_id, llm, executor)
+        return _assess_per_measure(run_id, tech_id, llm, executor)
+
+
+def engine_mode(run_id: str) -> str:
+    """How a run assesses: `stacked` (a technology call, then one call per
+    fabric) or `per_measure` (one call per measure per fabric). A run's
+    params.engine wins; else the setting frozen with the run's method."""
+    run = get_collection("scoring_runs").find_one({"_id": run_id}, {"params.engine": 1, "snapshot.scoring_config": 1}) or {}
+    if (run.get("params") or {}).get("engine") in ("stacked", "per_measure"):
+        return run["params"]["engine"]
+    cfg = next((c for c in (run.get("snapshot") or {}).get("scoring_config") or [] if c["_id"] == "engine"), {})
+    return cfg.get("mode") or "per_measure"
+
+
+def _assess_per_measure(run_id: str, tech_id: str, llm: LLM, executor: ThreadPoolExecutor) -> str:
+    loaded = _load(run_id, tech_id)
+    if isinstance(loaded, str):
+        return loaded
+    run, entry, built = loaded
+    measures, fabrics, dossier = run["snapshot"]["measures"], run["snapshot"]["fabrics"], built["text"]
 
     # the gate's verdict is stored on the run, so a resume knows exactly which
     # fabrics are owed without re-gating (and without missing one)
@@ -310,34 +416,10 @@ def assess_technology(run_id: str, tech_id: str, llm: LLM,
         if existing:
             continue  # agent already did it; the sweep must not redo it
         futures = {m["_id"]: executor.submit(
-            _score_measure, llm, run_id, m, entry["name"], fabric, dossier)
+            carry(_score_measure), llm, run_id, m, entry["name"], fabric, dossier)
             for m in measures}
         results = {mid: f.result() for mid, f in futures.items()}
-        get_collection("assessments").insert_one({
-            "_id": f"{run_id}:{tech_id}:{fabric['_id']}",
-            "scoring_run_id": run_id,
-            "tech_id": tech_id,
-            "technology": entry["name"],
-            "fabric_id": fabric["_id"],
-            "fabric": fabric.get("name"),
-            "doc_count": len(built["pages"]),  # pages actually read, after the size guard
-            "evidence_runs": built["runs"],  # the collection runs whose pages the scorer read
-            "dossier_pages": built["pages"],  # the page versions read: new evidence is any other
-            **({"dossier_from": built["from"]} if built["from"] else {}),
-            "measures": {mid: {**results[mid],
-                               "code": next((m.get("code") for m in measures
-                                             if m["_id"] == mid), mid)}
-                         for mid in results},
-            "tora": rollup_tora(results, measures),
-            "placement": compute_placement(results, snapshot["scoring_config"]),
-            # compact copy of the outside-TORA scores so list views can show
-            # them without shipping the full measure payloads
-            "extras": {m["code"]: results[m["_id"]]["score"]
-                       for m in measures
-                       if str(m.get("code", "")).startswith("X") and m["_id"] in results},
-            "tora_basis": "scored",
-            "created_at": _now(),
-        })
+        get_collection("assessments").insert_one(assessment_doc(run, entry, fabric, built, results))
         assessed.append(fabric.get("name"))
 
     # watch metrics — one call per technology per run (fabric-independent),
@@ -349,25 +431,35 @@ def assess_technology(run_id: str, tech_id: str, llm: LLM,
     if not has_watch and not cancelled(run_id) and \
             get_collection("assessments").count_documents(
                 {"scoring_run_id": run_id, "tech_id": tech_id}) > 0:
-        metrics: list = []
-        try:
-            data = _ask_json(llm, PromptStore.get("watch_metrics").render(
-                technology=entry["name"], evidence=dossier), run_id)
-            if isinstance(data, list):
-                metrics = [m for m in data if isinstance(m, dict) and m.get("metric")]
-        except Exception:
-            log.exception("watch metrics failed for %s", entry["name"])
+        metrics = watch_metrics_call(llm, run_id, entry["name"], dossier)
         get_collection("assessments").update_many(
             {"scoring_run_id": run_id, "tech_id": tech_id},
             {"$set": {"watch_metrics": metrics}})
 
+    mark_progress(run_id)
+    return f"{entry['name']}: assessed in {', '.join(assessed) or 'no new fabrics'}"
+
+
+def watch_metrics_call(llm: LLM, run_id: str, tech_name: str, dossier: str) -> list:
+    """The metrics to watch, in one call of their own; none when it fails."""
+    try:
+        with with_context(skills=["watch_metrics"]):
+            data = _ask_json(llm, PromptStore.get("watch_metrics").render(
+                **watch_metrics_values(tech_name, dossier)), run_id)
+        if isinstance(data, list):
+            return [m for m in data if isinstance(m, dict) and m.get("metric")]
+    except Exception:
+        log.exception("watch metrics failed for %s", tech_name)
+    return []
+
+
+def mark_progress(run_id: str) -> None:
     done = len(get_collection("assessments").distinct("tech_id", {"scoring_run_id": run_id}))
     done += len(get_collection("scoring_runs").find_one(
         {"_id": run_id}, {"skipped": 1}).get("skipped", []))
     get_collection("scoring_runs").update_one(
         {"_id": run_id},
-        {"$set": {"progress.techs_done": done, "heartbeat": _now()}})
-    return f"{entry['name']}: assessed in {', '.join(assessed) or 'no new fabrics'}"
+        {"$set": {"progress.techs_done": done, "heartbeat": now_utc()}})
 
 
 def _record_skip(run_id: str, entry: dict, reason: str) -> None:
@@ -390,9 +482,6 @@ def recompute_run(run_id: str) -> int:
     count = 0
     for a in get_collection("assessments").find({"scoring_run_id": run_id}):
         get_collection("assessments").update_one(
-            {"_id": a["_id"]},
-            {"$set": {"tora": rollup_tora(a["measures"], measures),
-                      "placement": compute_placement(a["measures"], config),
-                      "tora_basis": f"recomputed {_now()}"}})
+            {"_id": a["_id"]}, {"$set": rollup(a["measures"], measures, config, f"recomputed {now_utc()}")})
         count += 1
     return count

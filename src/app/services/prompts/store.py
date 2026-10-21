@@ -24,6 +24,8 @@ class Prompt:
     prompt: str  # the actual prompt text, with {placeholder} slots
     variables: list[str]  # the placeholder names render() requires
     version: int
+    reasoning: str = "off"  # "on": the model reasons before it answers (services/llm)
+    title: str = ""
 
     def render(self, **values: str) -> str:
         """Return the actual prompt as one string — system, a blank line, then the
@@ -50,4 +52,6 @@ class PromptStore:
             prompt=doc["prompt"],
             variables=doc.get("variables", []),
             version=doc.get("version", 1),
+            reasoning=doc.get("reasoning", "off"),
+            title=doc.get("title") or doc["name"],
         )

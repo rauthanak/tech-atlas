@@ -1,0 +1,58 @@
+{
+  "trl_levels": [
+    {
+      "trl_id": "1",
+      "level": 1,
+      "name": "Basic principles observed",
+      "definition": "Scientific research has begun; the principles are reported, not yet applied."
+    },
+    {
+      "trl_id": "2",
+      "level": 2,
+      "name": "Concept formulated",
+      "definition": "A practical use is proposed, but nothing has been built to prove it."
+    },
+    {
+      "trl_id": "3",
+      "level": 3,
+      "name": "Proof of concept in the lab",
+      "definition": "Experiments show the key functions work, in a lab."
+    },
+    {
+      "trl_id": "4",
+      "level": 4,
+      "name": "Validated in the lab",
+      "definition": "Components work together in a lab setting."
+    },
+    {
+      "trl_id": "5",
+      "level": 5,
+      "name": "Validated in a relevant setting",
+      "definition": "Components tested in conditions close to real use."
+    },
+    {
+      "trl_id": "6",
+      "level": 6,
+      "name": "A prototype shown in a real setting",
+      "definition": "A working prototype demonstrated in a relevant, realistic setting."
+    },
+    {
+      "trl_id": "7",
+      "level": 7,
+      "name": "A full prototype working in operation",
+      "definition": "A near-final system demonstrated in real operation."
+    },
+    {
+      "trl_id": "8",
+      "level": 8,
+      "name": "Complete and qualified",
+      "definition": "The final system is built and passes its tests and qualification."
+    },
+    {
+      "trl_id": "9",
+      "level": 9,
+      "name": "Proven in operation",
+      "definition": "The system is in successful real-world use."
+    }
+  ]
+}

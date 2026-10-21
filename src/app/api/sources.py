@@ -7,7 +7,6 @@ query (a data source; saved searches answered by its adapter) or none (never
 collected — terms forbid it or there is no usable access; cannot be enabled).
 `progress` (per saved search) is the app's own note, written by runs."""
 
-from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
@@ -17,6 +16,7 @@ from pymongo import ReturnDocument
 from agent.scout.tools import adapters
 from app.horizons import HORIZONS
 from app.services.db.mongo import get_collection
+from app.services.timezone import now_utc
 
 router = APIRouter()
 
@@ -96,7 +96,7 @@ def update_source(source_id: str, edit: SourceEdit) -> dict:
     if edit.searches is not None:  # removing a saved search also removes its progress
         changes["progress"] = [p for p in current.get("progress") or []
                                if p.get("search") in edit.searches]
-    changes["updated_at"] = datetime.now(timezone.utc).isoformat()
+    changes["updated_at"] = now_utc()
     update: dict = {"$set": changes}
     if cleared:
         update["$unset"] = cleared

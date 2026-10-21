@@ -3,7 +3,7 @@
     {
       "signal_id": "funding-round",
       "name": "Funding round",
-      "look_for": "A company raises money. Note the stage, the amount and the investors, including corporate venture arms and sovereign or pension funds. Significant: a disclosed amount, or a named top-tier, corporate or sovereign investor.",
+      "look_for": "A company raises money at any stage, from pre-seed and seed to late stage. Note the stage, the amount and the investors, including corporate venture arms and sovereign or pension funds. Significant: a disclosed amount, a named top-tier, corporate or sovereign investor, or a first round for a deep-tech company.",
       "mode": "never_miss",
       "enabled": true,
       "order": 1
@@ -62,7 +62,7 @@
       "look_for": "An official warning, directive or vulnerability notice from a security agency (for example CISA, ENISA or CERT-In) that affects a technology.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 8
+      "order": 9
     },
     {
       "signal_id": "major-outage",
@@ -70,7 +70,7 @@
       "look_for": "A major outage at a cloud, network, CDN, security or communications provider, or a subsea or terrestrial cable cut. Note who, where, for how long, the cause and the impact.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 9
+      "order": 10
     },
     {
       "signal_id": "public-tender",
@@ -78,7 +78,7 @@
       "look_for": "A government or public body buying a technology, or inviting bids for it.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 10
+      "order": 11
     },
     {
       "signal_id": "patent-filing-or-grant",
@@ -86,7 +86,7 @@
       "look_for": "A patent filed or granted in a relevant area, especially by a competitor, a big technology company or a surprising new player, or filed in many countries.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 11
+      "order": 12
     },
     {
       "signal_id": "research-breakthrough",
@@ -94,7 +94,7 @@
       "look_for": "A measurable step forward: a new record, a beaten benchmark, a first demonstration or an independent replication. Incremental results don't count.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 12
+      "order": 13
     },
     {
       "signal_id": "top-conference-recognition",
@@ -102,7 +102,7 @@
       "look_for": "A paper accepted at, or an award from, a leading venue such as NeurIPS, SIGCOMM, NSDI, USENIX Security, MobiCom or OFC.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 13
+      "order": 14
     },
     {
       "signal_id": "prototype-or-field-trial",
@@ -110,15 +110,15 @@
       "look_for": "The technology working outside the lab: a demo, pilot or field trial, with the parties named.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 14
+      "order": 15
     },
     {
       "signal_id": "spin-out",
-      "name": "Spin-out",
-      "look_for": "A university or corporate lab spins out a company.",
+      "name": "Spin-out or startup launch",
+      "look_for": "A university or corporate lab spins out a company, or a new deep-tech startup is founded, incorporated or comes out of stealth. Note the founders, the backers and what it builds.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 15
+      "order": 16
     },
     {
       "signal_id": "standard-milestone",
@@ -126,7 +126,7 @@
       "look_for": "A standards body starts a work item or working group, adopts a draft, or ratifies or publishes a specification (for example 3GPP, IETF, ETSI, ITU, ISO or NIST).",
       "mode": "never_miss",
       "enabled": true,
-      "order": 16
+      "order": 17
     },
     {
       "signal_id": "open-source-milestone",
@@ -134,7 +134,7 @@
       "look_for": "A project launches, joins a foundation, graduates (for example at CNCF or Apache), or reaches a 1.0 release.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 17
+      "order": 18
     },
     {
       "signal_id": "alliance-formed",
@@ -142,7 +142,7 @@
       "look_for": "Companies form a consortium, alliance or industry group around a technology.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 18
+      "order": 19
     },
     {
       "signal_id": "product-launch",
@@ -150,7 +150,7 @@
       "look_for": "A vendor or hyperscaler launches a product or makes it generally available. A preview counts only if customers can use it.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 19
+      "order": 20
     },
     {
       "signal_id": "infrastructure-build",
@@ -158,15 +158,15 @@
       "look_for": "A new or upgraded subsea or terrestrial cable, cable landing station, network point of presence, data-centre or GPU region, or satellite constellation is announced, funded, completed or cancelled. Note who builds it, where, its capacity and when.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 20
+      "order": 21
     },
     {
       "signal_id": "competitor-move",
       "name": "Competitor move",
-      "look_for": "A company competing with Tata Communications launches, prices or invests in a technology, including in earnings calls or filings. For example: Orange Business, BT, Lumen, NTT, Colt or Verizon in networks; Zscaler, Palo Alto Networks or Cato Networks in security; Twilio, Sinch or Infobip in customer communications; Vodafone IoT, KORE or 1NCE in IoT; Akamai or LTN in media; Yotta, CtrlS or Jio in cloud in India.",
+      "look_for": "A company competing with Tata Communications launches, prices or invests in a technology, including in earnings calls or filings. For example: Orange Business, BT, Lumen, NTT, Colt or Verizon in networks; Zscaler, Palo Alto Networks or Cato Networks in security; Twilio, Sinch or Infobip in customer communications; Vodafone IoT, KORE or 1NCE in IoT; Akamai or LTN in media; Yotta, CtrlS or Jio in cloud in India. It counts especially when it is the company's first move into an area new to it: a first patent, research paper, product, acquisition or team there. Hyperscalers (AWS, Microsoft, Google) count when they move into Tata Communications' markets: enterprise connectivity (satellite included), cloud, security, customer communications, IoT or media services. Report it as a Competitor move even when the same news is also a product launch, partnership, acquisition or deployment.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 21
+      "order": 22
     },
     {
       "signal_id": "named-deployment",
@@ -174,15 +174,15 @@
       "look_for": "A named customer runs the technology in production.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 22
+      "order": 23
     },
     {
       "signal_id": "partnership",
       "name": "Partnership",
-      "look_for": "Companies team up to build, integrate or sell a technology. Note it especially when it involves one of Tata Communications' own partners: Cisco, AWS, Microsoft, TCS, Versa, NVIDIA or Johnson Controls.",
+      "look_for": "Companies, universities or governments team up to research, build, integrate or sell a technology, including a memorandum of understanding (MoU) or a joint research programme. Note it especially when it involves one of Tata Communications' own partners: Cisco, AWS, Microsoft, TCS, Versa, NVIDIA or Johnson Controls.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 23
+      "order": 24
     },
     {
       "signal_id": "price-change",
@@ -190,15 +190,15 @@
       "look_for": "A price cut or a new pricing model, a sign the technology is becoming a commodity or being pushed to market.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 24
+      "order": 25
     },
     {
       "signal_id": "market-figure",
-      "name": "Market figure",
-      "look_for": "An analyst market size, forecast or survey figure, with its scope and date.",
+      "name": "Market figure or analyst coverage",
+      "look_for": "An analyst market size, forecast or survey figure, with its scope and date; or an analyst firm covering a technology for the first time, such as its first report on it or its first appearance in a hype cycle, wave or quadrant.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 25
+      "order": 26
     },
     {
       "signal_id": "hiring-surge-or-new-team",
@@ -206,7 +206,7 @@
       "look_for": "Many open roles for a skill at a named employer, a sharp rise in such roles, a new team or lab, or a notable hire or departure.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 26
+      "order": 27
     },
     {
       "signal_id": "employment-trend",
@@ -214,7 +214,7 @@
       "look_for": "Official or reputable data showing that jobs or skills in a field are growing or shrinking.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 27
+      "order": 28
     },
     {
       "signal_id": "developer-adoption-jump",
@@ -222,7 +222,7 @@
       "look_for": "A sharp rise in downloads, stars, contributors or usage of a technology's tools.",
       "mode": "never_miss",
       "enabled": true,
-      "order": 28
+      "order": 29
     },
     {
       "signal_id": "single-job-ad",
@@ -279,6 +279,14 @@
       "mode": "can_ignore",
       "enabled": true,
       "order": 35
+    },
+    {
+      "signal_id": "approval-licence-or-certification",
+      "name": "Approval, licence or certification",
+      "look_for": "A regulator or certification body approves, licenses or certifies a technology, product or provider: for example a NIST validation of a post-quantum algorithm or module, a spectrum or satellite licence, or a telecom equipment certification. Note who granted it, to whom and for what.",
+      "mode": "never_miss",
+      "enabled": true,
+      "order": 8
     }
   ]
 }

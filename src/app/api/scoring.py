@@ -2,21 +2,17 @@
 the editable method behind the assessment stage. Reads feed the portal's
 Scoring tab; PUTs are admin edits (version bumped, timestamped)."""
 
-from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.services.db.mongo import get_collection
+from app.services.timezone import now_utc
 
 router = APIRouter()
 
 Axis = Literal["market_potential", "strategic_fit", "adoption_readiness", "extra"]
-
-
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 def _list(collection: str) -> list[dict]:
@@ -26,7 +22,7 @@ def _list(collection: str) -> list[dict]:
 def _apply_edit(collection: str, doc_id: str, changes: dict) -> dict:
     updated = get_collection(collection).find_one_and_update(
         {"_id": doc_id},
-        {"$set": {**changes, "updated_at": _now()}, "$inc": {"version": 1}},
+        {"$set": {**changes, "updated_at": now_utc()}, "$inc": {"version": 1}},
         return_document=True,
     )
     if updated is None:
@@ -73,12 +69,32 @@ def overview() -> dict:
 
 # ── fabrics ──────────────────────────────────────────────────────────
 
+class Lever(BaseModel):
+    lever_id: str = Field(min_length=1, max_length=100)
+    name: str = Field(min_length=1, max_length=100)
+    mechanism_id: str = Field(min_length=1, max_length=100)
+    text: str = Field(min_length=1, max_length=2000)
+
+
+class FinanceDefaults(BaseModel):
+    margin_low: float | None = Field(default=None, ge=0, le=1)
+    margin_high: float | None = Field(default=None, ge=0, le=1)
+    loss_without: float | None = Field(default=None, ge=0, le=1)
+    loss_with: float | None = Field(default=None, ge=0, le=1)
+
+
 class FabricEdit(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     definition: str = Field(min_length=1, max_length=4000)
     tcl_today: str | None = Field(default=None, max_length=4000)  # what TCL runs in it, with its source pages
     enabled: bool
     open_question: str | None = Field(default=None, max_length=1000)
+    # where the value lands (Nick's note, corrected by Tata); left as they are when not sent
+    levers: list[Lever] | None = Field(default=None, max_length=6)
+    key_metrics: str | None = Field(default=None, max_length=2000)
+    bottlenecks: list[str] | None = Field(default=None, max_length=20)
+    cautions: str | None = Field(default=None, max_length=2000)
+    finance_defaults: FinanceDefaults | None = None
 
 
 @router.get("/scoring/fabrics")
@@ -88,7 +104,11 @@ def list_fabrics() -> dict:
 
 @router.put("/scoring/fabrics/{fabric_id}")
 def update_fabric(fabric_id: str, edit: FabricEdit) -> dict:
-    return _apply_edit("fabrics", fabric_id, edit.model_dump())
+    changes = edit.model_dump()
+    for key in ("levers", "key_metrics", "bottlenecks", "cautions", "finance_defaults"):
+        if changes[key] is None:
+            del changes[key]
+    return _apply_edit("fabrics", fabric_id, changes)
 
 
 # ── measures ─────────────────────────────────────────────────────────
@@ -107,6 +127,9 @@ class MeasureEdit(BaseModel):
     anchors: Anchors
     required_evidence: str = Field(min_length=1, max_length=2000)
     open_question: str | None = Field(default=None, max_length=1000)
+    # technology: judged once for the technology as a whole · fabric: judged in
+    # each fabric · tata: entered by Tata Communications, never asked of the model
+    scope: Literal["technology", "fabric", "tata"] | None = None
 
 
 @router.get("/scoring/measures")
@@ -116,7 +139,10 @@ def list_measures() -> dict:
 
 @router.put("/scoring/measures/{measure_id}")
 def update_measure(measure_id: str, edit: MeasureEdit) -> dict:
-    return _apply_edit("measures", measure_id, edit.model_dump())
+    changes = edit.model_dump()
+    if changes["scope"] is None:  # not sent: left as it is
+        del changes["scope"]
+    return _apply_edit("measures", measure_id, changes)
 
 
 # ── scoring config ───────────────────────────────────────────────────

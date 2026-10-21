@@ -21,3 +21,12 @@ def test_invalid():
     for bad in ("", "no json here", "{broken", "```json\n{oops\n```"):
         with pytest.raises(ValueError):
             parse_json(bad)
+
+
+def test_nearly_json_is_repaired_but_prose_still_fails():
+    import pytest
+    from app.services.llm.llm import parse_json
+    assert parse_json('{"summary": "He said "hi" there", "technologies": ["a",]}') == \
+        {"summary": 'He said "hi" there', "technologies": ["a"]}
+    with pytest.raises(ValueError):
+        parse_json("I could not read this page.")

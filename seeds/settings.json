@@ -23,10 +23,27 @@
         "youtube.com",
         "instagram.com"
       ],
-      "pages_per_source": 40,
+      "pages_per_source": 60,
       "page_part_chars": 120000,
       "page_part_concurrency": 4,
       "lookback_days": 30
+    },
+    {
+      "name": "radar",
+      "wake_after_pages": 10,
+      "default_time_zone": "America/Chicago",
+      "evidence_floor": 3,
+      "classify_after_collection": true,
+      "classify_pages_cap": 10,
+      "classify_token_budget": 8000000,
+      "emerging_availability": [
+        "research",
+        "pilot",
+        "early_commercial"
+      ],
+      "find_evidence_results": 5,
+      "find_evidence_daily_budget": 20,
+      "frontier_near_band": 0.5
     }
   ]
 }

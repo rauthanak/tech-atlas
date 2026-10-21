@@ -53,10 +53,10 @@
     },
     {
       "name": "evidence",
-      "max_dossier_tokens": 300000,
+      "max_dossier_tokens": 500000,
       "note": "Safety ceiling only — the full summarized dossier is sent; this guard exists for pathological cases.",
       "open_question": null,
-      "version": 5
+      "version": 6
     },
     {
       "name": "horizons",
@@ -67,6 +67,12 @@
       },
       "open_question": "Horizon mapping is our proposal (near→H1, mid→H2, far→H3) — confirm the timeline bands correspond to TCL's H1/H2/H3 definitions.",
       "version": 1
+    },
+    {
+      "name": "engine",
+      "mode": "stacked",
+      "note": "stacked: one call per technology, then one per fabric it touches (item 5). per_measure: one call per measure per fabric, the earlier way.",
+      "open_question": null
     }
   ]
 }

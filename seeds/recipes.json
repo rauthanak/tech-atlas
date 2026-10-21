@@ -1,0 +1,63 @@
+{
+  "recipes": [
+    {
+      "recipe_id": "technology",
+      "name": "Technology call",
+      "stage": "assess",
+      "scope": "technology",
+      "cache": "evidence",
+      "skills": [
+        "fabric_relevance",
+        "measure_scoring",
+        "watch_metrics",
+        "domain_subdomain",
+        "trl_level",
+        "commercial_availability"
+      ],
+      "shared_blanks": [
+        "technology",
+        "evidence"
+      ],
+      "description": "Once per technology in an assessment run: which fabrics to assess it in, the measures judged for the technology as a whole, the metrics to watch, and its domain, readiness (TRL) and commercial availability judged from the full evidence. Its evidence is sent once and reused by the technology's fabric calls."
+    },
+    {
+      "recipe_id": "fabric",
+      "name": "Fabric call",
+      "stage": "assess",
+      "scope": "fabric",
+      "cache": "evidence",
+      "skills": [
+        "measure_scoring",
+        "value_levers"
+      ],
+      "shared_blanks": [
+        "technology",
+        "evidence",
+        "fabric_name",
+        "fabric_definition",
+        "tcl_today"
+      ],
+      "description": "Once per fabric a technology is assessed in: the measures judged in that fabric, and where the value lands there (use cases, levers, capital)."
+    },
+    {
+      "recipe_id": "classify",
+      "name": "Classify call",
+      "stage": "classify",
+      "scope": "technology",
+      "cache": "instructions",
+      "skills": [
+        "evidence_strength",
+        "domain_subdomain",
+        "commercial_availability",
+        "trl_level",
+        "possible_nascent"
+      ],
+      "shared_blanks": [
+        "technology",
+        "evidence",
+        "facts"
+      ],
+      "description": "Once per technology with new pages, after organizing: how solid its evidence is, its domain, commercial availability and readiness (TRL), and whether it may be nascent. The tasks and lists are the same for every technology and are reused."
+    }
+  ]
+}

@@ -7,6 +7,7 @@
 #   1. copy .env.example to .env and fill in your API key
 #   2. docker compose up
 #   3. open http://localhost:3100
+#      (the executive view, Frontier: http://localhost:3200)
 #
 # MongoDB is exposed on localhost:27017 (stop any locally installed
 # MongoDB first, or the port clashes); its data survives restarts in
@@ -55,6 +56,22 @@ services:
         TECH_ATLAS_API_URL: http://atlas:8100
     ports:
       - "3100:3100"
+    depends_on:
+      - atlas
+
+  # Frontier, the read-only executive view: the same portal, served on its
+  # own address. APP_SIDE is read by the portal's proxy.ts on every request,
+  # so it's set here at run time; it isn't a build arg.
+  frontier:
+    build:
+      context: ../tech-lens
+      args:
+        # Baked into the Next.js build — see the Dockerfile in tech-lens.
+        TECH_ATLAS_API_URL: http://atlas:8100
+    environment:
+      APP_SIDE: frontier
+    ports:
+      - "3200:3100"
     depends_on:
       - atlas
 

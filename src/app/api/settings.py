@@ -3,7 +3,6 @@ follows, the page budget per source, the page-part size and parallelism for
 long pages, and the first-run lookback for data sources. Read once per run
 and recorded on it."""
 
-from datetime import datetime, timezone
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, field_validator
@@ -11,6 +10,7 @@ from pymongo import ReturnDocument
 
 from app.services.db.mongo import get_collection
 from app.services.signals import snapshot
+from app.services.timezone import now_utc
 
 router = APIRouter()
 
@@ -40,6 +40,43 @@ def get_crawl_settings() -> dict:
 def update_crawl_settings(edit: CrawlSettingsEdit) -> dict:
     return get_collection("settings").find_one_and_update(
         {"_id": "crawl"},
-        {"$set": {**edit.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()},
+        {"$set": {**edit.model_dump(), "updated_at": now_utc()},
          "$setOnInsert": {"name": "crawl"}},
+        upsert=True, return_document=ReturnDocument.AFTER)
+
+
+class RadarSettingsEdit(BaseModel):
+    wake_after_pages: int = Field(ge=1, le=1000)
+    default_time_zone: str = Field(min_length=1, max_length=64)
+    evidence_floor: int = Field(ge=1, le=100)
+    classify_after_collection: bool
+    classify_pages_cap: int = Field(ge=1, le=50)
+    classify_token_budget: int = Field(ge=0)
+    emerging_availability: list[str] = Field(max_length=20)
+    find_evidence_results: int = Field(ge=1, le=10)
+    find_evidence_daily_budget: int = Field(ge=0, le=500)
+
+    @field_validator("default_time_zone")
+    @classmethod
+    def _zone(cls, tz: str) -> str:
+        from zoneinfo import ZoneInfo
+        try:
+            ZoneInfo(tz)
+        except Exception:
+            raise ValueError(f"{tz!r} isn't a time zone name, such as America/Chicago")
+        return tz
+
+
+@router.get("/settings/radar")
+def get_radar_settings() -> dict:
+    from app.services.settings_store import radar_settings
+    return radar_settings()
+
+
+@router.put("/settings/radar")
+def update_radar_settings(edit: RadarSettingsEdit) -> dict:
+    return get_collection("settings").find_one_and_update(
+        {"_id": "radar"},
+        {"$set": {**edit.model_dump(), "updated_at": now_utc()},
+         "$setOnInsert": {"name": "radar"}},
         upsert=True, return_document=ReturnDocument.AFTER)

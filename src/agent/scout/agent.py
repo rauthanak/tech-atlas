@@ -9,6 +9,7 @@ import logging
 from deepagents import create_deep_agent
 
 from agent.scout.tools.collect import make_collect_tool, page_budget, recorded_snapshot
+from app.services.llm.context import with_context
 from app.services.db.mongo import get_collection
 from app.services.prompts import PromptStore
 from app.services.runs import store
@@ -17,17 +18,31 @@ from app.settings import get_settings
 log = logging.getLogger(__name__)
 
 
+def scout_values(category: str, sources: list[dict], max_depth: int, max_pages: int) -> dict:
+    """The scout skill's blanks. The Skills page's preview fills them with
+    this same function, so it shows exactly what a run sends."""
+    return {
+        "category": category,
+        "sources": "\n".join(f"- {s['source_id']}: {s['name']} ({s['url']})" for s in sources),
+        "max_depth": str(max_depth),
+        "max_pages": str(max_pages),
+    }
+
+
 def run_scout(run_id: str, category: str, sources: list[dict], llm,
               max_pages_override: int | None = None) -> str:
+    with with_context(run_kind="collection", run_id=run_id, skills=["scout"]):
+        return _run_scout(run_id, category, sources, llm, max_pages_override)
+
+
+def _run_scout(run_id: str, category: str, sources: list[dict], llm,
+               max_pages_override: int | None = None) -> str:
     settings = get_settings()
     collect_source = make_collect_tool(run_id, category, sources, llm, max_pages_override)
 
-    prompt = PromptStore.get("scout").render(
-        category=category,
-        sources="\n".join(f"- {s['source_id']}: {s['name']} ({s['url']})" for s in sources),
-        max_depth=str(settings.scrape_max_depth),
-        max_pages=str(page_budget(recorded_snapshot(run_id), max_pages_override)),
-    )
+    prompt = PromptStore.get("scout").render(**scout_values(
+        category, sources, settings.scrape_max_depth,
+        page_budget(recorded_snapshot(run_id), max_pages_override)))
     agent = create_deep_agent(
         model=llm.chat_model(),
         tools=[collect_source],

@@ -12,6 +12,7 @@ from app.api.runs import analysis_errors
 from app.api.scoring_runs import _pov_state
 from app.services import evidence
 from app.services.db.mongo import get_collection
+from app.services.runs.store import COLLECTIONS
 from app.services.problems import didnt_finish, problems, source_access
 from app.services.signals import recheck, snapshot
 
@@ -51,7 +52,7 @@ def _for_analyst(stale: int, all_states: dict, to_assess: list[dict], to_write: 
 @router.get("/pipeline")
 def pipeline() -> dict:
     runs = get_collection("runs")
-    run = runs.find_one(sort=[("run_start_date_time", -1)],
+    run = runs.find_one(COLLECTIONS, sort=[("run_start_date_time", -1)],
                         projection={"signal_list": 0, "crawl_settings": 0, "substage_history": 0})
     totals = (run or {}).get("totals") or {}
     collect = {"status": "none"}
@@ -81,7 +82,8 @@ def pipeline() -> dict:
     resolve = get_collection("resolves").find_one(sort=[("started_at", -1)]) or {}
     technologies = {"count": get_collection("technologies").estimated_document_count(),
                     "resolve_status": resolve.get("status"),
-                    "resolved_at": resolve.get("finished_at")}
+                    "resolved_at": resolve.get("finished_at"),
+                    "new_names": resolve.get("to_resolve")}  # what the last Organize looked at
 
     all_states = evidence.states()
     to_assess = evidence.with_new_evidence(all_states)
@@ -96,12 +98,20 @@ def pipeline() -> dict:
                       techs_total=progress.get("techs_total", 0),
                       skipped=len(scoring.get("skipped") or []))
 
+    from agent.classifier import classify as classifier
+    crun = get_collection("classify_runs").find_one(sort=[("started_at", -1)], projection={"tech_ids": 0})
+    classify = {"status": crun["status"] if crun else "none", "pending": len(classifier.pending()),
+                **({"run_id": crun["_id"], "done": crun.get("done", 0), "total": crun.get("total", 0),
+                    "finished_at": crun.get("finished_at"), "stopped_reason": crun.get("stopped_reason"),
+                    "unchanged": crun.get("unchanged", 0),
+                    "failed": len(crun.get("failed") or []), "error": crun.get("error")} if crun else {})}
+
     composed, to_write = _pov_state(all_states)
     batch = pov_composer.batch_status()
     pov_job = _job(batch)
     if pov_job:
         pov_job["failed"] = len(batch.get("failed") or [])
     pov = {"composed": len(composed), "pending": len(to_write), "job": pov_job}
-    return {"collect": collect, "signals": signals, "technologies": technologies,
+    return {"collect": collect, "signals": signals, "technologies": technologies, "classify": classify,
             "assess": assess, "pov": pov, "problems": len(problems()),
             "for_analyst": _for_analyst(stale, all_states, to_assess, to_write)}

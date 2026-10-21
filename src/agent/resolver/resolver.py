@@ -28,13 +28,15 @@ import re
 import threading
 import uuid
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
 
 from pymongo import UpdateOne
 
+from app.services.llm.context import with_context
 from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM, parse_json
 from app.services.prompts.store import PromptStore
+from app.services.timezone import now_utc
+from app.services.websearch import source_of
 from app.settings import get_settings
 
 log = logging.getLogger(__name__)
@@ -46,10 +48,6 @@ _sync_active = False
 
 def _busy() -> bool:
     return _sync_active or (_active_thread is not None and _active_thread.is_alive())
-
-
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 def _norm(raw: str) -> str:
@@ -84,9 +82,9 @@ def _create_resolve_doc(replace: bool) -> str:
         "status": "running",
         "replace": replace,
         "phase": "starting",
-        "phase_history": [{"phase": "starting", "at": _now()}],
+        "phase_history": [{"phase": "starting", "at": now_utc()}],
         "llm_calls": 0,
-        "started_at": _now(),
+        "started_at": now_utc(),
     })
     return resolve_id
 
@@ -125,22 +123,23 @@ def restamp_all() -> int:
 def _execute(resolve_id: str, replace: bool) -> None:
     resolves = get_collection("resolves")
     try:
-        stats = _resolve(resolve_id, replace)
+        with with_context(run_kind="resolve", run_id=resolve_id):
+            stats = _resolve(resolve_id, replace)
         resolves.update_one({"_id": resolve_id}, {"$set": {
             "status": "completed", "phase": "done",
-            "finished_at": _now(), **stats},
-            "$push": {"phase_history": {"phase": "done", "at": _now()}}})
+            "finished_at": now_utc(), **stats},
+            "$push": {"phase_history": {"phase": "done", "at": now_utc()}}})
         log.info("resolve %s completed: %s", resolve_id, stats)
     except Exception as exc:  # a failed resolve must never take the app down
         log.exception("resolve %s failed", resolve_id)
         resolves.update_one({"_id": resolve_id}, {"$set": {
-            "status": "failed", "error": str(exc), "finished_at": _now()}})
+            "status": "failed", "error": str(exc), "finished_at": now_utc()}})
 
 
 def _progress(resolve_id: str, **fields) -> None:
     update: dict = {"$set": fields}
     if "phase" in fields:  # phase changes also land in the drill-down timeline
-        update["$push"] = {"phase_history": {"phase": fields["phase"], "at": _now()}}
+        update["$push"] = {"phase_history": {"phase": fields["phase"], "at": now_utc()}}
     get_collection("resolves").update_one({"_id": resolve_id}, update)
 
 
@@ -195,8 +194,7 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
     # the established register: fixed merge targets the LLM may fold new
     # names into, but never rename or merge with each other. Top names by
     # document volume, so the anchor is what the corpus actually talks about.
-    known = [t["name"] for t in techs.find({}, {"name": 1})
-             .sort("doc_count", -1).limit(settings.resolve_known_limit)]
+    known = known_register(settings.resolve_known_limit)
 
     # 5 · LLM pass 1 — alphabetical chunks put spelling-siblings together
     llm = LLM.initialize(settings.model_name)
@@ -241,7 +239,7 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
     ids_by_name = {t["name"]: t["_id"] for t in techs.find({}, {"name": 1})}
     taken = set(ids_by_name.values())
     writes = []
-    now = _now()
+    now = now_utc()
     for name, raws in buckets.items():
         tech_id = ids_by_name.get(name)
         if tech_id is None:
@@ -287,6 +285,28 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
 LABEL_BATCH = 500  # names per technology_label call
 
 
+# the skills' blanks: the Skills page's preview fills them with these same
+# functions, so it shows exactly what an organize sends
+
+def known_register(limit: int) -> list[str]:
+    """The established register new names are folded into: the names with the
+    most pages, and always every imported or hand-added name (they have no
+    pages yet, so a page count alone would leave them out)."""
+    top = [t["name"] for t in get_collection("technologies").find({}, {"name": 1})
+           .sort("doc_count", -1).limit(limit)]
+    kept = [t["name"] for t in get_collection("technologies").find({"origin": {"$in": ["imported", "added"]}}, {"name": 1})]
+    return top + [n for n in kept if n not in set(top)]
+
+
+def resolve_values(names: list[str], register: list[str]) -> dict:
+    return {"tech_list": json.dumps(names, ensure_ascii=False),
+            "known_list": json.dumps(register, ensure_ascii=False)}
+
+
+def label_values(names: list[str]) -> dict:
+    return {"names": json.dumps(names, ensure_ascii=False)}
+
+
 def label_missing(llm: LLM | None = None) -> int:
     """Display labels for technologies without one: the same name with its
     usual capitals ("ml-kem" → "ML-KEM"), from the technology_label skill.
@@ -302,7 +322,8 @@ def label_missing(llm: LLM | None = None) -> int:
     for chunk in _chunks(names, LABEL_BATCH):
         calls += 1
         try:
-            labels = parse_json(llm.ask(prompt.render(names=json.dumps(chunk, ensure_ascii=False))))
+            with with_context(skills=["technology_label"]):
+                labels = parse_json(llm.ask(prompt.render(**label_values(chunk))))
             labels = labels.get("labels") if isinstance(labels, dict) else None
             if not isinstance(labels, dict):
                 raise ValueError("no labels object in the reply")
@@ -327,11 +348,10 @@ def _llm_groups(llm: LLM, prompt, names: list[str], register: list[str]) -> list
     `register` is the established-names context; members may only come from
     `names`, so established entries can attract new names but never move."""
     known = set(names)
-    payload = json.dumps(names, ensure_ascii=False)
-    known_payload = json.dumps(register, ensure_ascii=False)
     for attempt in (1, 2):
         try:
-            out = llm.ask(prompt.render(tech_list=payload, known_list=known_payload))
+            with with_context(skills=["technology_resolve"]):
+                out = llm.ask(prompt.render(**resolve_values(names, register)))
             data = parse_json(out)
             groups = []
             for g in data.get("groups", []):
@@ -392,7 +412,7 @@ def _recompute_stats() -> None:
             a = acc[name]
             a["doc_count"] += 1
             a["pages"].add(d.get("end_url"))
-            a["sources"].add(d.get("source_id"))
+            a["sources"].add(source_of(d))  # a page found by web search counts as its own site
             a["horizons"][d.get("category") or "?"] += 1
             a["kinds"][d.get("kind") or "article"] += 1
     techs = get_collection("technologies")

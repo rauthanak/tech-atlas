@@ -1,0 +1,44 @@
+{
+  "availability": [
+    {
+      "availability_id": "research",
+      "name": "Research",
+      "definition": "In labs and papers: no product anyone can buy yet.",
+      "order": 1,
+      "emerging": true,
+      "catch_all": false
+    },
+    {
+      "availability_id": "pilot",
+      "name": "Pilot",
+      "definition": "Trials or pilots with named customers or partners, but not generally sold.",
+      "order": 2,
+      "emerging": true,
+      "catch_all": false
+    },
+    {
+      "availability_id": "early_commercial",
+      "name": "Early commercial",
+      "definition": "First products on sale and early customers; the market is still forming.",
+      "order": 3,
+      "emerging": true,
+      "catch_all": false
+    },
+    {
+      "availability_id": "mature",
+      "name": "Mature",
+      "definition": "Sold by several vendors to many customers, in an established market.",
+      "order": 4,
+      "emerging": false,
+      "catch_all": false
+    },
+    {
+      "availability_id": "unclassified",
+      "name": "Unclassified",
+      "definition": "The pages don't show how available it is yet.",
+      "order": 99,
+      "emerging": false,
+      "catch_all": true
+    }
+  ]
+}

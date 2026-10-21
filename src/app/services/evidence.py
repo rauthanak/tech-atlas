@@ -79,6 +79,11 @@ def new_pages(name: str, read: dict | None) -> list[dict]:
             if version(d) not in read["dossier_pages"] and not (cutoff and d["scraped_at"] < cutoff)]
 
 
+def source_names() -> dict[str, str]:
+    """Each source's name by id, so a page is labelled "CX Today", not "cx_today"."""
+    return {x["_id"]: x["name"] for x in get_collection("sources").find({}, {"name": 1})}
+
+
 def page(doc: dict) -> dict:
     """A new page as the API returns it."""
     return {"doc_id": doc["_id"], "title": doc.get("title"), "url": doc.get("end_url"),
@@ -93,6 +98,12 @@ def not_assessed_in(run: dict, rows: list[dict]) -> list[str]:
             if f["_id"] not in scored]
 
 
+def _measures(rows: list[dict]) -> dict:
+    """How many measures had enough evidence to score, of all those asked."""
+    return {"scored": sum(a.get("measures_scored", 0) for a in rows),
+            "of": sum(a.get("measures_of", 0) for a in rows)}
+
+
 def _assessment(run: dict, rows: list[dict]) -> dict:
     rows = sorted(rows, key=lambda a: a["fabric_id"])
     return {"scoring_run_id": run["_id"], "run_status": run["status"],
@@ -100,12 +111,14 @@ def _assessment(run: dict, rows: list[dict]) -> dict:
             "evidence_runs": sorted({r for a in rows for r in a.get("evidence_runs") or []})
             if any("evidence_runs" in a for a in rows) else None,  # None: not recorded
             **reading(rows),
+            "measures": _measures(rows),
             "fabrics": [{"assessment_id": a["_id"], "fabric_id": a["fabric_id"],
                          "fabric": a.get("fabric"),
                          "priority": (a.get("placement") or {}).get("priority"),
                          "horizon": (a.get("placement") or {}).get("horizon"),
                          "placement": a.get("placement"),  # its how-soon / how-big inputs say why one is missing
-                         "tora": a.get("tora")} for a in rows],
+                         "tora": a.get("tora"),
+                         "measures": _measures([a])} for a in rows],
             "not_assessed_in": not_assessed_in(run, rows)}
 
 
@@ -155,8 +168,15 @@ def states(tech_ids: list[str] | None = None) -> dict[str, dict]:
     if tech_ids is None:
         tech_ids = sorted(set().union(*(r["tech_ids"] for r in all_runs)))
     rows: dict[str, dict[str, list[dict]]] = {}
-    for a in get_collection("assessments").find({"tech_id": {"$in": tech_ids}},
-                                                {"measures": 0, "watch_metrics": 0}):
+    measures = {"$objectToArray": {"$ifNull": ["$measures", {}]}}
+    for a in get_collection("assessments").aggregate([
+        {"$match": {"tech_id": {"$in": tech_ids}}},
+        # the scored count without fetching the measures: unscored ones have no number
+        {"$addFields": {"measures_of": {"$size": measures},
+                        "measures_scored": {"$size": {"$filter": {
+                            "input": measures, "cond": {"$isNumber": "$$this.v.score"}}}}}},
+        {"$project": {"measures": 0, "watch_metrics": 0}},
+    ]):
         rows.setdefault(a["tech_id"], {}).setdefault(a["scoring_run_id"], []).append(a)
     povs = set(get_collection("povs").distinct("_id", {"tech_id": {"$in": tech_ids}}))
     return {t["_id"]: _state(t, all_runs, rows.get(t["_id"], {}), povs)
@@ -168,22 +188,40 @@ def state(tech_id: str) -> dict | None:
     return states([tech_id]).get(tech_id)
 
 
-def list_states(tech_ids: list[str]) -> dict[str, dict]:
+def list_states(tech_ids: list[str], full: dict | None = None) -> tuple[dict[str, dict], dict[str, dict]]:
     """State, new-page count and assessment date for any technologies in the
-    register: the Technologies list. A technology no scoring run included can
-    only be off or not assessed, with every linked page new, so only the
-    others need the full state (one page query each)."""
-    included = set().union(*(r["tech_ids"] for r in runs()))
-    full = states([t for t in tech_ids if t in included])
+    register: the Technologies list, with what the latest assessment came to
+    (each fabric's priority, and how many measures it could score); and the
+    full states() it read them from (`full`, when already worked out). A
+    technology no scoring run included can only be off or not assessed, with
+    every linked page new, so only the others need the full state (one page
+    query each)."""
+    if full is None:
+        included = set().union(*(r["tech_ids"] for r in runs()))
+        full = states([t for t in tech_ids if t in included])
     out: dict[str, dict] = {}
     for t in get_collection("technologies").find({"_id": {"$in": tech_ids}},
                                                  {"enabled": 1, "page_count": 1}):
         s = full.get(t["_id"])
+        a = (s or {}).get("assessment") or {}
         out[t["_id"]] = ({"state": s["state"], "new_pages": len(s["new"]),
-                          "assessed_at": (s["assessment"] or {}).get("assessed_at")} if s else
+                          "assessed_at": a.get("assessed_at"), "measures": a.get("measures"),
+                          "priorities": [{"fabric_id": f["fabric_id"], "fabric": f["fabric"],
+                                          "priority": f["priority"]} for f in a.get("fabrics", [])]} if s else
                          {"state": "not_assessed" if t.get("enabled", True) else "off",
-                          "new_pages": t.get("page_count", 0), "assessed_at": None})
-    return out
+                          "new_pages": t.get("page_count", 0), "assessed_at": None,
+                          "measures": None, "priorities": []})
+    return out, full
+
+
+def pages_since_off(techs: list[dict]) -> dict[str, int]:
+    """For each switched-off technology, how many distinct pages about it were
+    collected after it was switched off: the wake flag asks for a look once
+    this reaches `radar.wake_after_pages`."""
+    docs = get_collection("documents")
+    return {t["_id"]: len(docs.distinct("end_url", {"technologies_resolved": t["name"],
+                                                    "scraped_at": {"$gt": t["switched_off_at"]}}))
+            for t in techs if not t.get("enabled", True) and t.get("switched_off_at")}
 
 
 # ── the waiting lists, each read off the states ─────────────────────

@@ -37,6 +37,24 @@ def ensure_database() -> None:
     db["assessments"].create_index([("tech_id", ASCENDING)])
     db["assessments"].create_index([("evidence_runs", ASCENDING)])
     db["povs"].create_index([("scoring_run_id", ASCENDING)])
+    db["llm_calls"].create_index([("run_id", ASCENDING)])
+    db["llm_calls"].create_index([("at", ASCENDING)])
+    db["decisions"].create_index([("tech_id", ASCENDING), ("kind", ASCENDING), ("active", ASCENDING)])
+    db["classify_runs"].create_index([("started_at", ASCENDING)])
+    db["imports"].create_index([("at", ASCENDING)])
+    db["find_evidence_jobs"].create_index([("at", ASCENDING)])
+
+
+def backfill() -> None:
+    """Fill fields that older records lack, once (idempotent): Points of View
+    written before their time zone was recorded show in the radar's default."""
+    from app.services.settings_store import radar_settings
+
+    zone = radar_settings()["default_time_zone"]
+    done = get_db()["povs"].update_many({"composed_tz": {"$exists": False}},
+                                        {"$set": {"composed_tz": zone}}).modified_count
+    if done:
+        log.info("backfill: %d Points of View marked as written in %s", done, zone)
 
 
 def run() -> None:
@@ -54,5 +72,6 @@ def run() -> None:
     ensure_database()
     if seeding.load_if_new():
         log.info("seeding data loaded into %r", settings.mongo_db)
+    backfill()
     counts = {c: get_db()[c].estimated_document_count() for c in sorted(COLLECTIONS)}
     log.info("database %r ready (%s)", settings.mongo_db, counts)

@@ -33,12 +33,17 @@ def run(db, run_id: str, day: int, status: str = "completed", techs=("edge-ai",)
 
 
 def assessment(db, run_id: str, day: int, pages: list[str] | None = None, tech_id: str = "edge-ai",
-               fabric: str = "cloud", dossier_from: str | None = None) -> str:
-    """`pages=None` makes an assessment from before page versions were recorded."""
+               fabric: str = "cloud", dossier_from: str | None = None, scores: list | None = None,
+               priority: str | None = "P2") -> str:
+    """`pages=None` makes an assessment from before page versions were recorded;
+    `scores` gives its measures, None for one left unscored."""
     row = {"_id": f"{run_id}:{tech_id}:{fabric}", "scoring_run_id": run_id, "tech_id": tech_id,
            "technology": tech_id, "fabric_id": fabric, "fabric": fabric.title(),
            "created_at": at(day), "doc_count": len(pages or []), "evidence_runs": ["c"],
-           "placement": {"priority": "P2", "horizon": "H1"}, "tora": {}}
+           "placement": {"priority": priority, "horizon": "H1" if priority else None}, "tora": {}}
+    if scores is not None:
+        row["measures"] = {f"m{i}": {"code": f"M{i}", "score": s, "unscorable": s is None}
+                           for i, s in enumerate(scores, 1)}
     if pages is not None:
         row["dossier_pages"] = pages
     if dossier_from:

@@ -14,19 +14,16 @@ import logging
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
 
+from app.services.llm.context import with_context
 from app.services import busy
 from app.services.db.mongo import get_collection
 from app.services.llm import LLM
 from app.services.signals import snapshot
+from app.services.timezone import now_utc
 from app.settings import get_settings
 
 log = logging.getLogger(__name__)
-
-
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 def stale_query(current_hash: str) -> dict:
@@ -65,7 +62,7 @@ def start() -> dict:
             "total": len(ids), "done": 0, "failed": 0,
             "found": 0, "other": 0, "set_aside": 0, "failed_reasons": {},
             "signals_hash": snap["signals_hash"],
-            "started_at": _now(), "heartbeat_at": _now(), "finished_at": None})
+            "started_at": now_utc(), "heartbeat_at": now_utc(), "finished_at": None})
     threading.Thread(target=_run, args=(job_id, ids, snap),
                      name=f"recheck-{job_id}", daemon=True).start()
     return {"job_id": job_id, "total": len(ids)}
@@ -83,11 +80,12 @@ def _run(job_id: str, ids: list[str], snap: dict) -> None:
         docs.update_many({"ref_doc_id": doc_id}, {"$set": fields})  # its stubs
 
     def one(doc_id: str) -> None:
-        update = {"$inc": {"done": 1}, "$set": {"heartbeat_at": _now()}}
+        update = {"$inc": {"done": 1}, "$set": {"heartbeat_at": now_utc()}}
         try:
             doc = docs.find_one({"_id": doc_id}, {"end_url": 1, "extracted_text": 1})
             if doc and doc.get("extracted_text"):
-                analysis = summarize_page(llm, doc["end_url"], doc["extracted_text"], snap)
+                with with_context(run_kind="recheck", run_id=job_id):
+                    analysis = summarize_page(llm, doc["end_url"], doc["extracted_text"], snap)
                 error = analysis.get("analysis_error")
                 if error:  # failed or partly analysed: counted by reason
                     update["$inc"][f"failed_reasons.{error['reason']}"] = 1
@@ -113,7 +111,7 @@ def _run(job_id: str, ids: list[str], snap: dict) -> None:
             update["$inc"]["failed_reasons.unexpected error"] = 1
             record(doc_id, {"analysis_error": {"reason": "unexpected error",
                                                "detail": " ".join(str(exc).split())[:200],
-                                               "at": _now()}})
+                                               "at": now_utc()}})
         jobs.update_one({"_id": job_id}, update)
 
     try:
@@ -121,21 +119,21 @@ def _run(job_id: str, ids: list[str], snap: dict) -> None:
                                 thread_name_prefix="recheck") as pool:
             list(pool.map(one, ids))
         jobs.update_one({"_id": job_id}, {"$set": {"stage": "organizing technologies",
-                                                   "heartbeat_at": _now()}})
+                                                   "heartbeat_at": now_utc()}})
         resolve_id = run_resolve_sync()
         jobs.update_one({"_id": job_id}, {"$set": {
             "status": "completed", "stage": "done", "resolve_id": resolve_id,
-            "finished_at": _now()}})
+            "finished_at": now_utc()}})
         log.info("re-check %s completed (%d pages)", job_id, len(ids))
     except Exception as exc:
         log.exception("re-check %s failed", job_id)
         jobs.update_one({"_id": job_id}, {"$set": {
-            "status": "failed", "error": str(exc)[:500], "finished_at": _now()}})
+            "status": "failed", "error": str(exc)[:500], "finished_at": now_utc()}})
 
 
 def reconcile_stale() -> None:
     """At boot: a job still 'running' died with the last process."""
     result = get_collection("recheck_jobs").update_many(
-        {"status": "running"}, {"$set": {"status": "interrupted", "finished_at": _now()}})
+        {"status": "running"}, {"$set": {"status": "interrupted", "finished_at": now_utc()}})
     if result.modified_count:
         log.warning("marked %d re-check job(s) interrupted", result.modified_count)

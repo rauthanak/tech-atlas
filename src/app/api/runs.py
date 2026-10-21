@@ -9,6 +9,7 @@ from agent.scout.tools.collect import page_budget
 from agent.supervisor.tools.sources import collectable_query
 from app.services import busy
 from app.services.db.mongo import get_collection
+from app.services.runs.store import COLLECTIONS
 from app.services.problems import didnt_finish, source_access
 from app.services.runs import runner
 from app.services.signals import snapshot
@@ -47,6 +48,7 @@ def list_runs() -> dict:
     """The latest 100 runs, without their per-source rows; `incomplete`
     counts the websites that didn't finish."""
     runs = list(get_collection("runs").aggregate([
+        {"$match": COLLECTIONS},
         {"$sort": {"run_start_date_time": -1}},
         {"$limit": 100},
         {"$addFields": {"unfinished": {"$filter": {

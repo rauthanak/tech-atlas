@@ -84,7 +84,7 @@ class FakeLLM:
     def __init__(self):
         self.calls = 0
 
-    def ask(self, prompt, system=None):
+    def ask(self, prompt, system=None, **kw):
         self.calls += 1
         if "FAIL" in prompt.split("URL:")[-1]:
             raise RuntimeError("boom")
@@ -147,7 +147,7 @@ def test_an_unusable_reply_says_so(db, monkeypatch):
     monkeypatch.setattr(summarize, "call_with_backoff", lambda fn, cancelled=None: fn())
 
     class ProseLLM:
-        def ask(self, prompt, system=None):
+        def ask(self, prompt, system=None, **kw):
             return "Sorry, here is a plain summary instead."
 
     out = summarize_page(ProseLLM(), "https://example.com/p", "alpha " * 100, _snap(db, 120000))

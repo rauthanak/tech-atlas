@@ -6,6 +6,7 @@ summarized with the run's signal list, counted."""
 from dataclasses import dataclass
 
 from agent.scout.tools.summarize import summarize_page
+from app.services.llm.context import with_context
 from app.services.runs import store
 
 
@@ -39,7 +40,8 @@ class Context:
         return store.cancelled(self.run_id)
 
     def summarize(self, url: str, text: str) -> dict:
-        return summarize_page(self.llm, url, text, self.snapshot, self.cancelled)
+        with with_context(run_kind="collection", run_id=self.run_id):
+            return summarize_page(self.llm, url, text, self.snapshot, self.cancelled)
 
     def visited(self, outcome: Outcome, source: dict) -> None:
         outcome.pages += 1
