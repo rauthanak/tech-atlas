@@ -104,3 +104,26 @@ def test_an_assumption_needs_its_date(db):
     assert r.status_code == 422 and r.json()["detail"] == "an assumption needs the date it was stated"
     r = client.post("/api/lists/assumptions", json={"name": "Spectrum auctions slip a year.", "date": "2026-10-21"})
     assert r.status_code == 201 and r.json()["item"]["date"] == "2026-10-21"
+
+
+def test_the_briefing_says_what_changed_since_the_edition(db):
+    _world(db)
+    assert client.get("/api/editions/since").json()["since"] is None  # nothing published yet
+    publish("FY27 Q2")
+    assert {k: v for k, v in client.get("/api/editions/since").json()["since"].items()
+            if k in ("edition", "moved", "placed_new", "placed_gone", "povs_written")} == {
+        "edition": "FY27 Q2", "moved": 0, "placed_new": 0, "placed_gone": 0, "povs_written": 0}
+    decisions.create("override", "edge-ai", fabric_id="cloud", value="P1", reason="board priority", tz="UTC", computed="P3")
+    db["povs"].update_one({"_id": "r1:quic"}, {"$set": {"composed_at": "2099-01-01T00:00:00+00:00"}})  # written after it
+    since = client.get("/api/editions/since").json()["since"]
+    assert since["moved"] == 1 and since["povs_written"] == 1
+    assert since["now"] == {"placements": 2, "held": 0, "povs": 2}  # what a publish now would send
+
+
+def test_a_point_of_view_says_which_version_leaders_see(db):
+    _world(db)
+    assert client.get("/api/editions/pov/quic").json() == {"edition": None, "composed_at": None, "composed_tz": None}
+    publish("FY27 Q2")
+    seen = client.get("/api/editions/pov/quic").json()
+    assert seen["edition"]["label"] == "FY27 Q2" and seen["composed_at"] == db["povs"].find_one({"_id": "r1:quic"})["composed_at"]
+    assert client.get("/api/editions/pov/nothing").json()["composed_at"] is None

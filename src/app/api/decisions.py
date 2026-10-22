@@ -86,7 +86,58 @@ def leader_record(tech_id: str, fabric_id: str) -> dict:
 @router.get("/decisions")
 def list_decisions(tech_id: str, include_inactive: bool = False) -> dict:
     query: dict = {"tech_id": tech_id} if include_inactive else {"tech_id": tech_id, "active": True}
-    return {"decisions": list(get_collection("decisions").find(query).sort("at", -1))}
+    return {"decisions": described(list(get_collection("decisions").find(query).sort("at", -1)))}
+
+
+FIELD_WORDS = {"availability": "Commercial availability", "domain": "Domain", "subdomain": "Sub-domain",
+               "trl": "Readiness (TRL)"}
+LIST_OF = {"availability": "availability", "domain": "domains", "subdomain": "subdomains", "trl": "trl"}
+
+
+def described(decs: list[dict]) -> list[dict]:
+    """Each choice with `what` it set, in plain words, and the catalog file
+    when an import recorded it (`from_file`): a technology's History."""
+    from app.services import finance
+    names = classify_effective.names()
+    measures = {m["_id"]: m for m in get_collection("measures").find({}, {"name": 1, "scope": 1})}
+    fabrics = {f["_id"]: f["name"] for f in get_collection("fabrics").find({}, {"name": 1})}
+    steps = {k: s["name"] for k, s in finance.steps().items()}
+    for d in decs:
+        k, v = d["kind"], d.get("value")
+        where = f" in {fabrics.get(d['fabric_id'], d['fabric_id'])}" if d.get("fabric_id") else ""
+        m = measures.get(d.get("measure_id")) or {"name": d.get("measure_id")}
+        if k == "move":
+            item = names[LIST_OF[d["field"]]].get(v) if d.get("field") in LIST_OF else None
+            what = f"{FIELD_WORDS.get(d.get('field'), d.get('field'))} set to " + (
+                f"TRL {v}" if d.get("field") == "trl" else (item or {}).get("name", str(v)))
+        elif k == "override":
+            what = f"Priority{where} set to {v}" + (f" (it was computed {d['computed']})" if d.get("computed") else "")
+        elif k == "hand_score":
+            what = f"{m['name']}{where} scored {v} by hand"
+        elif k == "accept_gap":
+            what = f"{m['name']}{where} left out" if m.get("scope") == "tata" else f"{m['name']}{where}: gap accepted"
+        elif k == "tata_entry":
+            what = f"{m['name']}{where} entered as {v}"
+        elif k == "nascent":
+            what = "Confirmed as possibly nascent" if v == "yes" else "Answered: not nascent"
+        elif k == "catalog":
+            what = "Added to the catalog" if v == "yes" else "Taken out of the catalog"
+        elif k == "use_case":
+            what = f"A suggested use case{where} {'accepted' if v == 'accept' else 'rejected'}"
+        elif k == "path_step":
+            what = f"Step reached{where}: {steps.get(v, v)}"
+        elif k == "finance":
+            what = f"Finance figures entered{where}"
+        elif k == "bottlenecks":
+            n = len((v or {}).get("picked") or []) + (1 if (v or {}).get("other") else 0)
+            what = f"Blockers picked{where}: {n}"
+        elif k == "commitment":
+            what = f"Owner and next action recorded{where}" + (f": {v['owner']}" if (v or {}).get("owner") else "")
+        else:
+            what = k
+        d["what"] = what
+        d["from_file"] = classify_effective.imported_from(d)
+    return decs
 
 
 @router.get("/gates")

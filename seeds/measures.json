@@ -40,15 +40,15 @@
       "name": "Use-case breadth",
       "axis": "market_potential",
       "weight": 0.3,
-      "definition": "How many distinct TCL-relevant problems the technology addresses.",
+      "definition": "How many distinct Tata-relevant problems the technology addresses.",
       "anchors": {
         "low": "0–2: single narrow use case.",
         "mid": "5: a family of related uses within one fabric.",
-        "high": "8–10: broad horizontal utility across several fabrics or industries TCL serves."
+        "high": "8–10: broad horizontal utility across several fabrics or industries Tata serves."
       },
       "required_evidence": "Distinct named use cases, each with at least one piece of evidence; hypothetical uses do not count.",
       "open_question": null,
-      "version": 1,
+      "version": 2,
       "scope": "fabric"
     },
     {
@@ -57,15 +57,15 @@
       "name": "Fabric fit",
       "axis": "strategic_fit",
       "weight": 0.4,
-      "definition": "How squarely the technology sits inside one of TCL's fabrics — assessed per fabric.",
+      "definition": "How squarely the technology sits inside one of Tata's fabrics — assessed per fabric.",
       "anchors": {
-        "low": "0–2: touches the fabric only by analogy; no plausible TCL service embeds it.",
+        "low": "0–2: touches the fabric only by analogy; no plausible Tata service embeds it.",
         "mid": "5: adjacent — fits the fabric's domain but would extend, not deepen, current offerings.",
         "high": "8–10: core — directly upgrades or threatens services this fabric sells today."
       },
       "required_evidence": "Technical descriptions concrete enough to map onto the fabric's services; at least one piece of evidence naming a use in this fabric's domain.",
       "open_question": null,
-      "version": 1,
+      "version": 2,
       "scope": "fabric"
     },
     {
@@ -74,15 +74,15 @@
       "name": "Portfolio adjacency",
       "axis": "strategic_fit",
       "weight": 0.3,
-      "definition": "How close the technology is to what TCL already operates — assets, platforms, skills.",
+      "definition": "How close the technology is to what Tata already operates — assets, platforms, skills.",
       "anchors": {
-        "low": "0–2: nothing TCL runs today is reusable toward it.",
-        "mid": "5: TCL's assets help (network, PoPs, enterprise relationships) but the core capability is new.",
-        "high": "8–10: TCL could credibly deliver it by extending an existing platform or asset."
+        "low": "0–2: nothing Tata runs today is reusable toward it.",
+        "mid": "5: Tata's assets help (network, PoPs, enterprise relationships) but the core capability is new.",
+        "high": "8–10: Tata could credibly deliver it by extending an existing platform or asset."
       },
-      "required_evidence": "What the technology needs to operate (infrastructure, data, distribution), mappable against the TCL portfolio.",
-      "open_question": "Depends on the TCL portfolio description, pending stakeholder interviews.",
-      "version": 1,
+      "required_evidence": "What the technology needs to operate (infrastructure, data, distribution), mappable against the Tata portfolio.",
+      "open_question": "Depends on the Tata portfolio description, pending stakeholder interviews.",
+      "version": 2,
       "scope": "fabric"
     },
     {
@@ -91,15 +91,15 @@
       "name": "Right to play",
       "axis": "strategic_fit",
       "weight": 0.3,
-      "definition": "Whether TCL would be a credible provider in the eyes of buyers — beyond mere capability.",
+      "definition": "Whether Tata would be a credible provider in the eyes of buyers — beyond mere capability.",
       "anchors": {
         "low": "0–2: buyers would not shortlist a carrier for this; incumbents own the trust.",
-        "mid": "5: TCL could earn a seat via partnerships or an anchor customer.",
-        "high": "8–10: carrier-grade trust, global reach or regulatory standing is exactly why buyers would pick TCL."
+        "mid": "5: Tata could earn a seat via partnerships or an anchor customer.",
+        "high": "8–10: carrier-grade trust, global reach or regulatory standing is exactly why buyers would pick Tata."
       },
       "required_evidence": "Who buys it, from whom today, and what the buying criteria are.",
       "open_question": null,
-      "version": 1,
+      "version": 2,
       "scope": "fabric"
     },
     {
@@ -108,7 +108,7 @@
       "name": "Maturity (TRL)",
       "axis": "adoption_readiness",
       "weight": 0.4,
-      "definition": "Technology readiness, expressed on TCL's TRL-style scale.",
+      "definition": "Technology readiness, expressed on Tata's TRL-style scale.",
       "anchors": {
         "low": "0–2: paper or lab demonstration only (TRL 1–3).",
         "mid": "5: working prototypes, early field trials, pre-standard (TRL 4–6).",
@@ -116,7 +116,7 @@
       },
       "required_evidence": "Dated evidence of demonstrations, trials, deployments or ratified standards — a vendor claim alone does not raise TRL.",
       "open_question": null,
-      "version": 1,
+      "version": 2,
       "scope": "technology"
     },
     {
@@ -159,15 +159,15 @@
       "name": "Disruption threat",
       "axis": "extra",
       "weight": null,
-      "definition": "If TCL does nothing, how badly does this hurt existing revenue? The only defence-oriented measure.",
+      "definition": "If Tata does nothing, how badly does this hurt existing revenue? The only defence-oriented measure.",
       "anchors": {
         "low": "0–2: no plausible impact on any current revenue line.",
         "mid": "5: erodes one line over years; substitution is possible but sticky.",
-        "high": "8–10: direct substitution for a major line, already being marketed at TCL's customers."
+        "high": "8–10: direct substitution for a major line, already being marketed at Tata's customers."
       },
       "required_evidence": "Evidence of substitution actually happening or being sold — competitor positioning, customer pilots replacing incumbent services.",
-      "open_question": "Depends on the TCL portfolio description, pending stakeholder interviews.",
-      "version": 1,
+      "open_question": "Depends on the Tata portfolio description, pending stakeholder interviews.",
+      "version": 2,
       "scope": "tata"
     },
     {
@@ -176,15 +176,15 @@
       "name": "Serviceable capture",
       "axis": "extra",
       "weight": null,
-      "definition": "The slice of the opportunity TCL could realistically win.",
+      "definition": "The slice of the opportunity Tata could realistically win.",
       "anchors": {
-        "low": "0–2: TCL's channels and assets reach almost none of it.",
+        "low": "0–2: Tata's channels and assets reach almost none of it.",
         "mid": "5: a definable segment (existing enterprise base, specific geographies) is winnable.",
-        "high": "8–10: TCL's position makes it a natural top-3 provider for a large share."
+        "high": "8–10: Tata's position makes it a natural top-3 provider for a large share."
       },
-      "required_evidence": "Market shape by segment/geography against TCL's footprint. Depends on addressable-market being scorable; inherit its thinness.",
+      "required_evidence": "Market shape by segment/geography against Tata's footprint. Depends on addressable-market being scorable; inherit its thinness.",
       "open_question": null,
-      "version": 1,
+      "version": 2,
       "scope": "tata"
     },
     {
@@ -193,15 +193,15 @@
       "name": "Capability gap",
       "axis": "extra",
       "weight": null,
-      "definition": "What TCL lacks to pursue this, and how expensive the gap is to close. High score means the gap is SMALL.",
+      "definition": "What Tata lacks to pursue this, and how expensive the gap is to close. High score means the gap is SMALL.",
       "anchors": {
         "low": "0–2: the gap is the business itself — talent, IP and platforms all absent.",
         "mid": "5: buildable or buyable within normal investment horizons.",
-        "high": "8–10: TCL substantially has what it needs today."
+        "high": "8–10: Tata substantially has what it needs today."
       },
-      "required_evidence": "What delivering requires versus what the portfolio shows TCL operates; hiring or acquisition signals where present.",
-      "open_question": "Depends on the TCL portfolio description, pending stakeholder interviews.",
-      "version": 1,
+      "required_evidence": "What delivering requires versus what the portfolio shows Tata operates; hiring or acquisition signals where present.",
+      "open_question": "Depends on the Tata portfolio description, pending stakeholder interviews.",
+      "version": 2,
       "scope": "fabric"
     }
   ]

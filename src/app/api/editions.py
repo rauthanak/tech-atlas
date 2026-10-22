@@ -20,6 +20,18 @@ def list_editions() -> dict:
     return {"editions": editions.listed()}
 
 
+@router.get("/editions/since")
+def since_latest() -> dict:
+    """What has changed since the latest edition, for the Briefing's publish line."""
+    return {"since": editions.since()}
+
+
+@router.get("/editions/pov/{tech_id}")
+def pov_in_latest(tech_id: str) -> dict:
+    """Which version of this Point of View leaders see, for its page."""
+    return editions.pov_in_latest(tech_id)
+
+
 @router.post("/editions", status_code=201)
 def publish(body: PublishIn | None = None, tz: str = Depends(request_tz)) -> dict:
     try:

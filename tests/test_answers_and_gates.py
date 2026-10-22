@@ -92,3 +92,11 @@ def test_moving_the_domain_drops_a_sub_domain_of_the_old_one(db):
     moved = decisions.create("move", "edge-ai", field="domain", value="cloud", tz="UTC")
     d = classify_effective.effective(t, [moved], lists)["domain"]
     assert (d["id"], d["subdomain_id"], d["subdomain"]) == ("cloud", None, None)
+
+
+def test_proposed_sub_domains_wait_before_scoring(db):
+    db["subdomains"].insert_many([{"_id": "ai--x", "name": "X", "domain_id": "ai", "status": "new"},
+                                  {"_id": "ai--y", "name": "Y", "domain_id": "ai", "status": "seeded"}])
+    item = next(i for i in client.get("/api/gates").json()["gate1"] if i["kind"] == "subdomains")
+    assert item["count"] == 1 and item["href"] == "/admin/classification/domains"
+    assert item["sentence"] == "1 sub-domain the model proposed, to accept, merge or rename"

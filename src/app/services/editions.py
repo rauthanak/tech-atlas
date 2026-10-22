@@ -162,6 +162,26 @@ def _mark_moves(placed: list[dict], before: dict | None) -> int:
     return n
 
 
+def since() -> dict | None:
+    """What leaders would see differently if the edition were published now:
+    priorities moved, placements new or gone, and Points of View written
+    since it; and what a publish now would send (`now`). None before the
+    first edition."""
+    before = latest()
+    if not before:
+        return None
+    now = live()
+    was = {(p["tech_id"], p["fabric_id"]): p["priority"] for p in before["placed"]}
+    is_ = {(p["tech_id"], p["fabric_id"]): p["priority"] for p in now["placed"]}
+    rows = now["placed"] + now["held"]
+    return {"edition": label(before), "published_at": before["published_at"], "tz": before.get("tz"),
+            "moved": sum(1 for k, v in is_.items() if k in was and was[k] != v),
+            "placed_new": len(is_.keys() - was.keys()), "placed_gone": len(was.keys() - is_.keys()),
+            "povs_written": len({r["tech_id"] for r in rows if r["pov"] and r["pov"]["composed_at"] > before["published_at"]}),
+            "now": {"placements": len(now["placed"]), "held": len(now["held"]),
+                    "povs": len({r["tech_id"] for r in rows if r["pov"]})}}
+
+
 def publish(name: str | None, tz: str) -> dict:
     """Freeze what leaders see now; raises Refused when it can't, saying why."""
     from fastapi import HTTPException
@@ -208,6 +228,17 @@ def publish(name: str | None, tz: str) -> dict:
                       "technologies": len({r["tech_id"] for r in now["placed"] + now["held"]})}}
     get_collection("editions").insert_one(doc)
     return summary(doc)
+
+
+def pov_in_latest(tech_id: str) -> dict:
+    """Which version of a technology's Point of View leaders see: the latest
+    edition's summary (None before the first) and when the version it holds
+    was written, in the writer's zone (None when it holds none)."""
+    e = latest(full=False)
+    doc = e and get_collection("edition_povs").find_one({"_id": f"{e['_id']}:{tech_id}"},
+                                                         {"pov.composed_at": 1, "pov.composed_tz": 1})
+    pov = doc["pov"] if doc else {}
+    return {"edition": summary(e) if e else None, "composed_at": pov.get("composed_at"), "composed_tz": pov.get("composed_tz")}
 
 
 def frozen_pov(tech_id: str) -> tuple[dict | None, dict | None]:

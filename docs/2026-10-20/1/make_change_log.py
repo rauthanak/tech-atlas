@@ -20,7 +20,7 @@ OUT = ROOT / "Tech Radar - changes after the midpoint review.docx"
 NAVY = RGBColor(0x04, 0x1A, 0x4A)
 MUTED = RGBColor(0x49, 0x4A, 0x52)
 
-VERSION = "Version 7 · 21 October 2026"
+VERSION = "Version 15 · 21 October 2026"
 HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the midpoint review, with today's screens and design mock-ups."),
            ("2", "20 Oct 2026", "Change 0 built: technologies say how solid their assessment is, a technology's result in each fabric stays "
                                 "with the technology, plain names on every screen. Real screens replace its mock-up."),
@@ -43,7 +43,32 @@ HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the mi
                                 "each needs, how far Tata has got and whether it pays; every use case asked again for a plain "
                                 "title. Change 17: the Point of View's scores say what each one asks and open the "
                                 "measures behind them in a panel on the right; the page uses its full width and stacks on a "
-                                "phone. 'Frontier' is called the leaders' view on every screen.")]
+                                "phone. 'Frontier' is called the leaders' view on every screen."),
+           ("8", "21 Oct 2026", "Change 18, the first screen of a screen-by-screen review against Don Norman's design "
+                                "principles: a technology's page opens on its verdict and one 'Waiting on you' list, with "
+                                "the fabrics, the evidence and its history on their own tabs; one page count; every choice "
+                                "people made, with Undo, in one place."),
+           ("9", "21 Oct 2026", "Change 19: a technology's fabric tab, by the same principles: the fabric bar stays in "
+                                "view, each part says how it stands, done parts start folded, the priority is a sentence, "
+                                "use cases are compact, and Tata's plan (owner, step, blockers) reads in the order the "
+                                "owner's record needs."),
+           ("10", "21 Oct 2026", "Change 20: Tata's plan reworked after your review: the path to scale is the one process, "
+                                 "drawn as a track; the owner states are a status (the commitment) worked out from a "
+                                 "checklist of what's recorded."),
+           ("11", "21 Oct 2026", "Change 21: finance set aside until Tata has discussed it, on every screen; the next step's "
+                                 "proof is entered on the path to scale itself; every dropdown's arrow set in from its edge. "
+                                 "This completes the technology page's review."),
+           ("12", "21 Oct 2026", "Change 22: the Briefing, the Points of View list and one Point of View, by the same "
+                                 "principles: to-do first and readable closed, one findings count with two tabs, what "
+                                 "changed since the edition; the list sorted by priority with filters; a Point of View "
+                                 "that says when it's out of date. The Point of View skill says Tata, not TCL."),
+           ("13", "21 Oct 2026", "Change 23, after your review of change 22: the Briefing's To do is one strip of three "
+                                 "columns, and the findings tabs are New and Old."),
+           ("14", "21 Oct 2026", "Change 24, after your review of change 23: To do's open list as cards, the examples "
+                                 "folded; Publish to leaders says what it sends; each Point of View says which version "
+                                 "leaders see."),
+           ("15", "21 Oct 2026", "Changes 25–28: Operations and Setup by the same principles, kept simple; and Tata's "
+                                 "plan reaches the Point of View in full, shown on a worked example.")]
 
 # The numbers in the text, from the live radar on 21 Oct (6 Oct is the run before these changes).
 N = dict(
@@ -71,6 +96,9 @@ SOURCES = [
     ("S6", "Our working sessions on the comments, 20 Oct", "Where we went through S1–S5 point by point and agreed how to build each."),
     ("S7", "Our walk-through of the portal, 21 Oct",
      "Every screen read again as someone using it for the first time: what each part is, what to do there and where it's used."),
+    ("S8", "Our review of every screen against Don Norman's design principles, from 21 Oct",
+     "One screen at a time, most used first: can a reader see what it is, what to do and what happened (discoverability, "
+     "signifiers, mapping, feedback, the conceptual model). Nothing in how the radar works changes."),
 ]
 
 # Built screens, in reading order, with their captions: item-N.png or item-N-<screen>.png
@@ -115,6 +143,28 @@ AFTER_CAPTIONS = {
     "item-17-scores.png": "After: the full name of each score, what it asks and the measures it comes from; Why opens, in place, each measure's score, the reasoning and its pages.",
     "item-16-use-cases.png": "After: one row per use case, in plain words: the investment it needs and why, how far Tata has got on its path to scale, and whether it pays; the note under the table says what those mean and where they're entered.",
     "item-14-briefing.png": "After: the Briefing's three cards fold closed and still say what waits.",
+    "item-18-overview.png": "After: a technology's page opens on Overview: the Point of View's verdict, its priority in each fabric, what waits on you, then what the radar judged.",
+    "item-18-waiting.png": "After: Waiting on you, fabric by fabric: first what needs a person before publishing, then what the owner's record lacks; each item opens the fabric at the part.",
+    "item-18-priority.png": "After: each fabric leads with its priority, why (how soon and how big) and the three scores, with P1–P6 and the horizon said in words.",
+    "item-18-path.png": "After: the path to scale as a bar of seven steps, with the step reached and the next in full; every step's proof is one click away.",
+    "item-19-fabric-tab.png": "After: a fabric tab: the fabric bar stays in view, the priority is a sentence, and each part's title says how it stands (amber to settle, grey not recorded, green done).",
+    "item-19-use-cases.png": "After: use cases, compact: sources folded into a count, the capital in a word with its reason one click away, each lever on one line.",
+    "item-22-briefing.png": "After: the Briefing leads with To do; each closed card lists what waits, and the publish card says what changed since the edition. Below, what the radar found, with the window menu on the line it changes and two tabs.",
+    "item-23-briefing.png": "After: To do as one strip of three columns, each listing what waits first; the New and Old tabs below.",
+    "item-24-todo.png": "After: an open column's list as cards, two or three across, each with its one action; the technologies behind it fold under Which ones.",
+    "item-24-publish.png": "After: Publish to leaders says leaders see only what's published, which edition they see now, and exactly what a publish now would send.",
+    "item-24-pov.png": "After: a Point of View rewritten after the edition says leaders still see the earlier version, and links to Publish.",
+    "item-25-operations.png": "After: Operations' tabs, and its six steps numbered in order, each saying who moves it on: you start it, it runs by itself, or it waits for you.",
+    "item-26-signal-form.png": "After: Delete sits inside a signal's Edit form, behind a confirm; switching a signal off pauses it instead.",
+    "item-27-open-questions.png": "After: Setup's menu in four groups, and Mark settled on each open question, where the question is read.",
+    "item-27-settings.png": "After: Settings with the crawler internals behind Technical details, the time-zone line following the rule, and unsaved edits flagged.",
+    "item-22-povs.png": "After: the Points of View list says what keeps them current, sorts by highest priority, and filters by fabric, priority and newer pages.",
+    "item-22-pov.png": "After: a Point of View says when pages arrived after it was written and what to do, offers one way back, and labels the evidence reason as the latest look.",
+    "item-21-path.png": "After: the next step's proof is entered on the path itself: Customer zero needs a measured cost per outcome, with Enter… beside it.",
+    "item-21-dropdowns.png": "After: every dropdown's arrow is set in from its rounded edge, with room kept for it after the text.",
+    "item-20-plan.png": "After: Tata's plan: the commitment as a status in the title; where Tata is on its path to scale as one track; then a checklist of what's recorded, each with its action.",
+    "item-19-finance.png": "After: Finance leads with Enter the figures, says when figures are asked for and what the next step needs now, and lists what the figures need once.",
+    "item-18-history.png": "After: History says what the latest assessment read, of all its pages, and lists every choice people made, who, when and why, with Undo.",
 }
 
 # status: Planned · In progress · Built · Live
@@ -449,9 +499,285 @@ ITEMS = [
          diagram=None,
          before=[("item-17-before-scores.png", "Before: three short score names, 'Details' leading away, and no word on what a score rests on."),
                  ("item-17-before-page.png", "Before: the scores alone in a narrow right column, with empty space below them.")]),
+    dict(n="18", title="A technology's page opens on its verdict and what waits on you", status="Built",
+         source=[("S8", "the technology page, read against the design principles: the conclusion was at the bottom, what needs "
+                        "a person was spread over every fabric, three different page counts, the same help text in every "
+                        "part, and the status said four times")],
+         what=["The page has four tabs under its name: Overview, Fabrics, Evidence and History. Above them, as before: the "
+               "fabrics, where it is on the radar's journey and the Next step with its cost.",
+               "Overview leads with the Point of View's verdict (Open, Rewrite), its priority in each fabric with the horizon "
+               "in words, and how many measures had enough evidence.",
+               "Waiting on you: one list, fabric by fabric. First what needs a person before the next edition goes to "
+               "leaders (figures to enter, measures the pages couldn't score, suggested use cases, a moved override, "
+               "finance figures); then what the owner's record lacks (how far Tata has got, the blockers, an owner, what "
+               "the next step needs). Each item opens the fabric's tab at that part. A fabric tab's number now counts all "
+               "of these, not only unscored measures.",
+               "Each fabric leads with its priority, why (how soon and how big) and the three scores, which used to be "
+               "folded at the bottom. Each part says in one line what it is; More gives what you do and where it shows.",
+               "The path to scale is a bar of seven steps, with the step reached and the next in full; every step's proof "
+               "is one click away, and Change step lists them all as before.",
+               "One page count. A page collected again because it changed is listed once, with how many times it was "
+               "collected; History says what the latest assessment read of them ('112 of its 113 pages, 1 arrived after').",
+               "History lists every choice people made about the technology, newest first, in plain words: who (a person, "
+               "or the catalog file), when, why, with Undo; replaced and undone choices on request.",
+               "Plain words: 'your figure' where it said 'Tata's figure' (the reader is Tata); the first owner state is "
+               "'No owner yet', not 'Undefined'; two pages from one source carry their dates; '1 page', not '1 pages'."],
+         why="Someone opening a technology asks what we think, what they need to do, and why; the page now answers in that "
+             "order, on one screen, and nothing that was there is gone.",
+         metrics=[("Page height, an assessed technology at 1440 px", "4,500 px, one page", "Overview 1,406 px; Fabrics 2,833 px"),
+                  ("Where the Point of View's verdict sits", "About 3,700 px down", "First, under the tabs"),
+                  ("Where what needs a person is listed", "Spread over 6 parts in each fabric",
+                   "One list on Overview; each item opens its part"),
+                  ("A fabric tab's number, Agentic AI in Cloud", "None (counted unscored only; 2 figures waited)", "2"),
+                  ("Page counts on the page", "Three: 112, 113, 122", "One: 113"),
+                  ("Help text repeated in each fabric", "About 360 words", "One line per part; More for the rest"),
+                  ("Who decided what, and Undo", "Beside each value, where it is", "Also in one list, on History")],
+         diagram=None,
+         before=[("item-18-before-top.png", "Before: the first screen: status, counts and the model's answers; no verdict, and "
+                                            "nothing saying what waits on you."),
+                 ("item-18-before-bottom.png", "Before: the Point of View's verdict, about 3,700 px down, after every part of a fabric.")]),
+    dict(n="19", title="A fabric tab that says how each part stands, in the order you work through it", status="Built",
+         source=[("S8", "the fabric tab, read against the same principles: the fabric scrolled out of view, parts didn't say "
+                        "whether they were done, the owner's record came after the two things it depends on, use cases "
+                        "were long, pointers weren't links, and Finance's main action was a small link at the bottom")],
+         what=["The fabric bar (each fabric with its priority and what's to settle) stays at the top of the screen while the "
+               "parts scroll; 'Not assessed in IoT or Media' sits beside it.",
+               "Each part's title says how it stands, in the words Waiting on you uses: amber when something needs settling, "
+               "grey when it isn't recorded yet, green when it's done. Parts that are done start folded.",
+               "The priority is a sentence: 'P2 because it arrives mid-term (how soon: 6 of 10, from 2 of 2 measures) and the "
+               "prize is big (how big: 8 of 10, from 2 of 4 measures)'.",
+               "Use cases are compact: sources folded into '4 sources', the capital in a word with 'why' one click away, "
+               "each lever on one line; 'How it makes money, step by step' still opens under each.",
+               "Tata's plan for it, one part, holding the owner, how far Tata has got and what could stop it scaling "
+               "(reworked in change 20).",
+               "Pointers are links: 'enter it under Finance' opens Finance and scrolls to it; 'Setup › Fabrics' and "
+               "'Setup › Path to scale' open those pages.",
+               "Finance leads with Enter the figures. It says figures are asked for from Proof of concept (step 3), and what "
+               "the next step needs from it now; until a figure is worked out, what they need is listed once."],
+         why="A fabric tab is where people do the work; each part now says whether it waits on them, in the order they do it.",
+         metrics=[("Fabric tab height, Agentic AI in Cloud, 1440 px", "2,833 px", "2,637 px"),
+                  ("Use cases, two of them (1440 / 400 px)", "656 / 1,649 px", "491 / 1,154 px"),
+                  ("Which fabric you're in, scrolled to Finance", "Only the headings' 'in Cloud'", "The fabric bar, always in view"),
+                  ("Parts that say how they stand", "None",
+                   "Measures, Tata's plan and Finance always; Use cases when a suggestion waits"),
+                  ("Owner's record order", "Blockers, step, owner (the reverse of what it needs)", "Owner, step, blockers"),
+                  ("Pointers that are links", "0 of 5", "5 of 5")],
+         diagram=None,
+         before=[("item-19-before-top.png", "Before: the fabric buttons at the top only, the priority as a row of numbers, every part open."),
+                 ("item-19-before-plan.png", "Before: blockers, then the path, then the owner, as three separate parts, and Finance's action a small link at the bottom.")]),
+    dict(n="20", title="Tata's plan: one process, and a status that says what's recorded", status="Built",
+         source=[("S8", "your review of change 19: the owner states (No owner yet, Defined, Aligned, Integrated) were drawn as "
+                        "steps, like the path to scale beneath them, so the section read as two processes; only the path "
+                        "to scale is a process")],
+         what=["Where Tata is: the path to scale, Tata's process, is the only progress track: a dot per step, filled to the "
+               "step reached, the next one ringed (down the screen on a phone). Under it: the step reached with Change step "
+               "and Undo, what the next step needs with a link to where it's entered, and every step's proof one click away.",
+               "The owner states are a status, not steps: the commitment, in the part's title, with how much is recorded "
+               "('Commitment: No owner yet · 1 of 4 recorded'). The leaders' view keeps the same four names.",
+               "What's recorded: a checklist of the four things that raise the commitment, each ticked or not, with its "
+               "action in its row: the step reached; owner and next action (Record, Change, Undo); what could stop it "
+               "scaling (Pick blockers… opens the checklist, with the pages' suggestions and their quotes, in place); "
+               "people, budget or a trial. One line says what each level means: Defined, Aligned, Integrated.",
+               "Nothing was dropped: every action and Undo works as before."],
+         why="One thing on the page should look like a process: the one Tata walks through. How much of the plan is on record "
+             "is a status, and now reads as one.",
+         metrics=[("Progress tracks in the part", "Two (the owner states and the path to scale)", "One: the path to scale"),
+                  ("The commitment shown as", "A row of four steps", "A status in the title, with '1 of 4 recorded'"),
+                  ("What raises the commitment", "Said in the states' captions", "A checklist, each row with its action"),
+                  ("Tata's plan in Cloud, 1440 / 400 px", "881 / 1,849 px", "550 / 953 px")],
+         diagram=None,
+         before=[("item-20-before-plan.png", "Before: the owner states drawn as four steps above the path to scale, so the part "
+                                             "read as two processes.")]),
+    dict(n="21", title="Finance set aside until Tata has discussed it", status="Built",
+         source=[("S8", "your review of the fabric tab: the finance card asked an emerging technology for retail-style inputs "
+                        "(volume, unit price, revenue displaced) it can't have yet, without saying what they were for")],
+         what=["Finance (contribution, payback, break-even, from Nick's note, S4) is set aside on every screen until Tata has "
+               "discussed how it wants to judge an emerging technology's business case: the fabric tab's Finance part, "
+               "Setup › Finance (its address now says it's set aside), the fabrics' finance defaults, the Point of View's "
+               "'Does it pay?' column and its finance fold, and the leaders' view, which shows the Point of View's parts.",
+               "Nothing asks for it meanwhile: the before-publishing list and Waiting on you no longer list finance inputs, "
+               "and the Point of View's writer isn't given finance. Figures already entered are kept, and the code is "
+               "kept, so it can come back as it was or changed.",
+               "The proof each step on the path needs is still recorded, now on the path itself: under 'Where Tata is', the "
+               "next step lists what it needs, with Enter… beside each piece a person records (Customer zero: a measured "
+               "cost per outcome; Proof of concept: a named buyer, a budget, a price). 'Proof for <step> is in hand' still "
+               "flags it, and a note alone no longer calls for figures.",
+               "Every dropdown in the portal (25 of them) has its arrow set in from the rounded edge, with room kept for "
+               "it after the text; the browser's own arrow sat against the edge."],
+         why="Ask for a number only when the technology's stage can have one, and say what it's for. Until Tata has decided "
+             "what an emerging technology's business case should hold, the honest screen asks for nothing.",
+         metrics=[("Finance inputs asked of an Evaluation-stage technology, per fabric", "11 fields (13 for a protection lever)", "None"),
+                  ("Where the next step's proof is entered", "In the finance form, under 'Evidence for the next step'",
+                   "Beside the next step, on the path"),
+                  ("Screens that show finance", "6", "0 (kept, switched off)")],
+         diagram=None,
+         before=[("item-21-before-finance.png", "Before: the finance form on an Evaluation-stage technology: revenue, volume, "
+                                                "unit price, revenue it displaces, costs and margin, with the next step's proof among them.")]),
+    dict(n="22", title="The Briefing and the Points of View, read first-time", status="Built",
+         source=[("S8", "the Briefing, the Points of View list and one Point of View, read against the same principles")],
+         what=["Briefing: it leads with To do. The three cards (before scoring, before publishing, publish the edition) "
+               "list what waits even when closed, row by row, in place of '4 things to settle · 196 items', a sum that "
+               "counted one technology several times.",
+               "Briefing: the publish card says what has changed since the edition leaders see ('Since then: 22 Points of "
+               "View rewritten'), so it's clear when publishing would change anything.",
+               "Briefing: what the radar found sits under its own heading. The window menu is on the line it changes "
+               "('Last 7 days: 795 findings from 533 pages'), and Recent findings and Older articles found now are two "
+               "tabs with their counts, in place of one list where the older ones came after 375 recent ones. A "
+               "finding with no publication date says so.",
+               "Points of View: sorted by highest priority (a technology's best fabric), or newest written; filtered by "
+               "fabric, by priority (including 'no priority', now written on the card) and to those with newer pages.",
+               "Points of View: 'Keeping them current' at the top: those written from an older assessment can be written "
+               "now, with the cost; those with newer pages need their technology assessed again first, since a Point of "
+               "View only explains its assessment. Rewrite all moves up beside them, away from 'Show more'.",
+               "One Point of View: a line under the title says when pages arrived after it was written, and what to do. "
+               "One way back, and 'Open the technology' only when the back link doesn't go there; the assessment run "
+               "is under Technical details.",
+               "One Point of View: the evidence card's reason is labelled 'at its latest look': the radar's most recent "
+               "judgment can have read only the newest pages, so it isn't presented as the reason for all of them. The "
+               "score legend is one line; the rest is in How to read this page.",
+               "The Point of View skill (version 9) calls the company Tata, never TCL, even where its inputs say TCL. "
+               "Points of View change as they're written again; none was rewritten now."],
+         why="The Briefing is where work starts and the Points of View are what leaders act on: each now says first what "
+             "waits, what's current and what isn't.",
+         metrics=[("Briefing: what a closed to-do card says", "'4 things to settle · 196 items'", "Each thing that waits, by name"),
+                  ("Briefing: findings counts on the page", "Three (795, 375, '20 of 795')", "One per tab, with the window on its line"),
+                  ("Briefing: whether publishing would change anything", "Not said", "What changed since the edition"),
+                  ("Points of View: order", "Newest written", "Highest priority first; filters by fabric, priority, newer pages"),
+                  ("One Point of View: out of date", "Not said", "Said under the title, with what to do")],
+         diagram=None,
+         before=[("item-22-before-briefing.png", "Before: three folded cards saying only how many things to settle, and the "
+                                                 "window menu in the corner."),
+                 ("item-22-before-povs.png", "Before: the Points of View in the order they were written, with search only."),
+                 ("item-22-before-pov.png", "Before: four links at the top, and no word that a page arrived after it was written.")]),
+    dict(n="23", title="The Briefing's To do in one strip, and plain tab names", status="Built",
+         source=[("S8", "your review of change 22: the three to-do cards took the whole page, and 'Older articles found now' "
+                        "didn't say what 'now' meant")],
+         what=["To do is one strip of three columns: Before scoring, Before publishing, Publish the edition. Each lists its "
+               "first three items (and how many more), each opening where it's done; the publish column says when it was "
+               "last published and what changed since.",
+               "A column's title, or Open, shows its full list below the strip, with every in-place action as before (a "
+               "run with its cost, Yes or No on each possibly nascent technology, Publish). The browser remembers which "
+               "one you left open.",
+               "The findings tabs are New and Old (a finding can be an article, a paper or a report, so not 'news'). Old "
+               "was published more than 30 days before the radar collected it: background, not new; the line beside the "
+               "tabs says so."],
+         why="The Briefing's work list should be seen at a glance, not scrolled past; and a tab's name should say what "
+             "decides it.",
+         metrics=[("Height of To do (1440 px)", "About 400 px, three stacked cards", "172 px, one strip"),
+                  ("Where the findings start (1440 px)", "About 760 px down", "About 530 px down"),
+                  ("The tabs' names", "'Recent findings', 'Older articles found now'", "'New', 'Old', with what Old means beside them")],
+         diagram=None,
+         before=[("item-23-before-briefing.png", "Before: the three to-do cards stacked across the full width, pushing the "
+                                                 "findings below the first screen.")]),
+    dict(n="24", title="To do's open list as cards, and what Publish does", status="Built",
+         source=[("S8", "your review of change 23: an opened column filled the page with white space and pushed it down; "
+                        "and it wasn't clear what Publish sends, or which Point of View leaders see")],
+         what=["An opened column's list shows as cards, two or three across (one on a phone): each with its sentence, a "
+               "line on what it means and its one action. The technologies behind it fold under 'Which ones', with Yes "
+               "or No on each possibly nascent one as before.",
+               "The third column is 'Publish to leaders'. It says which edition leaders see and what changed since; "
+               "opened, it says that leaders see only what's published, never work in progress, and exactly what a "
+               "publish now sends: every Point of View and placement as it stands, and what isn't placed yet with the "
+               "reason. Publishing rewrites nothing, costs no model calls and keeps every earlier edition.",
+               "'Before publishing' says it's advice, not a gate: what's unsettled goes to leaders as it stands, with its "
+               "reason.",
+               "Each Point of View says which version leaders see: this one, or an earlier one in the latest edition, "
+               "with a link that opens Publish on the Briefing. The Points of View list says how many were written "
+               "after the edition."],
+         why="A list that opens should keep the page in place; and the person publishing should know what leaders will "
+             "see before and after they press it.",
+         metrics=[("Height of the opened Before publishing list (1440 px)", "Over 750 px", "364 px"),
+                  ("Which Point of View leaders see", "Not said anywhere outside the leaders' view",
+                   "Said on every Point of View and on the list"),
+                  ("What Publish sends", "'Freezes every placement and Point of View'",
+                   "The counts: 249 Points of View, 399 placements, 117 not placed yet")],
+         diagram=None,
+         before=[("item-24-before-todo.png", "Before: Before publishing opened as full-width rows, each with five "
+                                             "technologies, running past the first screen.")]),
+    dict(n="25", title="Operations: the steps in order, and only what matters", status="Built",
+         source=[("S8", "our review of Operations against the design principles: six steps drawn as tiles with no order, "
+                        "a history of one line per Point of View, and the developers' service checks in plain view")],
+         what=["The six steps are numbered in the order they run, and each says who moves it on: you start it "
+               "(Collect), it runs by itself (Signals, Organize, Classify), or it waits for you (Assess, Points of View). "
+               "Only a step that waits for you carries the main button.",
+               "Points of View written since the edition leaders see are counted on their step, with a link to Publish.",
+               "Overview, Collections and Assessment runs are tabs of one place. History groups Points of View written "
+               "one at a time into one row ('4 written · 4 model calls'), and 'By skill' reads 'Cost by skill'.",
+               "Service health shows only with Technical details on, or whenever the API or the database is down.",
+               "One label for one action: 'Assess them again' everywhere. Redo scores on a run's page asks first and "
+               "says what it changes: priorities may move, and leaders see that only after the next publish."],
+         why="A process should read in its order, and a page should show the reader's work, not the system's.",
+         metrics=[("Steps in order", "Six tiles, unnumbered", "Numbered 1–6, each saying who moves it on"),
+                  ("Rows in History", "One per run: 59 on 21 Oct", "35, single Points of View grouped"),
+                  ("Service health", "Always shown", "Only when Technical details is on, or something is down")],
+         diagram=None,
+         before=[("item-25-before-operations.png", "Before: six tiles with no order, and no word on which run by "
+                                                   "themselves.")]),
+    dict(n="26", title="Setup: grouped, with work moved out and safer controls", status="Built",
+         source=[("S8", "our review of Setup: a flat menu of eleven kinds of thing, work living in Setup, hidden edit "
+                        "controls, and actions too easy to trigger")],
+         what=["The menu has four groups: what the radar reads, how it judges, Tata's frame, and the system.",
+               "Work moved out of Setup: Import technologies sits under Technologies ('Import a catalog file'), and the "
+               "sub-domains the model proposed wait in the Briefing's To do with the import's matches.",
+               "Every list edited in place says Edit on each row, as the Signal list did; a fabric's form scrolls into view when opened.",
+               "A signal's Delete sits inside its Edit form, behind a confirm. The cut-points are number fields with "
+               "the bands said in words. Changing how an assessment calls the model asks first, with its cost.",
+               "Developer details sit behind Technical details: the evidence limit, how an assessment calls the model, "
+               "the page-part settings, the judging token limit and the skill map's 'agent' marks. Changes speaks of "
+               "'the defaults' rather than 'starting files', and a sub-domain's status reads proposed → accepted."],
+         why="Setup should say what each part is for, show what can be changed, and make mistakes hard.",
+         metrics=[("Menu", "11 items in one list", "10 items in 4 groups; Import under Technologies"),
+                  ("Delete buttons on the Signal list", "37, one per row", "None on the rows; one inside Edit"),
+                  ("Lists that say Edit on each row", "Signal list only", "Also Fabrics, Measures, Classification, Path to scale, Mechanisms, Assumptions")],
+         diagram=None,
+         before=[("item-26-before-signal-list.png", "Before: a Delete as prominent as Edit on every one of the 37 rows.")]),
+    dict(n="27", title="Setup's pages: answer where you read, and Tata's words", status="Built",
+         source=[("S8", "our review of Setup's pages: open questions answered on another tab, numbers that said "
+                        "nothing, a list shown twice, and 'TCL' in the setup text")],
+         what=["Each open question has Mark settled beside it; the item keeps its values. (Raising or settling a "
+               "question on a fabric no longer clears its 'what Tata has today' text, which it could before.)",
+               "Scoring method opens with one plain line ('12 setup decisions wait on Tata's answer') instead of "
+               "number tiles. Path to scale shows its steps once.",
+               "Sources say On or Off in words; a source's page has its switch at the top.",
+               "Settings flags edits not saved yet, and its time-zone line follows the rule: each time shows in the "
+               "zone of the person who did the thing.",
+               "'TCL' is now 'Tata' in the fabrics, measures, open questions and the Sources H1 line (16 setup items), "
+               "kept as the defaults."],
+         why="An answer belongs where the question is read, and the screens should use the client's own name.",
+         metrics=[("Where an open question is settled", "On its item's tab", "Beside it, on Open questions"),
+                  ("'TCL' in setup text", "40 places", "None"),
+                  ("Path to scale's proof", "Listed twice", "Once")],
+         diagram=None,
+         before=[("item-27-before-open-questions.png", "Before: open questions to read here and settle elsewhere.")]),
+    dict(n="28", title="Tata's plan reaches the Point of View in full", status="Built",
+         source=[("S8", "your request for a worked example: an invented plan for one catalog technology, to see what it "
+                        "changes in the Point of View")],
+         what=["The Point of View is now written from everything recorded in Tata's plan, labelled as Tata's own "
+               "record: the step reached and why, the proof recorded for each step, whether the next step's proof is "
+               "in hand, the blockers, and the owner's next action and date, people, budget and trial.",
+               "Its skill (version 10) says how to use it: attribute it to Tata and quote it exactly; never list as "
+               "missing what Tata has recorded; name the blockers as risks; end the recommendation on the owner's next "
+               "action and date.",
+               "Worked example, invented for the demo: Agentic AI in Interaction, at Customer zero (Tata's own service "
+               "desk at US$2.80 a resolved request against US$6.90), a bank's letter of intent, three blockers, and an "
+               "owner with a pilot to sign by 15 Dec 2026. Published in the edition 'Demo: Agentic AI plan'.",
+               "Small fixes: the indicative price shows as '$0.45 a unit', a next action no longer reads 'each., by', "
+               "and a section the model puts in the wrong place is moved back before the page shows it."],
+         why="What Tata records about its own plan is the strongest evidence a Point of View can have; it should "
+             "change the conclusion, not sit beside it.",
+         metrics=[("What the Point of View received from the plan", "One line: step, blockers, 'proof in hand'",
+                   "All of it, as Tata's own record"),
+                  ("Recommendation in the example", "Ended on signs to watch",
+                   "Ends on the owner's next action, by 15 Dec 2026"),
+                  ("Gaps in the example", "Asked for the cost Tata had already measured",
+                   "Asks for outside confirmation of Tata's figures")],
+         diagram=None,
+         before=[]),
 ]
 
 DECISIONS = [
+    "Finance (contribution, payback, break-even) is set aside on every screen until Tata has discussed it; figures and "
+    "code are kept (21 Oct).",
     "Detection stays the core; each Point of View carries the path to scale; no macro model.",
     "Tata's own categories are used: commercial availability, domain and sub-domain, TRL.",
     "An imported list means 'these are emerging technologies we care about'; each row's own commercial availability is kept.",

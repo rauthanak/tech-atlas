@@ -32,6 +32,12 @@ large), and Gate 2 lists it (services/gates)."""
 from app.services import decisions
 from app.services.db.mongo import get_collection
 
+# Finance (contribution, payback, break-even) is set aside until Tata has discussed it (21 Oct 2026): nothing asks
+# for it or shows it, the Point of View isn't given it, and Gate 2 doesn't list it. Its figures and code are kept,
+# and a rung's evidence (a named buyer, a price, a measured cost per outcome) is still recorded. The portal's
+# FINANCE_SHOWN (lib/value.ts) is its pair.
+SHOWN = False
+
 POC = "proof_of_concept"
 # what a rung can need: its words, and where it comes from (the assessment,
 # a note or figure entered on the finance card, or a figure code works out)
@@ -105,7 +111,9 @@ def figures(tech_id: str, fabric_id: str, decs: list[dict] | None = None, fabric
 
     out: dict = {"step": {"id": step["_id"], "name": step["name"], "order": step["order"]} if step else None,
                  "step_decision": _brief(step_d),
-                 "needed": bool(step and step["order"] >= poc) or bool(entered),
+                 # a rung's note alone (a named buyer, a measured cost) doesn't call for figures
+                 "needed": bool(step and step["order"] >= poc) or any(
+                     k in v for k in (*decisions.FINANCE_AMOUNTS, *decisions.FINANCE_SHARES)),
                  "entered": _brief(entered), "mechanism": mechanism, "margin": margin, "revenue": revenue,
                  "displaced": displaced, **inputs, **loss,
                  "notes": {k: {"value": v[k], **src()} if v.get(k) else None for k in NOTES}, "missing": {}}

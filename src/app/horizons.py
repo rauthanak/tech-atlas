@@ -4,7 +4,7 @@ collection stores just the horizon key."""
 HORIZONS: dict[str, dict[str, str]] = {
     "H1": {
         "label": "Already on the market",
-        "meaning": "If TCL does not have it, that is a miss.",
+        "meaning": "If Tata doesn't have it, that's a miss.",
     },
     "H2": {
         "label": "Money is moving before the market",

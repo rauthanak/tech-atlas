@@ -1,22 +1,22 @@
 <!doctype html>
-<!-- The Tech Radar business process as a swimlane diagram (21 Oct 2026). Rendered to
+<!-- The Tech Radar business process as a swimlane diagram (21 Oct 2026; v2 after changes 18–24: Tata's plan as its own lane, Gate 2 a person's decision); render at width 4100. Rendered to
      review-comments/10-20-2026/Tech Radar - process.png in the API container (it has the browser):
        docker cp process.html tech-radar-atlas-1:/tmp/ && docker exec tech-radar-atlas-1 python -c "
        from playwright.sync_api import sync_playwright
        with sync_playwright() as p:
-           b = p.chromium.launch(); pg = b.new_page(viewport={'width': 3700, 'height': 1000}, device_scale_factor=1.5)
+           b = p.chromium.launch(); pg = b.new_page(viewport={'width': 4100, 'height': 2300}, device_scale_factor=1.5)
            pg.set_content(open('/tmp/process.html').read()); pg.wait_for_timeout(500)
            pg.locator('#sheet').screenshot(path='/tmp/process.png')"
      Boxes sit on a grid (lanes are rows, steps are columns); the arrows are drawn after layout from the boxes' positions. -->
 <html><head><meta charset="utf-8"><style>
   :root { --navy:#041a4a; --azure:#2457c5; --ink:#1b1f2a; --muted:#545b6b; --line:#b9c3d6;
-          --team:#fff6e3; --team-edge:#e5a100; --radar:#eef5ff; --radar-edge:#2457c5; --lead:#eaf7f3; --lead-edge:#2a9d8f; }
+          --team:#fff6e3; --team-edge:#e5a100; --plan:#f3edff; --plan-edge:#6b3fc4; --radar:#eef5ff; --radar-edge:#2457c5; --lead:#eaf7f3; --lead-edge:#2a9d8f; }
   * { box-sizing:border-box; }
   body { margin:0; background:#fff; font:13px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color:var(--ink); }
   #sheet { position:relative; width:max-content; padding:28px 32px 26px; background:#fff; }
   h1 { margin:0; font-size:28px; color:var(--navy); }
   .sub { margin:4px 0 18px; color:var(--muted); font-size:14px; }
-  #board { position:relative; display:grid; grid-template-columns:56px 230px repeat(9, 300px); column-gap:62px; }
+  #board { position:relative; display:grid; grid-template-columns:56px 230px repeat(10, 300px); column-gap:62px; }
   .lane { grid-column:1 / -1; border-top:2px solid #8e9bb5; margin-left:-0px; }
   .lane-label { grid-column:1; writing-mode:vertical-rl; transform:rotate(180deg); display:flex; align-items:center;
                 justify-content:center; font-weight:700; font-size:14px; color:var(--navy); text-align:center; padding:8px 0; }
@@ -26,6 +26,18 @@
          box-shadow:0 1px 0 rgba(0,0,0,0.04); align-self:start; }
   .box.team { border-color:var(--team-edge); }
   .box.lead { border-color:var(--lead-edge); }
+  .box.plan { border:2.5px solid var(--plan-edge); box-shadow:0 0 0 4px rgba(107,63,196,0.12); }
+  .box.plan .n { background:var(--plan-edge); }
+  .track { display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; padding:8px 10px 2px; }
+  .track div { position:relative; background:#fff; border:1.5px solid var(--plan-edge); border-radius:6px; padding:5px 6px 6px; font-size:11.5px; line-height:1.3; color:var(--muted); }
+  .track b { display:block; font-size:12.5px; color:var(--navy); margin-bottom:2px; }
+  .track div.tbd { border-style:dashed; }
+  .sec { padding:6px 10px 0; font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); font-weight:700; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; padding:5px 10px 2px; align-items:center; font-size:12px; }
+  .chip { border-radius:999px; padding:1px 9px; border:1px solid #c9cfdb; background:#f6f7fa; }
+  .chip.on { background:#e6f6ee; border-color:#86c9a5; }
+  .goes { margin:8px 10px 8px; padding:6px 9px; border-radius:6px; background:#fff; border:1px dashed var(--plan-edge); font-size:12.5px; }
+  .tag { display:inline-block; font-size:10.5px; font-weight:700; color:#fff; background:var(--plan-edge); border-radius:3px; padding:0 5px; margin-left:6px; vertical-align:2px; }
   .box .hd { padding:7px 10px 6px; border-bottom:1px solid #e3e7ef; display:flex; gap:8px; align-items:baseline; }
   .box .n { flex:none; width:22px; height:22px; border-radius:50%; background:var(--navy); color:#fff; font-size:12px; font-weight:700;
             display:inline-flex; align-items:center; justify-content:center; transform:translateY(3px); }
@@ -53,15 +65,17 @@
 </style></head><body>
 <div id="sheet">
   <h1>Tech Radar: the business process</h1>
-  <div class="sub">How a technology goes from a web page to Tata's leaders, who does each step, where people decide, and what a user can do at each step. As it runs on 21 Oct 2026; numbers are today's settings.</div>
+  <div class="sub">How a technology goes from a web page to Tata's leaders, who does each step, where people decide, and what a user can do at each step. As it runs on 21 Oct 2026, after changes 18–24; numbers are today's settings. Tata's plan, the Evidence to Investment path, has its own lane (purple).</div>
   <div id="board">
     <!-- lane bands -->
     <div class="band" style="grid-row:1 / 3; background:var(--team)"></div>
-    <div class="band" style="grid-row:3; background:var(--radar)"></div>
-    <div class="band" style="grid-row:4; background:var(--lead)"></div>
+    <div class="band" style="grid-row:3; background:var(--plan)"></div>
+    <div class="band" style="grid-row:4; background:var(--radar)"></div>
+    <div class="band" style="grid-row:5; background:var(--lead)"></div>
     <div class="lane-label" style="grid-row:1 / 3">Innovation team · Tech Lens (admin)</div>
-    <div class="lane-label" style="grid-row:3">Radar · runs by itself</div>
-    <div class="lane-label" style="grid-row:4">Tata's leaders · leaders' view</div>
+    <div class="lane-label" style="grid-row:3">Tata's fabric owners<small>Evidence to Investment</small></div>
+    <div class="lane-label" style="grid-row:4">Radar · runs by itself</div>
+    <div class="lane-label" style="grid-row:5">Tata's leaders · leaders' view</div>
 
     <!-- innovation team, top row: the main path and the two gates -->
     <div id="start" class="event" style="grid-row:1; grid-column:2; justify-self:start; margin-left:10px">start</div>
@@ -76,16 +90,17 @@
       <svg viewBox="0 0 250 170"><polygon points="125,3 247,85 125,167 3,85" fill="#fff" stroke="#e5a100" stroke-width="2.5"/></svg>
       <div>Gate 1: Before scoring<small>Enough evidence to assess?</small><small>Briefing › Before scoring</small></div>
     </div>
-    <div id="g2" class="gate" style="grid-row:1; grid-column:8">
+    <div id="g2" class="gate" style="grid-row:1; grid-column:10">
       <svg viewBox="0 0 250 170"><polygon points="125,3 247,85 125,167 3,85" fill="#fff" stroke="#e5a100" stroke-width="2.5"/></svg>
-      <div>Gate 2: Before publishing<small>Everything settled?</small><small>Briefing › Before publishing</small></div>
+      <div>Gate 2: Ready to publish?<small>A person decides</small><small>Briefing › To do › Before publishing</small></div>
     </div>
-    <div id="s9" class="box team" style="grid-row:1; grid-column:10">
-      <div class="hd"><span class="n">9</span><span class="t">Publish an edition<span class="who">a person; no AI</span></span></div>
-      <ul><li>Freezes the placements, Points of View and assumptions as they stand</li>
-          <li>Refused while an assessment or Points of View are being written</li></ul>
+    <div id="s9" class="box team" style="grid-row:1; grid-column:11">
+      <div class="hd"><span class="n">10</span><span class="t">Publish to leaders<span class="who">a person; no AI · Briefing › To do › Publish to leaders</span></span></div>
+      <ul><li>Copies every Point of View and placement as they stand, with the assumptions in force: an edition. Leaders see only the latest edition, never work in progress</li>
+          <li>Refused only while an assessment or Points of View are being written; rewrites nothing; earlier editions are kept</li></ul>
       <div class="can"><b>You can</b><ul>
-        <li>Publish the edition, named and dated (Briefing)</li>
+        <li>Publish, named or dated; it says first what it sends</li>
+        <li>See on each Point of View which version leaders see</li>
         <li>Check the assumptions first (Setup › Assumptions)</li></ul></div>
     </div>
 
@@ -99,21 +114,43 @@
         <li>Review catalog import matches: accept or reject</li>
         <li>Switch it off, or wait for the next collection</li></ul></div>
     </div>
-    <div id="fix2" class="box team" style="grid-row:2; grid-column:8">
-      <div class="hd"><span class="n">7</span><span class="t">Settle what's open<span class="who">a person, with Tata; the technology's fabric tab</span></span></div>
+
+    <div id="s7" class="box team" style="grid-row:2; grid-column:10">
+      <div class="hd"><span class="n">9</span><span class="t">Settle what's open<span class="who">a person, with Tata · the technology's page</span></span></div>
+      <ul><li>Before publishing lists what's open; anything left unsettled goes to leaders as it stands, with its reason</li></ul>
       <div class="can"><b>You can</b><ul>
         <li>Score a measure by hand, or accept the gap (with a reason)</li>
-        <li>Enter Tata's figure: disruption threat, serviceable capture</li>
+        <li>Enter Tata's figures: disruption threat, serviceable capture</li>
         <li>Accept or reject suggested use cases</li>
         <li>Override the priority (with a reason)</li>
-        <li>Tick the blockers that apply</li>
-        <li>Record the step reached on the path to scale</li>
-        <li>Record the owner, next action and what's committed</li>
-        <li>Enter finance figures (from Proof of concept)</li></ul></div>
+        <li>Settle a TRL and Maturity score that disagree</li></ul></div>
+    </div>
+
+    <!-- Tata's plan: the Evidence to Investment path, its own lane -->
+    <div id="plan" class="box plan" style="grid-row:3; grid-column:8 / span 2">
+      <div class="hd"><span class="n">7</span><span class="t">Tata's plan: Evidence to Investment<span class="tag">TATA DECIDES</span><span class="who">for each technology in each fabric, once it's assessed there. Tata's fabric owner decides; the team records it on the technology's fabric tab › Tata's plan. It never changes a score.</span></span></div>
+      <div class="sec">The path to scale: the proof that reaches each step</div>
+      <div class="track">
+        <div><b>1 Evaluation</b>a use case with a named lever</div>
+        <div><b>2 Customer zero</b>measured cost per outcome against today's process, Tata using it itself</div>
+        <div><b>3 Proof of concept</b>a named buyer, a budget, an indicative price</div>
+        <div><b>4 One customer</b>positive contribution after running costs; payback</div>
+        <div class="tbd"><b>5 Beta</b>for Tata to define</div>
+        <div class="tbd"><b>6 Roadmap</b>for Tata to define</div>
+        <div class="tbd"><b>7 Investment</b>for Tata to define</div>
+      </div>
+      <div class="can" style="margin-top:8px"><b>You record</b><ul>
+        <li>The step Tata has reached, and the next step's proof as it comes in</li>
+        <li>What could stop it scaling: the fabric's blockers, or another</li>
+        <li>The owner and the next action, with its date</li>
+        <li>People, budget or a trial committed</li></ul></div>
+      <div class="sec">Commitment: a status worked out from what's recorded, not a step</div>
+      <div class="chips"><span class="chip">No owner yet</span>→<span class="chip">Defined: owner and next action</span>→<span class="chip">Aligned: + step and blockers</span>→<span class="chip on">Integrated: + people, budget or a trial</span></div>
+      <div class="goes"><b>Where it goes.</b> Into the Point of View's text when it's next written, all of it, as Tata's own record: the step reached and its proof, the blockers as risks, and the owner's next action and date, which ends the recommendation. Beside the Point of View, for leaders: the commitment and the owner. As Tata moves up a step, record it, rewrite the Point of View, publish. Finance figures are set aside until Tata has discussed them.</div>
     </div>
 
     <!-- radar -->
-    <div id="s2" class="box" style="grid-row:3; grid-column:3">
+    <div id="s2" class="box" style="grid-row:4; grid-column:3">
       <div class="hd"><span class="n">2</span><span class="t">Collect and read pages<span class="who">automatic, once started</span></span></div>
       <ul><li>Crawls each switched-on source: up to 60 pages per source, 5 crawlers at once; unchanged pages skipped</li>
           <li><span class="ai">AI</span>1 call per new page: a summary, the findings (events with a quote) and the technologies it names</li>
@@ -124,7 +161,7 @@
         <li>Change what counts as a finding (Setup › Signal list), then Check again</li>
         <li>Read the findings (Briefing)</li></ul></div>
     </div>
-    <div id="s3" class="box" style="grid-row:3; grid-column:4">
+    <div id="s3" class="box" style="grid-row:4; grid-column:4">
       <div class="hd"><span class="n">3</span><span class="t">Organize technologies<span class="who">automatic, after each collection</span></span></div>
       <ul><li>Code merges spellings of the same name</li>
           <li><span class="ai">AI</span>Groups new names into technologies (up to 4,000 names per call)</li>
@@ -134,7 +171,7 @@
         <li>Rename a technology, merge others into it, switch it off (its page › Manage)</li>
         <li>Add a technology by hand (Technologies)</li></ul></div>
     </div>
-    <div id="s4" class="box" style="grid-row:3; grid-column:5">
+    <div id="s4" class="box" style="grid-row:4; grid-column:5">
       <div class="hd"><span class="n">4</span><span class="t">Classify each technology<span class="who">automatic, after each collection</span></span></div>
       <ul><li><span class="ai">AI</span>1 call per technology, reading up to 10 of its pages; 6 at a time</li>
           <li>Commercial availability, domain and sub-domain, TRL, how solid the evidence is, possibly nascent; each with its reason and pages</li></ul>
@@ -144,7 +181,7 @@
         <li>Import the catalog file and review it (Setup › Import)</li>
         <li>Accept, merge or rename proposed sub-domains (Setup › Classification)</li></ul></div>
     </div>
-    <div id="s6" class="box" style="grid-row:3; grid-column:7">
+    <div id="s6" class="box" style="grid-row:4; grid-column:7">
       <div class="hd"><span class="n">6</span><span class="t">Assess<span class="who">a person starts it; then automatic</span></span></div>
       <ul><li><span class="ai">AI</span>Per technology: 1 call (which fabrics it matters to; market, growth, maturity) + 1 call per relevant fabric (7 measures; up to 2 use cases with their levers and capital; blockers the pages show). About 3 calls each, 6 technologies at a time</li>
           <li>Code works out the three scores, the priority (P1–P6) and the horizon</li></ul>
@@ -153,32 +190,34 @@
         <li>Assess one technology (its page)</li>
         <li>Change measures, weights and cut-points (Setup › Scoring method)</li></ul></div>
     </div>
-    <div id="s8" class="box" style="grid-row:3; grid-column:9">
+    <div id="s8" class="box" style="grid-row:4; grid-column:9">
       <div class="hd"><span class="n">8</span><span class="t">Write Points of View<span class="who">a person starts it; then automatic</span></span></div>
-      <ul><li><span class="ai">AI</span>1 call per technology, from its assessment; 6 at a time</li>
+      <ul><li><span class="ai">AI</span>1 call per technology, from its assessment, people's choices and Tata's plan; 6 at a time</li>
           <li>Explains, never scores; every claim cites a numbered page</li></ul>
       <div class="can"><b>You can</b><ul>
         <li>Write all that wait, or Rewrite one (Points of View)</li>
+        <li>See whether leaders see this version or an earlier one</li>
         <li>Read it, open Why on any score, print or save as PDF</li></ul></div>
     </div>
 
     <!-- leaders -->
-    <div id="s10" class="box lead" style="grid-row:4; grid-column:10">
-      <div class="hd"><span class="n">10</span><span class="t">Read the edition<span class="who">Tata's leaders, at their own address</span></span></div>
+    <div id="s10" class="box lead" style="grid-row:5; grid-column:11">
+      <div class="hd"><span class="n">11</span><span class="t">Read the edition<span class="who">Tata's leaders, at their own address</span></span></div>
       <ul><li>The grid by fabric and stage; best bets on the frontier</li>
-          <li>Each technology's Point of View, owner state and evidence</li>
+          <li>Each technology's Point of View, with Tata's commitment, owner and next action beside it, and the evidence</li>
           <li>The assumptions in force</li></ul>
       <div class="can"><b>They can</b><ul>
         <li>Switch fabric, stage, and the Growth or Defence lens</li>
         <li>Open a Point of View, print it</li>
         <li>Nothing here changes data: it's read-only</li></ul></div>
     </div>
-    <div id="end" class="event end" style="grid-row:4; grid-column:11; justify-self:start; margin-left:4px">end</div>
+    <div id="end" class="event end" style="grid-row:5; grid-column:12; justify-self:start; margin-left:4px">end</div>
   </div>
   <div class="key">
     <span><i class="sw" style="background:var(--team);border-color:var(--team-edge)"></i>innovation team: people decide</span>
     <span><i class="sw" style="background:var(--radar);border-color:var(--radar-edge)"></i>the radar: runs by itself once started</span>
     <span><i class="sw" style="background:var(--lead);border-color:var(--lead-edge)"></i>Tata's leaders: read-only</span>
+    <span><i class="sw" style="background:var(--plan);border-color:var(--plan-edge)"></i>Tata's plan: Tata decides, the team records it</span>
     <span><svg width="30" height="20"><polygon points="15,1 29,10 15,19 1,10" fill="#fff" stroke="#e5a100" stroke-width="2"/></svg>gate: a decision with Yes / No</span>
     <span><span class="ai">AI</span>a step that makes model calls</span>
     <span><svg width="44" height="10"><line x1="0" y1="5" x2="44" y2="5" stroke="#6b778f" stroke-width="2" stroke-dasharray="6 4"/></svg>loops back</span>
@@ -229,11 +268,14 @@
   wire(["g1", "r"], ["s6", "t"], { label: "Yes: evidence strong or enough, or confirmed nascent → Assess", kind: "yes", labelSeg: 0, dx: -10, dy: -22 });
   wire(["g1", "b"], ["fix1", "t"], { label: "No: thin or no evidence", kind: "no", labelSeg: 0, dx: 8, dy: -4 });
   wire(["fix1", "b"], ["s2", "b"], { via: [{ y: laneB() + 2 }], dashed: true, label: "new pages: read, organized and classified again", kind: "loop", labelSeg: 1, dx: 40, dy: -18 });
-  wire(["s6", "r", 0.1], ["g2", "l"], { via: [{ x: R("g2").l - 34 }], label: "scores, priority, use cases", labelSeg: 1, dx: -200, dy: 40 });
-  wire(["g2", "r"], ["s8", "t"], { label: "Yes → write Points of View", kind: "yes", labelSeg: 0, dx: -6, dy: -22 });
-  wire(["g2", "b"], ["fix2", "t"], { label: "No: something open", kind: "no", labelSeg: 0, dx: 8, dy: -4 });
-  wire(["fix2", "r", 0.2], ["g2", "r", 0.75], { via: [{ x: R("fix2").r + 22 }], dashed: true, label: "settled", kind: "loop", labelSeg: 1, dx: 6, dy: 0 });
-  wire(["s8", "r", 0.1], ["s9", "l", 0.8], { via: [{ x: R("s9").l - 34 }], label: "a person decides to publish", labelSeg: 1, dx: -190, dy: 0 });
+  wire(["s6", "r", 0.1], ["s8", "l", 0.1], { label: "scores, priority, use cases → a person starts writing", labelSeg: 0, dx: 4, dy: -20 });
+  wire(["s6", "r", 0.03], ["plan", "l", 0.12], { via: [{ x: R("plan").l - 26 }], label: "once assessed in a fabric", labelSeg: 1, dx: -190, dy: -30 });
+  wire(["plan", "b", 0.75], ["s8", "t"], { label: "all of the plan → its text", labelSeg: 0, dx: 8, dy: -4 });
+  wire(["plan", "r", 0.5], ["s10", "t", 0.25], { label: "commitment, owner, next action → beside each Point of View", labelSeg: 0, dx: 4, dy: -20 });
+  wire(["s8", "r", 0.1], ["g2", "l"], { via: [{ x: R("s7").l - 31 }] });
+  wire(["g2", "r"], ["s9", "l", 0.3], { label: "Yes → publish", kind: "yes", labelSeg: 0, dx: 0, dy: -22 });
+  wire(["g2", "b"], ["s7", "t"], { label: "No: settle first", kind: "no", labelSeg: 0, dx: 8, dy: -4 });
+  wire(["s7", "b"], ["s8", "r", 0.6], { dashed: true, label: "settled → rewrite the Point of View", kind: "loop", labelSeg: 0, dx: 8, dy: 120 });
   wire(["s9", "b"], ["s10", "t"], { label: "a new edition", labelSeg: 0, dx: 8, dy: 0 });
   wire(["s10", "r"], ["end", "l"]);
   wire(["s10", "b"], ["s1", "b", 0.75], { via: [{ y: below("s10") }, { x: R("s1").l + R("s1").w * 0.75 }], dashed: true,

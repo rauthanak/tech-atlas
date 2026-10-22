@@ -130,3 +130,30 @@ def test_the_before_publishing_list_counts_technologies_blocking_first(db):
 
 def _get_for(tech_id):
     return client.get(f"/api/technologies/{tech_id}/assessment").json()["assessment"]
+
+
+def test_the_technology_page_lists_what_is_still_open_in_each_fabric(db):
+    _setup(db, {"maturity-trl": 7, "commercial-adoption": 7})
+    load_seeded(db, "fabrics", "path_steps")
+    [o] = client.get("/api/technologies/edge-ai/summary").json()["open"]
+    assert o["fabric_id"] == "cloud" and o["unscored"] > 0 and o["blocking"] is True
+    assert o["waiting_for_tata"] == 2 and not o["owner"] and not o["blockers"] and o["step"] is None
+    assert o["leader"] == "undefined" and not o["resources"]
+    client.post("/api/decisions", json={"kind": "commitment", "tech_id": "edge-ai", "fabric_id": "cloud",
+                                        "value": {"owner": "A. Rao", "next_action": "a pilot", "due": "2026-12-01"}})
+    client.post("/api/decisions", json={"kind": "path_step", "tech_id": "edge-ai", "fabric_id": "cloud",
+                                        "value": "evaluation"})
+    [o] = client.get("/api/technologies/edge-ai/summary").json()["open"]
+    assert o["owner"] and o["step"] == "Evaluation" and o["leader"] == "defined"  # the blockers aren't recorded yet
+    assert o["next_step"]["name"] == "Customer zero" and o["next_step"]["missing"]
+
+
+def test_a_technology_history_says_each_choice_in_plain_words(db):
+    _setup(db, {"maturity-trl": 7, "commercial-adoption": 7})
+    load_seeded(db, "fabrics", "path_steps")
+    client.post("/api/decisions", json={"kind": "path_step", "tech_id": "edge-ai", "fabric_id": "cloud", "value": "evaluation"})
+    client.post("/api/decisions", json={"kind": "override", "tech_id": "edge-ai", "fabric_id": "cloud", "value": "P3",
+                                        "reason": "a pilot is funded"})
+    ds = client.get("/api/decisions", params={"tech_id": "edge-ai", "include_inactive": True}).json()["decisions"]
+    assert [d["what"] for d in ds] == ["Priority in Cloud set to P3", "Step reached in Cloud: Evaluation"]  # held: nothing computed
+    assert ds[0]["from_file"] is None

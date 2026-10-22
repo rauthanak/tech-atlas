@@ -63,3 +63,12 @@ def test_one_collection_and_the_filters(db):
     assert client.get("/api/briefing", params={"run_id": "c2", "days": "7"}).status_code == 422
     assert client.get("/api/briefing", params={"run_id": "nope"}).status_code == 404
     assert client.get("/api/briefing", params={"days": "soon"}).status_code == 422
+
+
+def test_the_briefings_two_tabs_recent_findings_and_older_articles(db):
+    setup(db)
+    since = client.get("/api/briefing").json()["scope"]["from"]
+    get = lambda older: client.get("/api/signals/found", params={"sort": "briefing", "since": since, "older": older}).json()
+    recent, older = get("false"), get("true")
+    assert older["total"] == 1 and [h["doc_id"] for h in older["hits"]] == ["a2"]
+    assert recent["total"] == 5 and all(not h["older"] for h in recent["hits"])

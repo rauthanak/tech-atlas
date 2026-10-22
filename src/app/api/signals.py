@@ -193,10 +193,11 @@ def _unwound(match: dict, tech: str | None) -> list[dict]:
 
 
 def hits(match: dict, signal_match: dict | None = None, limit: int = 50, skip: int = 0,
-         sort: str = "collected", tech: str | None = None) -> tuple[list[dict], int]:
+         sort: str = "collected", tech: str | None = None, older: bool | None = None) -> tuple[list[dict], int]:
     """Findings, one per hit, and their total: the one shape the Briefing,
     the technology page and the side panel share. `n` is the hit's place on
-    its page; `tech` keeps the hits about that technology.
+    its page; `tech` keeps the hits about that technology; `older` keeps
+    only older articles (True) or only recent findings (False).
 
     sort="collected": newest collected first.
     sort="briefing": recent before older, then the signal list's order, then
@@ -205,6 +206,8 @@ def hits(match: dict, signal_match: dict | None = None, limit: int = 50, skip: i
     if signal_match:
         pipeline.append({"$match": signal_match})
     pipeline.append({"$addFields": _keys(order())})
+    if older is not None:
+        pipeline.append({"$match": {"older": older}})
     by = {"scraped_at": -1, "_id": 1, "n": 1}
     if sort == "briefing":
         by = {"older": 1, "rank": 1, "date": -1, **by}
@@ -265,16 +268,17 @@ def tally(match: dict, tech: str | None = None) -> dict:
 @router.get("/signals/found")
 def found(signal_id: str | None = None, tech: str | None = None, source_id: str | None = None,
           run_id: str | None = None, since: str | None = None, until: str | None = None,
-          doc_id: str | None = None, sort: Literal["collected", "briefing"] = "collected",
+          doc_id: str | None = None, sort: Literal["collected", "briefing"] = "collected", older: bool | None = None,
           limit: int = Query(default=50, ge=1, le=100), skip: int = Query(default=0, ge=0)) -> dict:
     """Findings, one row per hit. `doc_id` gives one page's; `since`/`until`
     bound the collection time, so a loaded list pages through a fixed window;
-    `sort=briefing` gives the Briefing's order."""
+    `sort=briefing` gives the Briefing's order; `older` picks the Briefing's
+    tab (older articles, or recent findings)."""
     match = scope(since, until, run_id, source_id)
     if doc_id:
         match["_id"] = doc_id
     items, total = hits(match, {"signals.signal_id": signal_id} if signal_id else None, limit, skip,
-                        sort=sort, tech=tech.strip().lower() if tech else None)
+                        sort=sort, tech=tech.strip().lower() if tech else None, older=older)
     return {"hits": items, "total": total}
 
 

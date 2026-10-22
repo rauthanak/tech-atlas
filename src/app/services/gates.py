@@ -63,15 +63,16 @@ def gate2(all_states: dict | None = None) -> list[dict]:
     techs = {t["_id"]: t for t in get_collection("technologies").find(
         {"_id": {"$in": list(applied)}}, {"label": 1, "name": 1, "classification": 1, "assessed_classification": 1})}
     for tech_id, fabrics in applied.items():
-        states = [eff.counts(f) for f in fabrics]
         name = (techs[tech_id].get("label") or techs[tech_id]["name"]) if tech_id in techs else tech_id
         row = {"tech_id": tech_id, "name": name, "best": _best(fabrics),
                "fabrics": [f["fabric_id"] for f in fabrics]}
-        unscored = sum(s.get("unscored", 0) for s in states)
+        mine = [d for d in chosen if d["tech_id"] == tech_id]
+        opens = [fabric_open(tech_id, f, mine, path) for f in fabrics]
+        unscored = sum(o["unscored"] for o in opens)
         if unscored:
-            blocking = [{"fabric_id": f["fabric_id"], "fabric": f["fabric"]} for f in fabrics if eff.blocks_placement(f)]
+            blocking = [{"fabric_id": o["fabric_id"], "fabric": o["fabric"]} for o in opens if o["blocking"]]
             items["unscored"].append({**row, "measures": unscored, "blocking": blocking})
-        waiting = sum(s.get("waiting_for_tata", 0) for s in states)
+        waiting = sum(o["waiting_for_tata"] for o in opens)
         if waiting:
             items["waiting_for_tata"].append({**row, "measures": waiting})
         moved = [f for f in fabrics if f["effective"]["override_moved"]]
@@ -80,30 +81,16 @@ def gate2(all_states: dict | None = None) -> list[dict]:
                 {"fabric_id": f["fabric_id"], "fabric": f["fabric"], "override": f["effective"]["priority"],
                  "was": f["effective"]["override"]["computed"], "now": f["effective"]["computed_priority"]}
                 for f in moved]})
-        # suggested use cases (not from the pages) wait for a person to accept or reject
-        decided = {d["key"] for d in chosen if d["tech_id"] == tech_id and d["kind"] == "use_case"}
-        waiting_cases = [{"fabric_id": f["fabric_id"], "fabric": f["fabric"], "title": s["title"]}
-                         for f in fabrics for s in f.get("suggested_use_cases") or [] if s["key"] not in decided]
+        waiting_cases = [{"fabric_id": o["fabric_id"], "fabric": o["fabric"], "title": t}
+                         for o in opens for t in o["suggested_use_cases"]]
         if waiting_cases:
             items["suggested_use_cases"].append({**row, "cases": waiting_cases})
-        # at Proof of concept or later, finance figures need their inputs
-        mine = [d for d in chosen if d["tech_id"] == tech_id]
-        gaps = []
-        for f in fabrics:
-            fig = finance.figures(tech_id, f["fabric_id"], mine, None, path)
-            if fig["needed"] and fig["missing"]:
-                gaps.append({"fabric_id": f["fabric_id"], "fabric": f["fabric"],
-                             "missing": sorted({x for v in fig["missing"].values() for x in v})})
+        gaps = [{"fabric_id": o["fabric_id"], "fabric": o["fabric"], "missing": o["finance_missing"]}
+                for o in opens if o["finance_missing"]]
         if gaps:
             items["finance_missing"].append({**row, "gaps": gaps})
-        # Nick's ladder: a step is set, and the evidence for the next rung is in hand (services/finance)
-        ready = []
-        for f in fabrics:
-            if decisions.pick(mine, "path_step", tech_id=tech_id, fabric_id=f["fabric_id"]):
-                fig = finance.figures(tech_id, f["fabric_id"], mine, None, path, f)
-                if fig["next_step"] and fig["next_step"]["in_hand"]:
-                    ready.append({"fabric_id": f["fabric_id"], "fabric": f["fabric"], "at": fig["step"]["name"],
-                                  "next": fig["next_step"]["name"]})
+        ready = [{"fabric_id": o["fabric_id"], "fabric": o["fabric"], "at": o["step"], "next": o["next_step"]["name"]}
+                 for o in opens if o["next_step"] and o["next_step"]["in_hand"]]
         if ready:
             items["ready_next_step"].append({**row, "steps": ready})
         # the readiness level and the Maturity score should tell the same story
@@ -117,3 +104,44 @@ def gate2(all_states: dict | None = None) -> list[dict]:
                  "ready_next_step"):
         items[kind].sort(key=lambda r: (r["best"], r["name"]))
     return [{"kind": kind, "count": len(rows), "technologies": rows} for kind, rows in items.items() if rows]
+
+
+def fabric_open(tech_id: str, f: dict, mine: list[dict], path: dict) -> dict:
+    """What's still open for a technology in one fabric, as people left it
+    (`mine`: its choices in force): Gate 2's items (measures to settle,
+    suggested use cases, finance figures from Proof of concept on), then what
+    isn't recorded yet (the step reached, the blockers, an owner) and what the
+    next step still needs. One count for the technology page and Gate 2."""
+    from app.services import finance
+    c = eff.counts(f)
+    fig = finance.figures(tech_id, f["fabric_id"], mine, None, path, f)
+    nxt = fig["next_step"]
+    decided = {d["key"] for d in mine if d["kind"] == "use_case"}
+    return {
+        "fabric_id": f["fabric_id"], "fabric": f["fabric"], "priority": f["effective"]["priority"],
+        "unscored": c.get("unscored", 0), "blocking": eff.blocks_placement(f),
+        "waiting_for_tata": c.get("waiting_for_tata", 0),
+        "override_moved": f["effective"]["override_moved"],
+        # suggested use cases (not from the pages) wait for a person to accept or reject
+        "suggested_use_cases": [s["title"] for s in f.get("suggested_use_cases") or [] if s["key"] not in decided],
+        # at Proof of concept or later, finance figures need their inputs
+        "finance_missing": sorted({x for v in fig["missing"].values() for x in v}) if fig["needed"] and finance.SHOWN else [],
+        "step": fig["step"]["name"] if fig["step"] else None,
+        # Nick's ladder: once a step is set, what the next rung still needs (services/finance)
+        "next_step": {"name": nxt["name"], "in_hand": nxt["in_hand"],
+                      "missing": [{"label": n["label"], "where": n["where"]} for n in nxt["needs"] if not n["have"]]}
+        if nxt and fig["step"] else None,
+        "blockers": fig["bottlenecks"] is not None,
+        "owner": (rec := decisions.pick(mine, "commitment", tech_id=tech_id, fabric_id=f["fabric_id"])) is not None,
+        "resources": any((rec or {}).get("value", {}).get(k) for k in decisions.RESOURCES),  # people, budget or a trial
+        "leader": decisions.leader_state(mine, tech_id, f["fabric_id"])["state"],  # the owner's record's state
+    }
+
+
+def open_for(tech_id: str) -> list[dict]:
+    """fabric_open for each fabric of a technology's latest assessment."""
+    from app.services import finance
+    fabrics = latest_applied([tech_id]).get(tech_id, [])
+    mine = decisions.active([tech_id])
+    path = finance.steps()
+    return [fabric_open(tech_id, f, mine, path) for f in fabrics]

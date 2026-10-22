@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services import decisions, finance
+from app.services import decisions, finance, gates
 from factories import tech
 from stacked_fakes import load_seeded
 
@@ -133,3 +133,24 @@ def test_a_margin_above_one_is_refused(db):
         raise AssertionError("expected a refusal")
     except decisions.Refused as exc:
         assert "at most 1" in str(exc)
+
+
+def test_finance_set_aside_asks_for_nothing_and_a_rungs_note_alone_never_does(db, monkeypatch):
+    from factories import assessment, page, run
+    from agent.analyzer import pov
+    _world(db)
+    page(db, "edge-ai-page", 1)
+    run(db, "r1", 2)
+    assessment(db, "r1", 2, pages=["edge-ai-page@1"])
+    decisions.create("finance", "edge-ai", fabric_id="cloud", tz="UTC", value={"cost_per_outcome": "$4 a ticket, was $9"})
+    assert finance.figures("edge-ai", "cloud")["needed"] is False  # a note for the next rung isn't a business case
+    decisions.create("path_step", "edge-ai", fabric_id="cloud", value="proof_of_concept", tz="UTC")
+    kinds = lambda: {g["kind"] for g in client.get("/api/gates").json()["gate2"]}
+    [o] = client.get("/api/technologies/edge-ai/summary").json()["open"]
+    assert finance.SHOWN is False and "finance_missing" not in kinds() and o["finance_missing"] == []
+    t = db["technologies"].find_one({"_id": "edge-ai"})
+    applied = gates.latest_applied(["edge-ai"])["edge-ai"]
+    assert "FINANCE" not in pov._extras(t, applied, decisions.active(["edge-ai"]), pov.Sources([]))
+    monkeypatch.setattr(finance, "SHOWN", True)  # brought back: Gate 2 asks for its figures again
+    assert "finance_missing" in kinds()
+    assert "FINANCE" in pov._extras(t, applied, decisions.active(["edge-ai"]), pov.Sources([]))

@@ -189,6 +189,43 @@ class Sources:
         return "\n".join(f"[{s['n']}] {s['source']} · {s['date']} · {s['title']}" for s in self.items)
 
 
+def _plan(tech_id: str, fabric_id: str, f: dict, decs: list[dict], decisions, finance) -> str:
+    """Tata's plan for one fabric, in full, as its fabric tab records it: the
+    step reached (with the reason given), the proof recorded for each step,
+    whether the next step's proof is in hand, the blockers, and the owner's
+    record (next action and date, people, budget, trial) with the commitment
+    it adds up to."""
+    clean = lambda t: str(t or "").strip().rstrip(".").strip()
+    parts = []
+    step_d = decisions.pick(decs, "path_step", tech_id=tech_id, fabric_id=fabric_id)
+    if f["step"]:
+        why = clean(step_d.get("reason")) if step_d else ""
+        parts.append(f"step reached on the path to scale: {f['step']['name']} (step {f['step']['order']} of "
+                     f"{len(finance.steps())})" + (f"; the reason recorded: {why}" if why else ""))
+    v = (decisions.pick(decs, "finance", tech_id=tech_id, fabric_id=fabric_id) or {}).get("value") or {}
+    proof = [f"{finance.NEEDS[k][0]}: {clean(v[k])}" for k in ("cost_per_outcome", "buyer", "budget", "exposed_contracts") if v.get(k)]
+    if v.get("price") is not None:
+        proof.append(f"an indicative price: ${v['price']:g} a unit")
+    if proof:
+        parts.append("proof Tata has recorded: " + "; ".join(proof))
+    nxt = f.get("next_step") or {}
+    if f["step"] and nxt.get("name") and nxt.get("needs"):
+        parts.append(f"the proof for the next step, {nxt['name']}, is in hand" if nxt.get("in_hand") else
+                     f"next step {nxt['name']}, which still needs: " + ", ".join(n["label"] for n in nxt["needs"] if not n["have"]))
+    b = f.get("bottlenecks") or {}
+    blockers = [clean(x) for x in [*(b.get("picked") or []), b.get("other")] if clean(x)]
+    if blockers:
+        parts.append("blockers that could stop it scaling: " + "; ".join(blockers))
+    lead = decisions.leader_state(decs, tech_id, fabric_id)
+    if lead.get("owner"):
+        due = datetime.fromisoformat(lead["due"]).strftime("%-d %b %Y")  # "15 Dec 2026"
+        parts.append(f"owner: {clean(lead['owner'])}; next action: {clean(lead['next_action'])}, due {due}"
+                     + "".join(f"; {w}: {clean(lead[k])}" for k, w in (("people", "people committed"),
+                               ("budget", "budget committed"), ("poc", "trial committed")) if lead.get(k)))
+    state = {"undefined": "No owner yet", "defined": "Defined", "aligned": "Aligned", "integrated": "Integrated"}[lead["state"]]
+    return (". ".join(parts) + f". Commitment: {state}.") if parts else "nothing recorded yet."
+
+
 def _extras(tech: dict, applied: list[dict], decs: list[dict], src: Sources) -> str:
     """What a Point of View adds to the scores: the classification, where the
     value lands, the path to scale, the finance figures and people's choices
@@ -237,19 +274,14 @@ def _extras(tech: dict, applied: list[dict], decs: list[dict], src: Sources) -> 
                              f"Evidence that would show one: {a['no_use_case'].get('evidence_needed') or 'not said'}")
             elif not ok:
                 value.append(f"- {a['fabric']}: not mapped yet")
+    from app.services import decisions
     path = finance.steps()
-    steps = ["BOTTLENECKS AND PATH TO SCALE (picked and set by people), per fabric:"]
+    steps = ["TATA'S PLAN (typed in by Tata's people on each fabric's tab, not from the pages: Tata's own record; "
+             "quote it exactly and never cite a page number for it), per fabric:"]
     money, people = ["FINANCE (figures entered by people; quote exactly):"], ["PEOPLE'S CHOICES:"]
     for a in applied:
         f = finance.figures(tech["_id"], a["fabric_id"], decs, None, path)
-        b = f.get("bottlenecks") or {}
-        blockers = [*(b.get("picked") or []), *([b["other"]] if b.get("other") else [])]
-        nxt = f.get("next_step") or {}
-        ready = ((f"; the evidence for {nxt['name']} is in hand" if nxt.get("in_hand") else
-                  f"; {nxt['name']} next, which needs: " + ", ".join(n["label"] for n in nxt.get("needs") or [] if not n["have"]))
-                 if nxt.get("name") and nxt.get("needs") else "")
-        steps.append(f"- {a['fabric']}: bottlenecks: {'; '.join(blockers) or 'none picked'}. Step reached: "
-                     + (f"{f['step']['name']}{ready}" if f["step"] else "not set"))
+        steps.append(f"- {a['fabric']}: " + _plan(tech["_id"], a["fabric_id"], f, decs, decisions, finance))
         if not f["needed"]:
             money.append(f"- {a['fabric']}: not needed yet (asked for from Proof of concept on)")
         else:
@@ -262,7 +294,8 @@ def _extras(tech: dict, applied: list[dict], decs: list[dict], src: Sources) -> 
         for mid, m in a["measures"].items():
             if m.get("state") == "gap_accepted":
                 people.append(f"- {a['fabric']}: a person accepted that {mid.replace('-', ' ')} can't be assessed")
-    return "\n".join(lines + [""] + value + [""] + steps + [""] + money + ([""] + people if len(people) > 1 else []))
+    money = money if finance.SHOWN else []  # set aside until Tata has discussed it
+    return "\n".join(lines + [""] + value + [""] + steps + ([""] + money if money else []) + ([""] + people if len(people) > 1 else []))
 
 
 def pov_inputs(run_id: str, tech_id: str, with_sources: bool = False):
@@ -392,6 +425,11 @@ def compose_pov(run_id: str, tech_id: str, tz: str | None = None, job_id: str | 
             with with_context(run_kind="pov", run_id=job_id, tech_id=tech_id, skills=["pov"]):
                 data = parse_json(llm.ask(rendered))
             if isinstance(data, dict):
+                # a section the model nested inside another (seen: four under tora_analysis) goes back to its place
+                for parent in [v for v in data.values() if isinstance(v, dict)]:
+                    for k in SECTIONS:
+                        if k in parent and data.get(k) is None:
+                            data[k] = parent.pop(k)
                 sections = {k: data.get(k) for k in SECTIONS}
                 bad = sorted({int(n) for n in CITE.findall(str(sections)) if not 1 <= int(n) <= len(sources)})
                 problems = f"cites {', '.join(f'[{n}]' for n in bad)}, which aren't in its sources" if bad else None

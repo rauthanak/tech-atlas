@@ -44,6 +44,11 @@ def test_an_older_point_of_view_and_the_pages_new_since_it(db):
     assert [p["url"] for p in body["new_pages"]["recent"]] == ["c"]
     docs = client.get("/api/technologies/edge-ai/documents").json()["documents"]
     assert {d["end_url"]: d["new"] for d in docs} == {"a": False, "b": False, "c": True}
+    page(db, "a", 6, stub_of=a1)  # a collected again, unchanged: still one page, its newest copy
+    body = client.get("/api/technologies/edge-ai/documents").json()
+    assert body["total"] == 3 and [d["end_url"] for d in body["documents"]] == ["a", "c", "b"]
+    assert {d["end_url"]: (d["copies"], d["new"]) for d in body["documents"]} == {
+        "a": (2, False), "b": (1, False), "c": (1, True)}
 
     povs = client.get("/api/scoring/povs").json()
     assert povs["povs"][0]["new_since_written"] == 2

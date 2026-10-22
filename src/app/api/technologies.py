@@ -185,7 +185,7 @@ def technology_summary(tech_id: str) -> dict:
             {"_id": {"$in": pov.get("assessment_ids") or []}}, {"measures": 0, "watch_metrics": 0})))
         since_pov = len(evidence.new_pages(t["name"], read)) if read else None
     cost = estimate([tech_id])
-    from app.services import editions
+    from app.services import editions, gates
     shown = editions.latest(full=False)  # leaders see only the latest edition
     return {
         "frontier": {"edition": editions.label(shown), "placed": get_collection("editions").count_documents(
@@ -215,6 +215,8 @@ def technology_summary(tech_id: str) -> dict:
                       "recent": [evidence.page(d) for d in s["new"][:5]]},
         "estimate": {"assess_calls": cost["calls"], "assess_calls_max": cost["calls_max"],
                      "write_calls": 1},
+        # what's still open in each fabric, for "Waiting on you" (services/gates)
+        "open": gates.open_for(tech_id) if a else [],
         **_classification(tech_id),
     }
 
@@ -306,14 +308,17 @@ def technology_documents(tech_id: str, limit: int = 50, skip: int = 0,
         raise HTTPException(status_code=404, detail=f"unknown technology {tech_id!r}")
     match = {"technologies_resolved": t["name"]}
     docs_coll = get_collection("documents")
-    total = docs_coll.count_documents(match)
+    # one row per page, its newest copy: a page collected again (it changed)
+    # counts once, as page_count does, and says how many times it was collected
+    total = len(docs_coll.distinct("end_url", match))
     # sort=published: newest published first; docs without a published date
     # sort below any dated ones (missing < value in Mongo), then by extraction
-    order = [("published_date", -1), ("scraped_at", -1)] if sort == "published" \
-        else [("scraped_at", -1)]
-    docs = list(docs_coll.find(match, {"extracted_text": 0})
-                .sort(order)
-                .skip(max(0, skip)).limit(max(1, min(limit, 500))))
+    order = {"published_date": -1, "scraped_at": -1} if sort == "published" else {"scraped_at": -1}
+    docs = [{**g["doc"], "copies": g["copies"]} for g in docs_coll.aggregate([
+        {"$match": match}, {"$project": {"extracted_text": 0}}, {"$sort": {"scraped_at": -1}},
+        {"$group": {"_id": "$end_url", "doc": {"$first": "$$ROOT"}, "copies": {"$sum": 1}}},
+        {"$sort": {f"doc.{k}": v for k, v in order.items()}},
+        {"$skip": max(0, skip)}, {"$limit": max(1, min(limit, 500))}])]
     new_versions = {evidence.version(d) for d in evidence.state(tech_id)["new"]}
     for d in docs:
         d["new"] = evidence.version(d) in new_versions  # not read by the latest assessment

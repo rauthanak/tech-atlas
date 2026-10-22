@@ -88,12 +88,44 @@ def test_the_bottlenecks_and_the_step_reached_go_to_the_writer_and_the_page(db, 
         r = client.post("/api/decisions", json={"kind": kind, "tech_id": "edge-ai", "fabric_id": "cloud", "value": value})
         assert r.status_code == 201, r.text
     data = pov.pov_inputs("r1", "edge-ai")[1]["assessment_data"]
-    assert f"- Cloud: bottlenecks: {blocker}. Step reached: Proof of concept" in data
+    assert "- Cloud: step reached on the path to scale: Proof of concept (step 3 of 7)" in data
+    assert f"blockers that could stop it scaling: {blocker}. Commitment: No owner yet." in data
     f = client.get("/api/scoring/runs/r1/pov/edge-ai")
     assert f.status_code == 404  # none written yet
     pov.compose_pov("r1", "edge-ai")
     f = client.get("/api/scoring/runs/r1/pov/edge-ai").json()["fabrics"][0]
     assert f["path_step"] == "Proof of concept" and f["finance"]["bottlenecks"]["picked"] == [blocker]
+
+
+def test_tatas_plan_goes_to_the_writer_in_full(db, monkeypatch):
+    _world(db, monkeypatch, Writer())
+    for kind, value, reason in (
+            ("path_step", "customer_zero", "Our own service desk runs it."),
+            ("finance", {"cost_per_outcome": "$2.80 a request against $6.90.", "buyer": "A bank.", "price": 0.45}, None),
+            ("bottlenecks", {"other": "Data must stay in India."}, None),
+            ("commitment", {"owner": "Head of product", "next_action": "Sign the pilot.", "due": "2026-12-15",
+                            "budget": "$240k"}, None)):
+        r = client.post("/api/decisions", json={"kind": kind, "tech_id": "edge-ai", "fabric_id": "cloud",
+                                                "value": value, "reason": reason})
+        assert r.status_code == 201, r.text
+    data = pov.pov_inputs("r1", "edge-ai")[1]["assessment_data"]
+    line = next(x for x in data.splitlines() if x.startswith("- Cloud: step reached"))
+    assert line == ("- Cloud: step reached on the path to scale: Customer zero (step 2 of 7); the reason recorded: Our own service desk "
+                    "runs it. proof Tata has recorded: measured cost per outcome against the current process: $2.80 a "
+                    "request against $6.90; a named buyer: A bank; an indicative price: $0.45 a unit. next step Proof of "
+                    "concept, which still needs: a budget or willingness to pay. blockers that could stop it scaling: Data "
+                    "must stay in India. owner: Head of product; next action: Sign the pilot, due 15 Dec 2026; budget "
+                    "committed: $240k. Commitment: Integrated.")
+
+
+def test_a_section_nested_in_another_goes_back_to_its_place(db, monkeypatch):
+    w = Writer()
+    w.ask = lambda prompt, system=None, **kw: json.dumps({"headline": "h", "tora_analysis": {
+        "market_potential": "m", "recommendation": "Pilot it.", "evidence_gaps": [{"fabric": "Cloud", "missing": ["x"]}]}})
+    _world(db, monkeypatch, w)
+    s = pov.compose_pov("r1", "edge-ai")["sections"]
+    assert s["recommendation"] == "Pilot it." and s["evidence_gaps"][0]["fabric"] == "Cloud"
+    assert s["tora_analysis"] == {"market_potential": "m"}
 
 
 def test_its_calls_are_recorded_under_its_own_compose_job(db, monkeypatch):
