@@ -3,9 +3,10 @@ runs: it assesses the technologies the latest resolve produced, under the
 config snapshot frozen at start. Recompute re-derives TORA from stored scores
 with current weights (no LLM); a re-score is simply a new run."""
 
+import re
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from agent.analyzer import engine
@@ -13,17 +14,21 @@ from agent.analyzer.agent import resume_scoring_run, start_scoring_run
 from agent.analyzer import pov as pov_composer
 from agent.analyzer.estimate import estimate
 from agent.analyzer.pov import compose_pov
-from app.services import busy, evidence
+from app.services import busy, decisions, editions, effective, evidence, watch
 from app.services.db.mongo import get_collection
+from app.services.tech_status import RUN_MAX
 from app.services.timezone import request_tz
+from app.services.display import display_name
 
 router = APIRouter()
 
 
 class ScoringRunParams(BaseModel):
     # at least one: an empty list would fall through to every enabled technology
-    technologies: list[str] | None = Field(default=None, min_length=1, max_length=2000,
+    technologies: list[str] | None = Field(default=None, min_length=1, max_length=RUN_MAX,
                                            description="explicit tech_ids")
+    # or a set the lists offer (services/tech_status.SETS): the server picks them, the first RUN_MAX
+    select: Literal["new_evidence", "ready"] | None = None
     top: int | None = Field(default=None, ge=1, le=200,
                             description="top N technologies by doc_count")
     min_docs: int | None = Field(default=None, ge=1)
@@ -43,55 +48,128 @@ def scoring_preview(min_docs: int = 1, technologies: str | None = None) -> dict:
     return estimate(get_collection("technologies").distinct("_id", query))
 
 
+class PreviewIds(BaseModel):
+    technologies: list[str] = Field(min_length=1, max_length=200_000)
+
+
+@router.post("/scoring/preview")
+def scoring_preview_ids(body: PreviewIds) -> dict:
+    """The same as GET /scoring/preview for a list too long for an address
+    (choosing thousands on the Technologies list): one request, not one per 100."""
+    return estimate(get_collection("technologies").distinct("_id", {"enabled": True, "_id": {"$in": body.technologies}}))
+
+
 @router.post("/scoring/runs", status_code=202)
 def create_run(params: ScoringRunParams) -> dict:
+    from app.services import tech_status
+    left = 0
+    if params.select:
+        ids = tech_status.chosen(params.select)
+        if not ids:
+            raise HTTPException(status_code=409, detail="Nothing in that list now: it was assessed or changed since.")
+        params.technologies, left = ids[:RUN_MAX], max(0, len(ids) - RUN_MAX)
     try:
-        run_id = start_scoring_run(params.model_dump(exclude_none=True))
+        run_id = start_scoring_run(params.model_dump(exclude_none=True, exclude={"select"}))
     except busy.Busy as exc:
         raise HTTPException(status_code=409, detail=f"{exc} Assessments can start when it finishes.")
     if run_id is None:
         raise HTTPException(status_code=409, detail="a scoring run is already active")
-    return {"scoring_run_id": run_id}
+    return {"scoring_run_id": run_id, "left_waiting": left}
 
 
 @router.get("/scoring/runs")
 def list_runs(limit: int = 50) -> dict:
+    # the per-technology records (gates, tech_calls) are read by the engine only
     runs = list(get_collection("scoring_runs")
-                .find({}, {"snapshot": 0})
+                .find({}, {"snapshot": 0, "gates": 0, "tech_calls": 0})
                 .sort("started_at", -1).limit(max(1, min(limit, 200))))
     return {"scoring_runs": runs}
 
 
 @router.get("/scoring/runs/{run_id}")
 def get_run(run_id: str) -> dict:
-    run = get_collection("scoring_runs").find_one({"_id": run_id}, {"snapshot": 0})
+    """An assessment run and what its page says about the whole of it: how
+    many assessments, its fabrics, the collections its evidence came from,
+    and the technologies left (a stopped run's resume). Its rows come from
+    /rows, 50 at a time."""
+    run = get_collection("scoring_runs").find_one({"_id": run_id}, {"snapshot": 0, "gates": 0, "tech_calls": 0})
     if run is None:
         raise HTTPException(status_code=404, detail=f"unknown scoring run {run_id!r}")
-    assessments = list(get_collection("assessments")
-                       .find({"scoring_run_id": run_id}, {"dossier_pages": 0})  # page lists can be long
-                       .sort("technology", 1))
-    applied = _applied(assessments)
-    for a in assessments:  # people's choices applied; a person's priority wins, the computed one stays in placement
+    assessments = get_collection("assessments")
+    mine = {"scoring_run_id": run_id}
+    fabrics = sorted({(a["fabric_id"], a.get("fabric") or a["fabric_id"])
+                      for a in assessments.find(mine, {"fabric_id": 1, "fabric": 1})}, key=lambda f: f[1])
+    done = set(assessments.distinct("tech_id", mine)) | {s["tech_id"] for s in run.get("skipped") or []}
+    return {**run, "assessed": assessments.count_documents(mine),
+            "fabrics": [{"id": i, "name": n} for i, n in fabrics],
+            # older assessments didn't record the collections they read
+            "evidence_runs": sorted(assessments.distinct("evidence_runs", mine))
+            if assessments.find_one({**mine, "evidence_runs": {"$exists": True}}, {"_id": 1}) else None,
+            "left": [t["tech_id"] for t in run.get("technologies") or [] if t["tech_id"] not in done]}
+
+
+ROW_SORTS = {"technology", "docs", "priority", "horizon"}  # else a score's key (market_potential…) or an extra (X1…)
+
+
+@router.get("/scoring/runs/{run_id}/rows")
+def run_rows(run_id: str, fabric: str | None = None, q: str = "", axis: Literal["priority", "priority_by_disruptiveness"] = "priority",
+             cell: str | None = None, sort: str = "market_potential", dir: int = -1, skip: int = 0,
+             limit: int = Query(50, ge=1, le=200)) -> dict:
+    """An assessment run's table, a page at a time: people's choices applied
+    (a person's priority wins), filtered by fabric and search, the grid's
+    counts by cell (how-soon band × how-big or threat band) over those, then
+    one cell when chosen, sorted, and `limit` rows from `skip`."""
+    query: dict = {"scoring_run_id": run_id, **({"fabric_id": fabric} if fabric else {})}
+    if q.strip():
+        query["technology"] = {"$regex": re.escape(q.strip().lower())}
+    rows = list(get_collection("assessments").find(query, {"dossier_pages": 0, "use_cases": 0, "watch_metrics": 0,
+                                                           "suggested_bottlenecks": 0, "suggested_use_cases": 0}))
+    applied = _applied(rows)
+    out = []
+    for a in rows:
         e = applied[a["_id"]]
-        a.update(tora=e["tora"], placement=e["placement"], **({"override": _override(e)} if _override(e) else {}))
-        a.pop("measures", None)
-    return {**run, "assessments": assessments}
+        placement = dict(e["placement"])
+        override = _override(e)
+        if override:
+            placement["priority"] = override["priority"]  # the priority in force: the grid, filters and sort use it
+        out.append({k: a.get(k) for k in ("_id", "technology", "tech_id", "fabric", "fabric_id", "doc_count", "extras",
+                                          "tora_basis", "evidence_runs")}
+                   | {"tora": e["tora"], "placement": placement, **({"override": override} if override else {})})
+
+    def cell_of(r: dict) -> str | None:
+        p = r["placement"] or {}
+        across = (p.get("timeline") or {}).get("band")
+        down = (p.get("potential") if axis == "priority" else p.get("disruptiveness") or {}) or {}
+        return f"{across}_{down.get('band')}" if across and down.get("band") else None
+
+    grid: dict[str, int] = {}
+    for r in out:
+        c = cell_of(r)
+        if c:
+            grid[c] = grid.get(c, 0) + 1
+    shown = [r for r in out if not cell or cell_of(r) == cell]
+
+    def key(r: dict):
+        p = r["placement"] or {}
+        if sort == "technology":
+            return r["technology"] or ""
+        if sort == "docs":
+            return r["doc_count"] or 0
+        if sort == "priority":
+            return int((p.get(axis) or "P9")[1:])
+        if sort == "horizon":
+            return p.get("horizon") or "H9"
+        if sort.startswith("X"):
+            v = (r.get("extras") or {}).get(sort)
+            return -1 if v is None else v
+        v = ((r.get("tora") or {}).get(sort) or {}).get("score")
+        return -1 if v is None else v
+
+    shown.sort(key=lambda r: (key(r), r["technology"] or ""), reverse=dir < 0)
+    return {"rows": shown[skip:skip + limit], "total": len(shown), "scoped": len(out), "grid": grid}
 
 
-def _applied(rows: list[dict]) -> dict[str, dict]:
-    """Each assessment with people's choices applied (services/effective), by
-    id: a hand score can move its placement, an override is its priority."""
-    from app.services import decisions, effective
-    chosen = decisions.active(sorted({a["tech_id"] for a in rows}))
-    measures, config = list(get_collection("measures").find()), list(get_collection("scoring_config").find())
-    return {a["_id"]: effective.apply(a, chosen, measures, config) for a in rows}
-
-
-def _override(applied: dict) -> dict | None:
-    """A person's priority in force, as the run page and the Points of View list show it."""
-    o = applied["effective"]["override"]
-    return {"priority": o["value"], "reason": o["reason"], "at": o["at"], "tz": o["tz"],
-            "computed": o["computed"]} if o else None
+_applied, _override = effective.applied_rows, effective.override_view  # services/effective
 
 
 @router.get("/scoring/runs/{run_id}/assessments/{assessment_id}")
@@ -125,62 +203,98 @@ def terminate(run_id: str) -> dict:
     return {"status": "terminating"}
 
 
-def _pov_state(all_states: dict | None = None) -> tuple[list[dict], list[dict]]:
-    """(written Points of View, technologies waiting for one) — shared by the
-    list, compose-all and the pipeline, so the batch writes exactly what the
-    list shows. One Point of View per technology: only technologies still in
-    the register and switched on count, and the newest written one wins.
-    Waiting follows the readiness rule (services/evidence): none written from
-    the latest assessment's run."""
-    all_states = evidence.states() if all_states is None else all_states
-    existing = set(get_collection("technologies").distinct("_id", {"enabled": {"$ne": False}}))
-    povs, seen = [], set()
-    for p in (get_collection("povs")
-              .find({}, {"sections.headline": 1, "scoring_run_id": 1,
-                         "tech_id": 1, "technology": 1, "version": 1,
-                         "composed_at": 1, "composed_tz": 1, "assessment_ids": 1})
-              .sort("composed_at", -1)):
-        if p["tech_id"] in existing and p["tech_id"] not in seen:
-            seen.add(p["tech_id"])
-            povs.append(p)
-    return povs, evidence.pov_targets(all_states)
-
-
 def _rewrite_targets(all_states: dict) -> list[dict]:
     """What "Rewrite all" covers: every switched-on technology with a latest
     assessment, each written from it."""
     return [t for t in evidence.latest_assessments(all_states) if all_states[t["tech_id"]]["state"] != "off"]
 
 
+@router.get("/scoring/crossed")
+def crossed() -> dict:
+    """Metrics to watch that crossed their threshold: each switched-on
+    technology's latest assessment says, for the metrics the one before it
+    set, which crossed, from a page it read (engine.watch_result), with
+    people's choices applied (services/watch)."""
+    rows, found, candidates = [], [], []
+    for a in get_collection("assessments").aggregate([
+            {"$match": {"watch_metrics.crossed": True}},
+            {"$sort": {"created_at": -1}},
+            {"$group": {"_id": "$tech_id", "watch_metrics": {"$first": "$watch_metrics"},
+                        "created_at": {"$first": "$created_at"}, "scoring_run_id": {"$first": "$scoring_run_id"}}}]):
+        candidates.append(a)
+    # only the technologies these name: switched on, with their labels
+    labels = {t["_id"]: display_name(t) for t in get_collection("technologies").find(
+        {"_id": {"$in": [a["_id"] for a in candidates]}, "enabled": True}, {"label": 1, "name": 1})}
+    for a in candidates:
+        latest = get_collection("assessments").find_one({"tech_id": a["_id"]}, {"created_at": 1},
+                                                        sort=[("created_at", -1)])
+        if a["_id"] not in labels or (latest and latest["created_at"] != a["created_at"]):
+            continue  # switched off, or a newer assessment has moved on
+        found.append(a)
+    # as people left them: a person's threshold shows; a person's "not crossed" takes it off the list
+    chosen = decisions.by_tech(decisions.active([a["_id"] for a in found], ["watch_threshold", "watch_crossed"]))
+    for a in found:
+        rows += [{"tech_id": a["_id"], "technology": labels.get(a["_id"], a["_id"]), "assessed_at": a["created_at"],
+                  "scoring_run_id": a["scoring_run_id"], **m}
+                 for m in watch.apply(a["watch_metrics"], chosen.get(a["_id"], [])) if m.get("crossed") is True]
+    return {"crossed": sorted(rows, key=lambda r: r["assessed_at"], reverse=True)}
+
+
 @router.get("/scoring/povs")
-def all_povs() -> dict:
+def all_povs(q: str = "", fabric: str | None = None, priority: str | None = None, newer: bool = False,
+             unsent: bool = False, sort: Literal["newest", "priority"] = "newest", skip: int = 0,
+             limit: int | None = Query(None, ge=1, le=200)) -> dict:
     """Every written Point of View of a switched-on technology, with the
     pages new since it was written and its placements; how many switched-off
     technologies' ones are left out; the technologies waiting for one; how
     many a rewrite covers; and the latest compose-all job — one poll drives
-    the whole Points of View list."""
-    all_states = evidence.states()
-    povs, uncomposed = _pov_state(all_states)
-    names = {t["_id"]: t["name"] for t in get_collection("technologies").find(
-        {"_id": {"$in": [p["tech_id"] for p in povs]}}, {"name": 1})}
-    rows = {a["_id"]: a for a in get_collection("assessments").find(
-        {"_id": {"$in": [i for p in povs for i in p.get("assessment_ids") or []]}}, {"watch_metrics": 0})}
-    applied = _applied(list(rows.values()))
-    for p in povs:
-        mine = sorted((rows[i] for i in p.get("assessment_ids") or [] if i in rows),
-                      key=lambda a: a["fabric_id"])
-        read = evidence.reading(mine)
-        p["new_since_written"] = len(evidence.new_pages(names[p["tech_id"]], read)) if read else None
-        p["assessed_at"] = read["assessed_at"] if read else None  # the assessment it was written from
-        p["placements"] = [{"fabric_id": e["fabric_id"], "fabric": e.get("fabric"), "priority": e["effective"]["priority"],
-                            "computed_priority": e["effective"]["computed_priority"], "override": _override(e),
-                            "horizon": e["effective"]["horizon"]} for e in (applied[a["_id"]] for a in mine)]
-        p.pop("assessment_ids", None)
+    the whole Points of View list. Each row, and what the list filters and
+    sorts by, is kept ready with the technology's answers (services/tech_status),
+    so a page of the list reads its own rows only."""
+    import re
+    from app.services import tech_status
+    tech_status.fresh()
+    status, kept = get_collection("tech_status"), get_collection("tech_status_rows")
+    written = {"f.pov_at": {"$ne": None}, "f.status": {"$ne": "off"}}
     off = get_collection("technologies").distinct("_id", {"enabled": False})
-    return {"povs": povs, "uncomposed": uncomposed,
-            "switched_off": len(get_collection("povs").distinct("tech_id", {"tech_id": {"$in": off}})),
-            "assessed": len(_rewrite_targets(all_states)),
-            "job": pov_composer.batch_status()}
+    common = {"switched_off": len(get_collection("povs").distinct("tech_id", {"tech_id": {"$in": off}})),
+              "assessed": tech_status.rewrite_count(), "job": pov_composer.batch_status()}
+
+    def rows(match: dict, order: list, skip_: int = 0, limit_: int = 0) -> list[dict]:
+        ids = [r["_id"] for r in status.find(match, {"_id": 1}).sort(order).skip(skip_).limit(limit_)]
+        by_id = {r["_id"]: r["pov"] for r in kept.find({"_id": {"$in": ids}}, {"pov": 1})}
+        page = [by_id[i] for i in ids if by_id.get(i)]
+        seen = editions.views([p["tech_id"] for p in page])
+        for p in page:
+            p["views"] = seen.get(p["tech_id"])
+        return page
+
+    newest = [("f.pov_at", -1), ("_id", 1)]
+    if limit is None:  # every one, as before (no filter, newest first)
+        return {"povs": rows(written, newest), "uncomposed": tech_status.waiting_lists()["pov_targets"], **common}
+    # a page of the list, filtered and sorted in the database, with the counts the page's lines and filters show
+    shown_edition = editions.latest(full=False)
+    published = shown_edition["published_at"] if shown_edition else None
+    unsent_n = status.count_documents({**written, "f.pov_at": {"$gt": published}}) if published else 0
+    match = dict(written)
+    if q.strip():
+        match["f.pov_search"] = re.compile(re.escape(q.strip().lower()))
+    if fabric:
+        match["f.pov_fabrics"] = fabric
+    if priority:
+        match["f.pov_prio" if fabric else "f.pov_prios"] = f"{fabric}:{priority}" if fabric else priority
+    if newer:
+        match["f.new_since_pov"] = {"$gt": 0}
+    if unsent and unsent_n:  # none left: the filter lets go
+        match["f.pov_at"] = {"$gt": published}
+    order = [("f.pov_best", 1), ("f.pov_label", 1), ("_id", 1)] if sort == "priority" else newest
+    names = {f["_id"]: f.get("name") or f["_id"] for f in get_collection("fabrics").find({}, {"name": 1})}
+    fabrics = sorted(((i, names.get(i, i)) for i in status.distinct("f.pov_fabrics", written)), key=lambda f: f[1])
+    return {"povs": rows(match, order, max(0, skip), limit), "total": status.count_documents(match),
+            "count": status.count_documents(written),
+            "behind": status.count_documents({**written, "f.new_since_pov": {"$gt": 0}}), "unsent": unsent_n,
+            "fabrics": [{"id": i, "name": n} for i, n in fabrics],
+            "uncomposed_count": status.count_documents({"f.state": "no_pov"}), **common}
 
 
 class ComposeAllParams(BaseModel):
@@ -247,4 +361,6 @@ def recompute(run_id: str) -> dict:
         count = engine.recompute_run(run_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    from app.services import tech_status
+    tech_status.touch(get_collection("assessments").distinct("tech_id", {"scoring_run_id": run_id}))
     return {"recomputed": count}

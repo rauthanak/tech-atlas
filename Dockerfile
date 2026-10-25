@@ -3,6 +3,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# a crash inside native code (a C library) prints where it happened, so the log says why the process died
+ENV PYTHONFAULTHANDLER=1
+
 # Dependencies first, so code edits don't re-run the slow layers.
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt

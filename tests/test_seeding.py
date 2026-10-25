@@ -127,3 +127,37 @@ def test_failed_write_leaves_file_and_listing(db, seeds):
     assert target.read_text() == before
     assert [r["id"] for r in seeding.changes()["items"]] == ["scout"]
     assert seeding.load_if_new() is False
+
+
+def test_proposals_waiting_for_review_are_counted_apart(db, seeds):
+    seeding.load_if_new()
+    get_collection("subdomains").insert_many([
+        {"_id": "ai--proposed", "subdomain_id": "ai--proposed", "domain_id": "ai", "name": "Proposed", "status": "new"},
+        {"_id": "ai--accepted", "subdomain_id": "ai--accepted", "domain_id": "ai", "name": "Accepted", "status": "seeded",
+         "updated_at": seeding._now()}])
+    found = seeding.changes()
+    assert [(r["collection"], r["id"]) for r in found["items"]] == [("subdomains", "ai--accepted")]
+    assert found["awaiting_review"] == {"subdomains": 1}
+    from fastapi.testclient import TestClient
+    from app.main import app
+    assert TestClient(app).get("/api/changes/count").json() == {"count": 1, "awaiting_review": {"subdomains": 1}}
+
+
+def test_revert_puts_back_the_default(db, seeds):
+    """Put back the default: edited back to the seed, added removed, deleted back; the tab empties."""
+    seeding.load_if_new()
+    seeded = get_collection("signals").find_one({"_id": "ipo"})["look_for"]
+    _touch("signals", "ipo", look_for="edited live")
+    get_collection("signals").insert_one({"_id": "new-one", "signal_id": "new-one", "name": "New one",
+                                          "look_for": "y", "mode": "never_miss", "enabled": True,
+                                          "updated_at": seeding._now()})
+    get_collection("sources").delete_one({"_id": "ietf"})
+    assert seeding.changes()["count"] == 3
+    refs = [{"collection": "signals", "id": "ipo"}, {"collection": "signals", "id": "new-one"},
+            {"collection": "sources", "id": "ietf"}]
+    assert seeding.revert(refs) == {"put_back": 3}
+    assert get_collection("signals").find_one({"_id": "ipo"})["look_for"] == seeded
+    assert get_collection("signals").find_one({"_id": "new-one"}) is None
+    assert get_collection("sources").find_one({"_id": "ietf"}) is not None
+    assert seeding.changes()["count"] == 0
+    assert seeding.load_if_new() is False   # the seed files are untouched

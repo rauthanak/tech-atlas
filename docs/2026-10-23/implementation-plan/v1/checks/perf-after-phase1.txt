@@ -1,0 +1,20 @@
+screen                                                8100                          8199
+                                 one · five at once · size     one · five at once · size
+Status pill (every page)        0.42s    0.76s       1 KB       120.00s  120.00s       0 KB SLOW HTTP timeout
+Setup badge (every page)        0.02s    0.04s       0 KB         0.02s    0.05s       0 KB     
+Briefing                        0.01s    0.02s       3 KB        42.00s   46.10s       3 KB SLOW
+Briefing: To do                 0.81s    4.42s     451 KB SLOW   41.88s   41.88s       0 KB SLOW HTTP RemoteDisconnected
+Briefing: findings              0.02s    0.08s      21 KB        41.18s   42.80s      21 KB SLOW
+Technologies                    0.68s    3.62s     221 KB SLOW  120.01s  120.01s       0 KB SLOW HTTP timeout
+Technologies, a filter          0.65s    3.34s     185 KB SLOW  109.27s  109.27s       0 KB SLOW HTTP RemoteDisconnected
+Technology                      0.00s    0.01s      18 KB         0.03s    0.01s      18 KB     
+Technology: pages               0.01s    0.03s     275 KB         2.15s    0.51s     227 KB SLOW
+Points of View                  0.22s    1.21s     237 KB       120.01s  120.01s       0 KB SLOW HTTP timeout
+Assessment runs                 0.00s    0.06s      76 KB         0.04s    0.06s     633 KB     
+Operations: problems            0.01s    0.01s      13 KB         8.16s    7.01s      13 KB SLOW
+Collections                     0.00s    0.01s       4 KB         0.02s    0.05s     105 KB     
+Leaders' view                   0.01s    0.03s     621 KB         0.04s    0.06s     621 KB     
+
+http://localhost:8100: 10,514 technologies; 3 of 14 calls over 0.5 s: Briefing: To do, Technologies, Technologies, a filter
+
+http://localhost:8199: (counts unavailable: Remote end closed connection without response); 9 of 14 calls over 0.5 s: Status pill (every page), Briefing, Briefing: To do, Briefing: findings, Technologies, Technologies, a filter, Technology: pages, Points of View, Operations: problems

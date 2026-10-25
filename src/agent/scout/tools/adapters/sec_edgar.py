@@ -7,10 +7,10 @@ import time
 from datetime import date
 
 import httpx
-import trafilatura
 from bs4 import BeautifulSoup
 
 from agent.scout.tools.adapters.base import Adapter, Item, fetch
+from agent.scout.tools.crawl import readable
 from app.settings import get_settings
 
 FORMS = ("8-K", "10-Q", "10-K", "D")
@@ -23,7 +23,7 @@ def _client() -> httpx.Client:
 
 
 def _text(html: str) -> str:
-    return (trafilatura.extract(html) or BeautifulSoup(html, "html.parser").get_text(" ")).strip()
+    return (readable(html) or BeautifulSoup(html, "html.parser").get_text(" ")).strip()
 
 
 class SecEdgar(Adapter):

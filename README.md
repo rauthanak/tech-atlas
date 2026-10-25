@@ -132,8 +132,10 @@ open a **new** Terminal window, `cd ~/TechRadar/tech-atlas`, and try again.
 - **Stop:** click the Terminal window and press `Ctrl`+`C`.
 - **Start again later:** open Terminal, `cd ~/TechRadar/tech-atlas`,
   `docker compose up`. Your data is kept between runs.
-- You can also open the **Docker Desktop** app to see the three running parts
-  (`mongo`, `atlas`, `lens`) with start/stop buttons and logs.
+- You can also open the **Docker Desktop** app to see the running parts
+  (`mongo`, `atlas`, `worker`, `lens`, `frontier`) with start/stop buttons and logs.
+  `worker` runs the long jobs (collections, assessments, Points of View);
+  `atlas` answers the web pages.
 
 ---
 
@@ -236,8 +238,10 @@ open a **new** PowerShell window, `cd C:\TechRadar\tech-atlas`, and try again.
 - **Stop:** click the PowerShell window and press `Ctrl`+`C`.
 - **Start again later:** open PowerShell, `cd C:\TechRadar\tech-atlas`,
   `docker compose up`. Your data is kept between runs.
-- You can also open the **Docker Desktop** app to see the three running parts
-  (`mongo`, `atlas`, `lens`) with start/stop buttons and logs.
+- You can also open the **Docker Desktop** app to see the running parts
+  (`mongo`, `atlas`, `worker`, `lens`, `frontier`) with start/stop buttons and logs.
+  `worker` runs the long jobs (collections, assessments, Points of View);
+  `atlas` answers the web pages.
 
 ---
 
@@ -271,6 +275,18 @@ set up on your computer:
 **Your data is safe during all of this.** Everything the app has collected
 lives inside Docker (a storage volume), not in these folders — replacing the
 folders doesn't touch it.
+
+**Page records, once (the version of 24 Oct 2026).** The first start of this
+version rewrites the stored page records once: each page is known by its link
+or title, and its full text is kept apart. It takes seconds for a few
+thousand pages, and the app answers once it's done. Take a backup first,
+from the `tech-atlas` folder:
+
+```bash
+docker compose exec mongo mongodump --db tech_atlas --archive > backup-before-update.archive
+```
+
+If the app stops part-way, the next start carries on where it was.
 
 **Your settings: check Changes first.** Edits made in the portal — sources,
 signals, skills, the scoring method, crawl settings — apply at once, but they

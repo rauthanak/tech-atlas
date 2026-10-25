@@ -27,6 +27,8 @@ class Settings:
         self.scrape_delay_seconds = float(os.getenv("SCRAPE_DELAY_SECONDS", "1"))
         self.include_paid_sources = os.getenv("INCLUDE_PAID_SOURCES", "false").strip().lower() in ("1", "true", "yes")
         self.keep_full_text_runs = int(os.getenv("KEEP_FULL_TEXT_RUNS", "10"))
+        # background jobs run in the worker container (services/jobs), not inside the API: on in Docker
+        self.jobs_in_worker = os.getenv("JOBS_IN_WORKER", "false").strip().lower() in ("1", "true", "yes")
         self.use_playwright = os.getenv("USE_PLAYWRIGHT", "true").strip().lower() in ("1", "true", "yes")
         self.show_more_clicks = int(os.getenv("SHOW_MORE_CLICKS", "3"))
 

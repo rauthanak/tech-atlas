@@ -49,7 +49,7 @@ def test_each_key_is_checked_by_its_own_rules(db):
     reply = ('{"fabric_relevance": {"fabrics": ["cloud", "nowhere"]}, "%s": {"score": 14, "evidence_urls": ["u"]}, '
              '"%s": {"score": 6, "evidence_urls": []}, "watch_metrics": "soon"}' % (first, second))
     out = recipes.parse(reply, built, {"fabric_relevance": stacked._relevance_check([{"_id": "cloud"}]),
-                                       "measure_scoring": stacked._measure_check, "watch_metrics": stacked._watch_check})
+                                       "measure_scoring": stacked._measure_check, "watch_metrics": stacked._watch_check(None)})
     assert out["fabric_relevance"] == ["cloud"]
     assert out[first]["score"] == 10                                   # clamped to 0–10
     assert out[second]["score"] is None and out[second]["unscorable"]  # a score citing no pages doesn't count
@@ -75,7 +75,7 @@ def test_no_json_is_asked_again_whole_then_a_failed_task_alone_then_it_takes_its
     counted = []
     out, retries = recipes.ask(Model(), built, {"fabric_relevance": stacked._relevance_check([{"_id": "cloud"}]),
                                                 "measure_scoring": stacked._measure_check,
-                                                "watch_metrics": stacked._watch_check},
+                                                "watch_metrics": stacked._watch_check(None)},
                                {"measure_scoring": engine.unscored}, on_call=lambda: counted.append(1))
     assert len(counted) == 3 and retries == 1  # whole, whole again, the left-out measure alone
     assert out["fabric_relevance"] == ["cloud"] and out[f"measure:{tech[1]['_id']}"]["score"] == 6

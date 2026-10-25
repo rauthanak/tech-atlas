@@ -7,6 +7,7 @@ from fastapi import APIRouter
 
 from app.services import decisions, finance
 from app.services.db.mongo import get_collection
+from app.services.display import display_name
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ def table(missing: bool = False) -> dict:
         if not fig["asks"] or (missing and not (fig["missing"] or (nxt.get("needs") and not nxt["in_hand"]))):
             continue
         t = techs.get(tech_id, {})
-        rows.append({"tech_id": tech_id, "name": t.get("label") or t.get("name") or tech_id, "fabric_id": fabric_id,
+        rows.append({"tech_id": tech_id, "name": display_name(t, tech_id), "fabric_id": fabric_id,
                      "fabric": (fabrics.get(fabric_id) or {}).get("name", fabric_id), **fig})
     return {"rows": rows, "path": sorted(path.values(), key=lambda s: s["order"]),
             "needs": {k: label for k, (label, _) in finance.NEEDS.items()}}

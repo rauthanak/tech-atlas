@@ -78,3 +78,20 @@ def blocks_placement(applied: dict) -> bool:
     p = applied["placement"]
     return applied["effective"]["priority"] is None and any(
         (p.get(k) or {}).get("score") is None for k in ("timeline", "potential"))
+
+
+def applied_rows(rows: list[dict]) -> dict[str, dict]:
+    """Each assessment with people's choices applied, by id: a hand score can
+    move its placement, an override is its priority."""
+    from app.services import decisions
+    from app.services.db.mongo import get_collection
+    chosen = decisions.active(sorted({a["tech_id"] for a in rows}))
+    measures, config = list(get_collection("measures").find()), list(get_collection("scoring_config").find())
+    return {a["_id"]: apply(a, chosen, measures, config) for a in rows}
+
+
+def override_view(applied: dict) -> dict | None:
+    """A person's priority in force, as the run page and the Points of View list show it."""
+    o = applied["effective"]["override"]
+    return {"priority": o["value"], "reason": o["reason"], "at": o["at"], "tz": o["tz"],
+            "computed": o["computed"]} if o else None

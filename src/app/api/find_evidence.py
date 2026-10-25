@@ -1,21 +1,40 @@
 """Find evidence (agent/find_evidence): its cost first, start it, and how it
 went. Only a person starts it; searches have a daily budget (radar settings),
-counted in the default time zone. Add a link needs no search, so no budget."""
+counted in the default time zone. Add a link needs no search, so no budget;
+nor does Add evidence (POST /find-evidence/add): links and files a person
+gives for one technology, optionally carried on to its Point of View."""
+
+import json
 
 from datetime import datetime
+from urllib.parse import urlsplit
 from typing import Literal
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from agent.find_evidence import job as finder
+from agent.scout.tools.crawl import extract_pdf
 from app.services import websearch
 from app.services.db.mongo import get_collection
 from app.services.settings_store import radar_settings
 from app.services.timezone import request_tz
 
 router = APIRouter()
+
+NO_LOGINS = ("a link can't carry a login: the radar reads pages as any visitor would and never keeps passwords. "
+             "Save the page as a PDF and add the file instead")
+
+
+def _bad_link(url: str) -> str | None:
+    """Why a pasted link can't be read, or None."""
+    if not url.startswith(("http://", "https://")):
+        return f"paste each page's full address, starting with http:// or https://: {url}"
+    parts = urlsplit(url)
+    if parts.username or parts.password:
+        return NO_LOGINS
+    return None
 
 
 class Gap(BaseModel):
@@ -69,13 +88,56 @@ def start(body: Start, tz: str = Depends(request_tz)) -> dict:
     if not get_collection("technologies").find_one({"_id": gap["tech_id"]}, {"_id": 1}):
         raise HTTPException(status_code=404, detail=f"unknown technology {gap['tech_id']!r}")
     if gap["kind"] == "link":
-        if not (gap.get("url") or "").startswith(("http://", "https://")):
-            raise HTTPException(status_code=422, detail="paste the page's full address, starting with http:// or https://")
+        if why := _bad_link(gap.get("url") or ""):
+            raise HTTPException(status_code=422, detail=why)
     elif why := _why_not(*searches_today()):
         raise why
     if gap["kind"] == "measure" and not gap.get("measure_id"):
         raise HTTPException(status_code=422, detail="say which measure")
     return {"job_id": finder.start(gap, tz)}
+
+
+MAX_LINKS, MAX_FILES, MAX_FILE_MB = 20, 10, 25
+READABLE = (".pdf", ".txt", ".md", ".html", ".htm")
+
+
+def _text_of(name: str, content: bytes) -> str:
+    """An uploaded file as text, or a refusal that says why."""
+    if not name.lower().endswith(READABLE):
+        raise HTTPException(status_code=422, detail=f"{name}: only PDF, text, Markdown or HTML files can be read")
+    if len(content) > MAX_FILE_MB * 1024 * 1024:
+        raise HTTPException(status_code=422, detail=f"{name} is larger than {MAX_FILE_MB} MB")
+    text = extract_pdf(content) if name.lower().endswith(".pdf") else content.decode("utf-8", errors="replace")
+    if not (text or "").strip():
+        raise HTTPException(status_code=422, detail=f"{name} has no text to read (a scanned PDF needs its text first)")
+    return text
+
+
+@router.post("/find-evidence/add", status_code=202)
+async def add_evidence(tech_id: str = Form(...), urls: str = Form("[]"), through: str = Form("judge"),
+                       assess_anyway: bool = Form(False), files: list[UploadFile] = File(default=[]),
+                       tz: str = Depends(request_tz)) -> dict:
+    """Links (a JSON list) and files for one technology: read and filed under
+    it, its evidence judged again, and with through=pov assessed and its Point
+    of View written."""
+    if not get_collection("technologies").find_one({"_id": tech_id}, {"_id": 1}):
+        raise HTTPException(status_code=404, detail=f"unknown technology {tech_id!r}")
+    try:
+        links = [u.strip() for u in json.loads(urls) if str(u).strip()]
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=422, detail="the links weren't readable: send them as a list")
+    if why := next((w for u in links if (w := _bad_link(u))), None):
+        raise HTTPException(status_code=422, detail=why)
+    if len(links) > MAX_LINKS or len(files) > MAX_FILES:
+        raise HTTPException(status_code=422, detail=f"at most {MAX_LINKS} links and {MAX_FILES} files at a time")
+    given = [{"name": f.filename or "file", "text": _text_of(f.filename or "file", await f.read())} for f in files]
+    if not links and not given:
+        raise HTTPException(status_code=422, detail="add at least one link or file")
+    if through not in ("judge", "pov"):
+        raise HTTPException(status_code=422, detail="through is judge or pov")
+    gap = {"kind": "links", "tech_id": tech_id, "urls": list(dict.fromkeys(links)), "through": through,
+           "assess_anyway": assess_anyway}
+    return {"job_id": finder.start(gap, tz, given)}
 
 
 @router.get("/find-evidence/{job_id}")

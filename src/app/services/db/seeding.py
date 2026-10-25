@@ -47,7 +47,10 @@ ID_FIELDS = {
     "mechanisms": "mechanism_id",
     "assumptions": "assumption_id",
 }
-NOT_COMPARED = {"version"}  # the app's own counter: written with an item, never compared
+NOT_COMPARED = {"version"}
+# items the model proposed that no person has reviewed yet: listed where they're
+# reviewed (Setup › Classification › Domains), not as setup edits
+AWAITING_REVIEW = {"subdomains": {"status": "new"}}  # the app's own counter: written with an item, never compared
 STATE_ID = "state"
 
 
@@ -143,11 +146,19 @@ def _label(name: str, item: dict) -> str:
     return str(item.get("name") or item.get("_id"))
 
 
+def _awaiting(name: str, doc: dict) -> bool:
+    wanted = AWAITING_REVIEW.get(name)
+    return bool(wanted) and all(doc.get(k) == v for k, v in wanted.items())
+
+
 def changes() -> dict:
     """Live configuration items that differ from the seeding data:
-    edited (after the seeding data was loaded), added, or deleted."""
+    edited (after the seeding data was loaded), added, or deleted. Items the
+    model proposed and no one has reviewed yet are counted apart
+    (`awaiting_review`), never offered as defaults."""
     loaded_at = _state().get("loaded_at")
     rows: list[dict] = []
+    awaiting: dict[str, int] = {}
 
     def row(name, item_id, item, kind, fields):
         rows.append({"collection": name, "id": item_id, "label": _label(name, item),
@@ -160,6 +171,9 @@ def changes() -> dict:
         live = {d["_id"]: d for d in get_collection(name).find()}
         for item_id, doc in live.items():
             seed = seeded.get(item_id)
+            if seed is None and _awaiting(name, doc):
+                awaiting[name] = awaiting.get(name, 0) + 1
+                continue
             if seed is None:
                 row(name, item_id, doc, "added",
                     [{"field": f, "seeding_value": None, "live_value": doc[f]}
@@ -176,7 +190,32 @@ def changes() -> dict:
                     [{"field": f, "seeding_value": seed[f], "live_value": None}
                      for f in fields if f in seed and f != id_field])
     rows.sort(key=lambda r: r["updated_at"] or "", reverse=True)
-    return {"count": len(rows), "loaded_at": loaded_at, "items": rows}
+    return {"count": len(rows), "loaded_at": loaded_at, "items": rows, "awaiting_review": awaiting}
+
+
+# ── Put back the default ─────────────────────────────────────────────
+
+def revert(refs: list[dict]) -> dict:
+    """Put the ticked items back to their seeding data: an edited one gets its
+    seeded fields back, an added one is removed, a deleted one comes back. The
+    opposite of Update seeding data; the item then leaves the Changes tab."""
+    put_back = 0
+    for ref in refs:
+        name, item_id = ref["collection"], ref["id"]
+        id_field = ID_FIELDS[name]
+        items = read_list(name)
+        seed = next((i for i in items if i.get(id_field) == item_id), None)
+        coll = get_collection(name)
+        if seed is None:
+            put_back += coll.delete_one({"_id": item_id}).deleted_count
+            continue
+        update: dict = {"$set": {**seed, "updated_at": _now()}}
+        dropped = {f: "" for f in list_fields(items) if f not in seed}
+        if dropped:
+            update["$unset"] = dropped
+        coll.update_one({"_id": item_id}, update, upsert=True)
+        put_back += 1
+    return {"put_back": put_back}
 
 
 # ── Update seeding data ──────────────────────────────────────────────

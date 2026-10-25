@@ -51,7 +51,6 @@ class RadarSettingsEdit(BaseModel):
     evidence_floor: int = Field(ge=1, le=100)
     classify_after_collection: bool
     classify_pages_cap: int = Field(ge=1, le=50)
-    classify_token_budget: int = Field(ge=0)
     emerging_availability: list[str] = Field(max_length=20)
     find_evidence_results: int = Field(ge=1, le=10)
     find_evidence_daily_budget: int = Field(ge=0, le=500)
@@ -73,10 +72,13 @@ def get_radar_settings() -> dict:
     return radar_settings()
 
 
+RETIRED = {"classify_token_budget": ""}  # settings the radar no longer has: a save removes them
+
+
 @router.put("/settings/radar")
 def update_radar_settings(edit: RadarSettingsEdit) -> dict:
     return get_collection("settings").find_one_and_update(
         {"_id": "radar"},
-        {"$set": {**edit.model_dump(), "updated_at": now_utc()},
+        {"$set": {**edit.model_dump(), "updated_at": now_utc()}, "$unset": RETIRED,
          "$setOnInsert": {"name": "radar"}},
         upsert=True, return_document=ReturnDocument.AFTER)

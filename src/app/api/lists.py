@@ -12,11 +12,13 @@ What an edit does to classified technologies (Classify reads these lists):
 """
 
 from collections import Counter
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from agent.classifier.classify import slug, subdomain_id
+from app.services import tech_status
 from app.services.db.mongo import get_collection
 from app.services.timezone import now_utc
 
@@ -27,9 +29,8 @@ LISTS = {"availability": "availability_id", "domains": "domain_id", "subdomains"
 # where a technology's classification holds each list's id
 CLASSIFIED_AS = {"availability": "classification.availability.value_id", "domains": "classification.domain.domain_id",
                  "subdomains": "classification.domain.subdomain_id", "trl_levels": "classification.trl.level"}
-# where a technology's effective classification (services/radar_status) holds it: what the counts use
-EFFECTIVE = {"availability": lambda c: c["availability"]["id"], "domains": lambda c: c["domain"]["id"],
-             "subdomains": lambda c: c["domain"]["subdomain_id"], "trl_levels": lambda c: c["trl"]["level"]}
+# where a technology's stored answers (services/tech_status) hold its effective classification: what the counts use
+EFFECTIVE = {"availability": "f.availability", "domains": "f.domain", "subdomains": "f.subdomain", "trl_levels": "f.trl"}
 EDITABLE = {"name", "definition", "order", "emerging", "catch_all", "domain_id", "status", "evidence_needed",
             "decision", "date"}
 
@@ -65,12 +66,16 @@ def read(name: str) -> dict:
     items = list(coll.find())
     counts: Counter = Counter()
     if name in CLASSIFIED_AS:  # as the Technologies list counts them: a person's or an import's choice, the assessment, the pages
-        from app.services import radar_status
-        counts = Counter(EFFECTIVE[name](c) for c in radar_status.classifications().values())
+        tech_status.fresh()
+        counts = Counter({r["_id"]: r["n"] for r in get_collection("tech_status").aggregate(
+            [{"$group": {"_id": f"${EFFECTIVE[name]}", "n": {"$sum": 1}}}])})
     for i in items:  # how many technologies are filed here
         i["technologies"] = counts.get(i.get("level") if name == "trl_levels" else i["_id"], 0)
     items.sort(key=lambda i: (i.get("order", 50), i.get("domain_id") or "", str(i.get("level") or ""), i.get("name", "")))
-    return {"list": name, "items": items}
+    # technologies with no value from this list (a TRL not judged yet): counted, so the counts add up
+    listed = {i.get("level") if name == "trl_levels" else i["_id"] for i in items}
+    unset = sum(n for k, n in counts.items() if k not in listed)
+    return {"list": name, "items": items, **({"unset": unset} if name in CLASSIFIED_AS else {})}
 
 
 @router.post("/lists/{name}", status_code=201)
@@ -132,19 +137,88 @@ class Merge(BaseModel):
     into: str = Field(min_length=1)
 
 
+class BulkMerge(Merge):
+    ids: list[str] = Field(min_length=1, max_length=5000)
+
+
+class BulkStatus(BaseModel):
+    ids: list[str] = Field(min_length=1, max_length=5000)
+    status: Literal["seeded", "new"]  # Accept, or its Undo
+
+
+class Unmerge(BaseModel):
+    """What a merge returned as `undo`: the sub-domains it removed, the
+    technologies it moved and the people's choices it pointed elsewhere."""
+    into: str
+    subdomains: list[dict] = Field(max_length=5000)
+    moves: list[dict] = Field(max_length=100_000)
+    decisions: list[dict] = Field(max_length=100_000)
+
+
+def _merge(ids: list[str], into: str) -> dict:
+    """Proposed (or duplicate) sub-domains folded into another: their
+    technologies move there, at no model cost, and they're removed. Returns
+    what Undo needs to put them back."""
+    coll = get_collection("subdomains")
+    target = coll.find_one({"_id": into})
+    olds = list(coll.find({"_id": {"$in": [i for i in ids if i != into]}}))
+    if target is None or not olds:
+        raise HTTPException(status_code=404, detail="both sub-domains must exist")
+    gone = [o["_id"] for o in olds]
+    techs, decisions = get_collection("technologies"), get_collection("decisions")
+    moves = [{"tech_id": t["_id"], "subdomain_id": t["classification"]["domain"]["subdomain_id"],
+              "domain_id": t["classification"]["domain"].get("domain_id"),
+              "new": bool(t["classification"]["domain"].get("subdomain_new"))}
+             for t in techs.find({"classification.domain.subdomain_id": {"$in": gone}},
+                                 {"classification.domain": 1})]
+    chosen = [{"id": d["_id"], "value": d["value"]} for d in decisions.find(
+        {"kind": "move", "field": "subdomain", "value": {"$in": gone}, "active": True}, {"value": 1})]
+    techs.update_many({"classification.domain.subdomain_id": {"$in": gone}},
+                      {"$set": {"classification.domain.subdomain_id": into,
+                                "classification.domain.domain_id": target["domain_id"]},
+                       "$unset": {"classification.domain.subdomain_new": ""}})
+    decisions.update_many({"_id": {"$in": [d["id"] for d in chosen]}}, {"$set": {"value": into}})
+    coll.delete_many({"_id": {"$in": gone}})
+    tech_status.touch([m["tech_id"] for m in moves], now=True)  # the counts and lists show where they went
+    return {"merged": len(gone), "into": into, "technologies_moved": len(moves),
+            "undo": {"into": into, "subdomains": olds, "moves": moves, "decisions": chosen}}
+
+
+@router.post("/lists/subdomains/merge")
+def merge_many(m: BulkMerge) -> dict:
+    return _merge(m.ids, m.into)
+
+
+@router.post("/lists/subdomains/unmerge")
+def unmerge(u: Unmerge) -> dict:
+    """Undo a merge: the sub-domains come back and their technologies (still
+    where the merge put them) and people's choices return to them."""
+    coll, techs = get_collection("subdomains"), get_collection("technologies")
+    for doc in u.subdomains:
+        coll.replace_one({"_id": doc["_id"]}, doc, upsert=True)
+    back = []
+    for mv in u.moves:
+        done = techs.update_one(
+            {"_id": mv["tech_id"], "classification.domain.subdomain_id": u.into},
+            {"$set": {"classification.domain.subdomain_id": mv["subdomain_id"],
+                      "classification.domain.domain_id": mv["domain_id"],
+                      **({"classification.domain.subdomain_new": True} if mv.get("new") else {})}}).modified_count
+        if done:
+            back.append(mv["tech_id"])
+    for d in u.decisions:
+        get_collection("decisions").update_one({"_id": d["id"], "value": u.into}, {"$set": {"value": d["value"]}})
+    tech_status.touch(back, now=True)
+    return {"put_back": len(u.subdomains), "technologies_moved_back": len(back)}
+
+
+@router.post("/lists/subdomains/status")
+def set_status(b: BulkStatus) -> dict:
+    """Accept many proposed sub-domains at once (status seeded), or undo that (new)."""
+    n = get_collection("subdomains").update_many(
+        {"_id": {"$in": b.ids}}, {"$set": {"status": b.status, "updated_at": now_utc()}, "$inc": {"version": 1}}).modified_count
+    return {"changed": n}
+
+
 @router.post("/lists/subdomains/{item_id}/merge")
 def merge(item_id: str, m: Merge) -> dict:
-    """A proposed (or duplicate) sub-domain folded into another: its
-    technologies move there, at no model cost, and it's removed."""
-    coll = get_collection("subdomains")
-    old, target = coll.find_one({"_id": item_id}), coll.find_one({"_id": m.into})
-    if old is None or target is None:
-        raise HTTPException(status_code=404, detail="both sub-domains must exist")
-    moved = get_collection("technologies").update_many(
-        {"classification.domain.subdomain_id": item_id},
-        {"$set": {"classification.domain.subdomain_id": m.into, "classification.domain.domain_id": target["domain_id"]},
-         "$unset": {"classification.domain.subdomain_new": ""}}).modified_count
-    get_collection("decisions").update_many({"kind": "move", "field": "subdomain", "value": item_id, "active": True},
-                                            {"$set": {"value": m.into}})
-    coll.delete_one({"_id": item_id})
-    return {"merged": item_id, "into": m.into, "technologies_moved": moved}
+    return _merge([item_id], m.into)

@@ -10,7 +10,7 @@ from pymongo.database import Database
 from app.settings import get_settings
 
 COLLECTIONS = frozenset({
-    "sources", "prompts", "runs", "documents",
+    "sources", "prompts", "runs", "documents", "page_texts",
     "fabrics", "measures", "scoring_config",
     "technologies", "resolves",
     "scoring_runs", "assessments", "povs", "pov_compose_jobs",
@@ -18,7 +18,9 @@ COLLECTIONS = frozenset({
     "llm_calls", "recipes", "decisions",
     "availability", "domains", "subdomains", "trl_levels", "path_steps", "mechanisms",
     "classify_runs", "imports", "find_evidence_jobs",
-    "assumptions", "editions", "edition_povs",
+    "assumptions", "editions", "edition_povs", "pov_views", "tag_runs", "tech_status", "tech_status_rows",
+    "scoring_tech_calls", "edition_rows", "import_items", "briefing_rows", "briefing_days",
+    "jobs",  # background jobs queued for the worker (services/jobs)  # the per-technology / per-row records of runs, editions, imports
 })
 
 

@@ -33,6 +33,11 @@ replaces the old one (the old one is kept, inactive), and undo deactivates.
               leader records (deck p.13); never     due: a date, and the
               changes a score                       resources: people,
                                                     budget, poc}
+  watch_threshold  a sign to watch (`key`: its      the threshold, in     optional
+              wording's key, services/watch)        words
+  watch_crossed    a sign to watch, as above        no (it hasn't         optional
+                                                    crossed, whatever the
+                                                    model said)
 
 What a leader records sets the state Frontier shows (leader_state): Undefined
 (no owner yet), Defined (an owner and a next action), Aligned (the path step
@@ -120,6 +125,13 @@ def _check(kind: str, d: dict) -> dict:
     elif kind == "use_case":
         if v not in ("accept", "reject") or not d.get("key") or not d.get("fabric_id"):
             raise Refused("accept or reject one suggested use case, in one fabric")
+    elif kind == "watch_threshold":
+        if not d.get("key") or not (isinstance(v, str) and v.strip()) or len(v) > 1000:
+            raise Refused("a threshold is about one sign to watch, in words (up to 1,000 characters)")
+        d["value"] = v.strip()
+    elif kind == "watch_crossed":
+        if not d.get("key") or v != "no":
+            raise Refused("say that one sign to watch hasn't crossed (no)")
     elif kind == "path_step":
         if not d.get("fabric_id") or not (isinstance(v, str) and v):
             raise Refused("a path-to-scale step is for one fabric")
@@ -206,6 +218,15 @@ def active(tech_ids: list[str] | None = None, kinds: list[str] | None = None) ->
     if kinds:
         query["kind"] = {"$in": kinds}
     return list(get_collection("decisions").find(query).sort("at", 1))
+
+
+def by_tech(decs: list[dict]) -> dict[str, list[dict]]:
+    """Choices grouped by technology, each group still oldest first: read once,
+    so a loop over many technologies doesn't scan every choice for each."""
+    out: dict[str, list[dict]] = {}
+    for d in decs:
+        out.setdefault(d["tech_id"], []).append(d)
+    return out
 
 
 def pick(decs: list[dict], kind: str, **match) -> dict | None:

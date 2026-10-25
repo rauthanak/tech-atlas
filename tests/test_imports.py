@@ -18,7 +18,7 @@ from app.main import app
 from app.services import classify_effective, decisions, imports
 from app.services.timezone import now_utc
 from agent.resolver.resolver import known_register
-from factories import tech
+from factories import as_if_relinked_in_full, tech
 from stacked_fakes import load_seeded
 
 client = TestClient(app)
@@ -111,6 +111,7 @@ def test_groups_review_confirm_and_again(db, monkeypatch):
     assert all(i["group"] == "matched" for i in again["items"])
     client.post(f"/api/imports/{again['_id']}/confirm")
     assert db["decisions"].count_documents({}) == before and db["technologies"].count_documents({}) == 3
+    as_if_relinked_in_full(db)
 
 
 def test_a_rejected_match_comes_in_new(db, monkeypatch):
@@ -227,7 +228,7 @@ def _old_confirm(db, import_id: str) -> None:
     """Confirm as it worked until 21 Oct, as the live import was confirmed:
     every joining row's values recorded in turn, last row winning, without
     naming the row."""
-    imp = db["imports"].find_one({"_id": import_id})
+    imp = imports.load(import_id)  # with its rows, kept apart since 24 Oct
     for it in imp["items"]:
         record = {"import_id": import_id, "file": imp["file"], "at": now_utc(), "tz": TZ,
                   "row": {**it["values"], "name": it["name"]}}
@@ -310,6 +311,7 @@ def test_confirm_reopen_confirm_again_changes_nothing_for_the_other_rows(db, mon
     client.post(f"/api/imports/{imp_id}/confirm")
     assert {t: _moves(db, t) for t in state} == state                       # the same as the first confirm
     assert db["decisions"].count_documents({}) == count + 3                 # only the reopened row's values again
+    as_if_relinked_in_full(db)
 
 
 def test_add_one_by_hand(db, monkeypatch):
@@ -336,3 +338,48 @@ def test_add_one_by_hand(db, monkeypatch):
     bad = client.post("/api/technologies", json={"name": "X", "domain": "ai", "subdomain": "cloud--cloud_compute"})
     assert bad.status_code == 422 and "isn't a sub-domain of 'ai'" in bad.json()["detail"]
     assert client.post("/api/technologies", json={"name": "Y", "availability": "soon"}).status_code == 422
+    as_if_relinked_in_full(db)
+
+
+def test_a_review_a_newer_confirmed_import_settled_drops_out(db):
+    from app.services import imports_gate
+    db["imports"].insert_many([
+        {"_id": "old", "file": "f.xlsx", "at": "2026-10-21T04:30:00+00:00", "status": "ready",
+         "items": [{"group": "proposed", "decision": None, "row": 2}, {"group": "matched", "row": 3}]},
+        {"_id": "other", "file": "g.xlsx", "at": "2026-10-21T05:00:00+00:00", "status": "ready",
+         "items": [{"group": "proposed", "decision": None, "row": 2}]}])
+    assert [i["count"] for i in imports_gate.items() if i["kind"] == "import_matches"] == [1, 1]
+    listed = client.get("/api/imports").json()["imports"]
+    assert {r["_id"]: r["waiting"] for r in listed} == {"old": 1, "other": 1}
+    db["imports"].insert_one({"_id": "new", "file": "f.xlsx", "at": "2026-10-22T03:58:00+00:00", "status": "confirmed",
+                              "confirmed_at": "2026-10-22T16:39:00+00:00", "items": []})
+    assert [i["href"] for i in imports_gate.items() if i["kind"] == "import_matches"] == ["/admin/import?id=other"]
+    listed = client.get("/api/imports").json()["imports"]
+    assert listed[0]["_id"] == "other" and next(r for r in listed if r["_id"] == "old")["replaced_by"]["id"] == "new"
+    refused = client.put("/api/imports/old/items", json={"rows": [2], "decision": "accept"})
+    assert refused.status_code == 409 and "newer import of the same file" in refused.json()["detail"]
+    assert client.delete("/api/imports/old").status_code == 200  # it can still be discarded
+    assert next(r for r in client.get("/api/imports").json()["imports"] if r["_id"] == "old")["waiting"] == 0
+
+
+def test_an_import_keeps_its_rows_apart_and_an_older_one_moves_them_on_save(db, monkeypatch):
+    """Rule 3: an import's record stays small, its rows one record each; an
+    import saved before that, rows inside, reads the same and moves them out
+    the next time it's saved; To do counts the waiting ones either way."""
+    _world(db, monkeypatch)
+    rows = [["Edge AI", "AI", "Edge AI", "d", "6", "Early Commercial"], ["LLM agents", "AI", "AI Agents", "d", "", "Pilot"]]
+    imp = client.post(f"/api/imports/{upload(book(rows)).json()['_id']}/match").json()
+    assert "items" not in db["imports"].find_one({"_id": imp["_id"]})
+    assert db["import_items"].count_documents({"import_id": imp["_id"]}) == 2
+    assert client.get("/api/imports").json()["imports"][0]["waiting"] == 1
+    # the same import as it was kept before: rows inside
+    items = client.get(f"/api/imports/{imp['_id']}").json()["items"]
+    db["import_items"].delete_many({})
+    db["imports"].update_one({"_id": imp["_id"]}, {"$set": {"items": items}})
+    assert client.get(f"/api/imports/{imp['_id']}").json()["items"] == items
+    assert client.get("/api/imports").json()["imports"][0]["waiting"] == 1
+    row = next(i["row"] for i in items if i["name"] == "LLM agents")
+    after = _decide(imp["_id"], [row], "accept")
+    assert {i["name"]: i["decision"] for i in after["items"]} == {"Edge AI": None, "LLM agents": "accept"}
+    assert "items" not in db["imports"].find_one({"_id": imp["_id"]})
+    assert db["import_items"].count_documents({"import_id": imp["_id"]}) == 2

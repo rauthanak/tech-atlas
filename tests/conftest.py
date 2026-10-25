@@ -33,3 +33,16 @@ def seeds(tmp_path, monkeypatch) -> Path:
     shutil.copytree(seeding.SEEDS_DIR, copy)
     monkeypatch.setattr(seeding, "SEEDS_DIR", copy)
     return copy
+
+
+@pytest.fixture(autouse=True)
+def stored_answers_always_fresh(monkeypatch):
+    """Tests write straight to the database, with no background updater:
+    screens work out every technology's stored answers, and polled answers,
+    on each read."""
+    from app.api import pipeline
+    from app.services import briefing_days, editions, tech_status
+    monkeypatch.setattr(tech_status, "ALWAYS_FRESH", True)
+    monkeypatch.setattr(briefing_days, "ALWAYS_NOW", True)  # the Briefing's changed days, worked out on each read
+    monkeypatch.setattr(pipeline, "CACHE_S", 0)   # each read works its answer out again
+    monkeypatch.setattr(editions, "SINCE_S", 0)

@@ -1,0 +1,15 @@
+{
+ "signal_list_s": 4.14,
+ "signal_switch_off_s": 0.02,
+ "signal_switch_back_s": 0.0,
+ "checkable_pages": 10807220,
+ "stale_pages": 0,
+ "publish_s": 610.54,
+ "edition_counts": {
+  "placements": 22050,
+  "held": 2340,
+  "povs": 411,
+  "moved": 0,
+  "technologies": 10890
+ }
+}

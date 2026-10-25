@@ -20,7 +20,12 @@ prompt (label_missing).
 Existing alias assignments are pinned: a raw string already claimed by a
 technology (including admin moves) is never re-sent to the LLM, so admin
 corrections and earlier resolves survive re-resolves. `replace=True` wipes the
-register and starts over. Documents are never rewritten beyond the stamp."""
+register and starts over. Documents are never rewritten beyond the stamp.
+
+An Organize works only on the visits waiting for it (`to_organize`: new page
+versions, and pages Check again read anew), and on older pages naming a name
+it claims; counts are of pages (services/pages), not visits. Starting over
+reads every page."""
 
 import json
 import logging
@@ -36,18 +41,28 @@ from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM, parse_json
 from app.services.prompts.store import PromptStore
 from app.services.timezone import now_utc
-from app.services.websearch import source_of
+from app.services.websearch import SOURCE as WEB_SEARCH_SOURCE
 from app.settings import get_settings
+from app.services import jobs
 
 log = logging.getLogger(__name__)
+WEB_SEARCH = WEB_SEARCH_SOURCE["source_id"]
 
 _lock = threading.Lock()
-_active_thread: threading.Thread | None = None
-_sync_active = False
 
 
 def _busy() -> bool:
-    return _sync_active or (_active_thread is not None and _active_thread.is_alive())
+    """An Organize is under way (its record says so: it may run in the worker)."""
+    return get_collection("resolves").find_one({"status": "running"}, {"_id": 1}) is not None
+
+
+def reconcile_stale() -> None:
+    """At the start of the process that runs jobs: an Organize still 'running' died with the one before."""
+    done = get_collection("resolves").update_many(
+        {"status": "running"}, {"$set": {"status": "failed", "error": "interrupted — the service restarted",
+                                         "finished_at": now_utc()}})
+    if done.modified_count:
+        log.warning("resolver: %d interrupted organize(s) marked failed", done.modified_count)
 
 
 def _norm(raw: str) -> str:
@@ -63,16 +78,12 @@ def _slug(name: str) -> str:
 def start_resolve(replace: bool = False) -> str:
     """Kick off a resolve in a background thread; returns the resolve id.
     Raises RuntimeError if one is already running."""
-    global _active_thread
     with _lock:
         if _busy():
             raise RuntimeError("a resolve is already running")
         resolve_id = _create_resolve_doc(replace)
-        _active_thread = threading.Thread(
-            target=_execute, args=(resolve_id, replace), daemon=True,
-            name=f"resolve-{resolve_id}")
-        _active_thread.start()
-        return resolve_id
+    jobs.start(_execute, resolve_id, replace)
+    return resolve_id
 
 
 def _create_resolve_doc(replace: bool) -> str:
@@ -92,29 +103,63 @@ def _create_resolve_doc(replace: bool) -> str:
 def run_resolve_sync(replace: bool = False) -> str | None:
     """Run a resolve inline on the caller's thread — the scout runner's
     'resolving' stage. Skips (returns None) when one is already running."""
-    global _sync_active
     with _lock:
         if _busy():
             return None
-        _sync_active = True
         resolve_id = _create_resolve_doc(replace)
-    try:
-        _execute(resolve_id, replace)
-    finally:
-        _sync_active = False
+    _execute(resolve_id, replace)
     return resolve_id
 
 
-def restamp_all() -> int:
-    """Re-derive technologies_resolved on every document from the current
-    register, and recompute per-technology stats. Deterministic, no LLM.
-    Used after admin edits (rename, alias move)."""
+def _alias_map() -> dict[str, str]:
+    """Every name a page may use, to the technology it means."""
     alias_map: dict[str, str] = {}
     for t in get_collection("technologies").find({}, {"name": 1, "aliases": 1}):
         for a in t.get("aliases", []):
             alias_map[a] = t["name"]
-    stamped = _stamp_documents(alias_map)
-    _recompute_stats()
+    return alias_map
+
+
+def _names_on(query: dict) -> list[str]:
+    """The raw names on the visits matching `query` (set-aside pages left out)."""
+    return [r["_id"] for r in get_collection("documents").aggregate([
+        {"$match": {**query, "ignored_by": None}}, {"$unwind": "$technologies"},
+        {"$group": {"_id": "$technologies"}}], allowDiskUse=True)]
+
+
+def _page_counts(match: dict, names: list[str] | None = None) -> Counter:
+    """How many pages (services/pages), not visits, name each raw name among
+    the visits matching `match`; set-aside pages left out. `names`: only these."""
+    rows = get_collection("documents").aggregate([
+        {"$match": {**match, "ignored_by": None}},
+        {"$project": {"technologies": 1, "page": {"$ifNull": ["$page_key", "$end_url"]}}},
+        {"$unwind": "$technologies"},
+        *([{"$match": {"technologies": {"$in": names}}}] if names is not None else []),
+        {"$group": {"_id": {"t": "$technologies", "p": "$page"}}},
+        {"$group": {"_id": "$_id.t", "n": {"$sum": 1}}}], allowDiskUse=True)
+    return Counter({r["_id"]: r["n"] for r in rows})
+
+
+def restamp(names) -> int:
+    """After a change to which technology a name means (a person's rename,
+    merge or moved alias; an import; pages filed by Find evidence or by
+    linking known names): re-link only the pages that name one of these names, and recount only the technologies
+    they named before or name now. Costs what that technology's pages cost,
+    not what every page costs."""
+    names = sorted({n for n in names if n})
+    if not names:
+        return 0
+    return _relink({"technologies": {"$in": names}}, _alias_map(), names)
+
+
+def _relink(query: dict, alias_map: dict[str, str], also=()) -> int:
+    """Link the pages matching `query` again, and recount the technologies
+    they were linked to before or are now (and `also`)."""
+    docs = get_collection("documents")
+    before = set(docs.distinct("technologies_resolved", query))
+    stamped = _stamp_documents(alias_map, query)
+    after = set(docs.distinct("technologies_resolved", query))
+    recompute_stats(sorted(before | after | set(also)))
     return stamped
 
 
@@ -147,16 +192,30 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
     settings = get_settings()
     techs = get_collection("technologies")
 
-    # 1 · gather raw strings — pages set aside by a Can ignore rule are
-    # left out (a missing ignored_by counts as null, so old documents count)
-    _progress(resolve_id, phase="gathering")
-    raw_counts: Counter[str] = Counter()
-    for d in get_collection("documents").find(
-            {"technologies": {"$exists": True, "$ne": []}, "ignored_by": None},
-            {"technologies": 1}):
-        raw_counts.update(d["technologies"])
+    # 1 · the visits this Organize works on, claimed so pages stored meanwhile wait for the next one
+    docs = get_collection("documents")
+    if not replace:
+        docs.update_many({"to_organize": {"$exists": True}}, {"$set": {"to_organize": resolve_id}})
+    waiting = {"to_organize": resolve_id}
+    waiting_n = None if replace else docs.count_documents(waiting)
 
-    # 2 · deterministic pass: group by normalized key, keep the most common
+    # pinned assignments: raw string -> existing canonical name
+    if replace:
+        techs.delete_many({})
+    pinned = _alias_map()
+    pinned_norm = {_norm(a): name for a, name in pinned.items()}
+
+    # 2 · gather raw strings and how many pages name each — pages set aside by
+    # a Can ignore rule are left out (a missing ignored_by counts as null, so
+    # old documents count). Starting over: every page's names; otherwise the
+    # names on the waiting visits that no technology has claimed yet
+    if replace:
+        raw_counts = _page_counts({"technologies": {"$exists": True, "$ne": []}})
+    else:
+        new = [n for n in _names_on(waiting) if n not in pinned]
+        raw_counts = _page_counts({"technologies": {"$in": new}}, new) if new else Counter()
+
+    # 3 · deterministic pass: group by normalized key, keep the most common
     # spelling as the display name
     groups: dict[str, dict] = {}
     for raw, n in raw_counts.items():
@@ -169,23 +228,16 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
     for g in groups.values():
         g["display"] = g["raws"].most_common(1)[0][0]
 
-    # 3 · frequency floor
+    # 4 · frequency floor
     candidates = {k: g for k, g in groups.items()
                   if g["count"] >= settings.min_docs_per_tech}
-
-    # 4 · pinned assignments: raw string -> existing canonical name
-    if replace:
-        techs.delete_many({})
-    pinned: dict[str, str] = {}
-    for t in techs.find({}, {"name": 1, "aliases": 1}):
-        for a in t.get("aliases", []):
-            pinned[a] = t["name"]
 
     # canonical mapping we are building: display name -> canonical name
     canon: dict[str, str] = {}
     unassigned: list[tuple[str, int]] = []
-    for g in candidates.values():
-        hit = next((pinned[r] for r in g["raws"] if r in pinned), None)
+    for key, g in candidates.items():
+        # a new spelling of a claimed name ("ML KEM" for "ml-kem") joins it, with no model call
+        hit = next((pinned[r] for r in g["raws"] if r in pinned), pinned_norm.get(key))
         if hit is not None:
             canon[g["display"]] = hit
         else:
@@ -217,7 +269,8 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
     weight: Counter[str] = Counter()
     for g in candidates.values():
         weight[canon[g["display"]]] += g["count"]
-    second = [n for n, _ in weight.most_common() if n not in pinned.values()]
+    claimed_names = set(pinned.values())
+    second = [n for n, _ in weight.most_common() if n not in claimed_names]
     _progress(resolve_id, phase="llm pass 2", canonical_after_pass1=len(weight))
     remap: dict[str, str] = {}
     for chunk in _chunks(second, settings.resolve_batch_size):
@@ -258,14 +311,17 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
     if writes:
         techs.bulk_write(writes)
 
-    # 8 · stamp documents and compute per-technology stats
+    # 8 · link the waiting visits and older pages naming a name claimed now, and
+    # recount the technologies they touch (starting over: every page and technology)
     _progress(resolve_id, phase="stamping documents")
-    alias_map: dict[str, str] = {}
-    for t in techs.find({}, {"name": 1, "aliases": 1}):
-        for a in t.get("aliases", []):
-            alias_map[a] = t["name"]
-    stamped = _stamp_documents(alias_map)
-    _recompute_stats()
+    alias_map = _alias_map()
+    if replace:
+        stamped = _stamp_documents(alias_map)
+        recompute_stats()
+    else:
+        claimed = sorted({r for raws in buckets.values() for r in raws})
+        stamped = _relink({"$or": [waiting, {"technologies": {"$in": claimed}}]} if claimed else waiting, alias_map)
+    docs.update_many({"to_organize": {"$exists": True}} if replace else waiting, {"$unset": {"to_organize": ""}})
 
     # 9 · display labels for technologies that have none
     _progress(resolve_id, phase="labelling")
@@ -273,6 +329,7 @@ def _resolve(resolve_id: str, replace: bool) -> dict:
     llm_calls += label_calls
 
     return {
+        "new_pages": waiting_n,
         "raw_strings": len(raw_counts),
         "after_deterministic": len(groups),
         "candidates": len(candidates),
@@ -366,29 +423,34 @@ def _llm_groups(llm: LLM, prompt, names: list[str], register: list[str]) -> list
     return []
 
 
-def _stamp_documents(alias_map: dict[str, str]) -> int:
+def _stamp_documents(alias_map: dict[str, str], query: dict | None = None) -> int:
     """technologies_resolved per document, and per finding that names its own
     technologies (signals.N.technologies_resolved). A set-aside page gets
     none, so the evidence for scoring, the counts and the Technologies page
     never include it; its own `technologies` field stays, so the decision can
     be audited. A finding none of whose names resolve has none of its own,
-    and readers fall back to the page's."""
+    and readers fall back to the page's. Only pages whose links change are
+    written; returns how many were."""
     docs = get_collection("documents")
     writes, stamped = [], 0
-    for d in docs.find({"technologies": {"$exists": True}},
-                       {"technologies": 1, "ignored_by": 1, "signals.technologies": 1}):
+    for d in docs.find({"technologies": {"$exists": True}, **(query or {})},
+                       {"technologies": 1, "ignored_by": 1, "technologies_resolved": 1,
+                        "signals.technologies": 1, "signals.technologies_resolved": 1}):
         resolved = [] if d.get("ignored_by") else \
             sorted({alias_map[t] for t in d.get("technologies", []) if t in alias_map})
-        update: dict = {"$set": {"technologies_resolved": resolved}}
+        sets: dict = {} if d.get("technologies_resolved") == resolved else {"technologies_resolved": resolved}
+        unsets: dict = {}
         for i, hit in enumerate(d.get("signals") or []):
             if "technologies" not in hit:
                 continue
             own = sorted({alias_map[t] for t in hit["technologies"] if t in alias_map})
-            if own:
-                update["$set"][f"signals.{i}.technologies_resolved"] = own
-            else:
-                update.setdefault("$unset", {})[f"signals.{i}.technologies_resolved"] = ""
-        writes.append(UpdateOne({"_id": d["_id"]}, update))
+            if own and hit.get("technologies_resolved") != own:
+                sets[f"signals.{i}.technologies_resolved"] = own
+            elif not own and "technologies_resolved" in hit:
+                unsets[f"signals.{i}.technologies_resolved"] = ""
+        if not sets and not unsets:
+            continue  # its links haven't changed: nothing to write
+        writes.append(UpdateOne({"_id": d["_id"]}, {**({"$set": sets} if sets else {}), **({"$unset": unsets} if unsets else {})}))
         stamped += 1
         if len(writes) >= 1000:
             docs.bulk_write(writes)
@@ -398,33 +460,62 @@ def _stamp_documents(alias_map: dict[str, str]) -> int:
     return stamped
 
 
-def _recompute_stats() -> None:
-    """Per-technology counts from the stamped documents: document records,
-    distinct pages, sources, H-categories, kinds."""
-    acc: dict[str, dict] = defaultdict(lambda: {
-        "doc_count": 0, "pages": set(), "sources": set(),
-        "horizons": Counter(), "kinds": Counter()})
-    for d in get_collection("documents").find(
-            {"technologies_resolved": {"$exists": True, "$ne": []}},
-            {"technologies_resolved": 1, "end_url": 1, "source_id": 1,
-             "category": 1, "kind": 1}):
-        for name in d["technologies_resolved"]:
-            a = acc[name]
-            a["doc_count"] += 1
-            a["pages"].add(d.get("end_url"))
-            a["sources"].add(source_of(d))  # a page found by web search counts as its own site
-            a["horizons"][d.get("category") or "?"] += 1
-            a["kinds"][d.get("kind") or "article"] += 1
+# a page found by web search counts as its own site (services/websearch.source_of), worked out in the database:
+# the address's host, without a leading "www."
+_HOST = {"$ifNull": [{"$arrayElemAt": [{"$getField": {"field": "captures", "input": {
+    "$regexFind": {"input": {"$ifNull": ["$end_url", ""]}, "regex": r"^[^:/?#]+://([^/?#]*)"}}}}, 0]}, ""]}
+_SITE = {"$let": {"vars": {"h": _HOST}, "in": {"$cond": [
+    {"$eq": [{"$substrBytes": ["$$h", 0, 4]}, "www."]}, {"$substrBytes": ["$$h", 4, -1]}, "$$h"]}}}
+_SOURCE = {"$cond": [{"$eq": ["$source_id", WEB_SEARCH]},
+                     {"$let": {"vars": {"s": _SITE}, "in": {"$cond": [{"$eq": ["$$s", ""]}, WEB_SEARCH, "$$s"]}}},
+                     "$source_id"]}
+
+
+def recompute_stats(names: list[str] | None = None) -> None:
+    """Per-technology counts from the stamped documents (document records,
+    distinct pages, sources, H-categories, kinds), counted in the database,
+    so memory stays flat however many pages there are. `names`: only these
+    technologies (a person's edit); otherwise every one."""
+    match: dict = {"technologies_resolved": {"$exists": True, "$ne": []}}
+    if names is not None:
+        match["technologies_resolved"] = {"$in": names}
+    docs = get_collection("documents")
+
+    def grouped(extra: list[dict]) -> list[dict]:
+        return list(docs.aggregate([{"$match": match}, {"$unwind": "$technologies_resolved"},
+                                    *([{"$match": {"technologies_resolved": {"$in": names}}}] if names is not None else []),
+                                    *extra], allowDiskUse=True))
+
+    totals = {r["_id"]: r for r in grouped([
+        {"$group": {"_id": "$technologies_resolved", "doc_count": {"$sum": 1},
+                    "pages": {"$addToSet": {"$ifNull": ["$page_key", "$end_url"]}}, "sources": {"$addToSet": _SOURCE}}},
+        {"$project": {"doc_count": 1, "page_count": {"$size": "$pages"}, "source_count": {"$size": "$sources"}}}])}
+    spread: dict[str, dict] = defaultdict(lambda: {"horizons": {}, "kinds": {}})
+    for field, key, empty in (("category", "horizons", "?"), ("kind", "kinds", "article")):
+        for r in grouped([{"$group": {"_id": {"t": "$technologies_resolved", "v": {"$ifNull": [f"${field}", empty]}},
+                                      "n": {"$sum": 1}}}]):
+            counts = spread[r["_id"]["t"]][key]  # "" and a missing value both count as `empty`
+            counts[r["_id"]["v"] or empty] = counts.get(r["_id"]["v"] or empty, 0) + r["n"]
     techs = get_collection("technologies")
     writes = []
-    for t in techs.find({}, {"name": 1}):
-        a = acc.get(t["name"])
+    for t in techs.find({} if names is None else {"name": {"$in": names}}, {"name": 1}):
+        a = totals.get(t["name"])
         writes.append(UpdateOne({"_id": t["_id"]}, {"$set": {
             "doc_count": a["doc_count"] if a else 0,
-            "page_count": len(a["pages"]) if a else 0,
-            "source_count": len(a["sources"]) if a else 0,
-            "horizons": dict(a["horizons"]) if a else {},
-            "kinds": dict(a["kinds"]) if a else {},
+            "page_count": a["page_count"] if a else 0,
+            "source_count": a["source_count"] if a else 0,
+            "horizons": spread[t["name"]]["horizons"] if a else {},
+            "kinds": spread[t["name"]]["kinds"] if a else {},
         }}))
+        if len(writes) >= 1000:
+            techs.bulk_write(writes)
+            writes = []
     if writes:
         techs.bulk_write(writes)
+    # pages were linked again (a resolve, a rename, Find evidence, linking known names):
+    # these technologies' stored answers may have moved (any of them, after a full recount)
+    from app.services import tech_status
+    if names is None:
+        tech_status.touch_all()
+    else:
+        tech_status.touch_names(names)

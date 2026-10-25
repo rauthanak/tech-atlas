@@ -3364,7 +3364,7 @@
       "subdomain_id": "ai--ai_data_center_hardware",
       "name": "AI Data Center Hardware",
       "domain_id": "ai",
-      "status": "new"
+      "status": "seeded"
     },
     {
       "subdomain_id": "cybersecurity--digital_identity",

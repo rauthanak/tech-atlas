@@ -62,10 +62,12 @@ def _measure_check(value, task):
     return engine.measure_result(value)
 
 
-def _watch_check(value, task):
-    if not isinstance(value, list):
-        raise ValueError("metrics to watch must be a list")
-    return [m for m in value if isinstance(m, dict) and m.get("metric")]
+def _watch_check(urls: set[str] | None):
+    def check(value, task):
+        if not isinstance(value, list):
+            raise ValueError("metrics to watch must be a list")
+        return engine.watch_result(value, urls)
+    return check
 
 
 def _measure_task(m: dict, fabric: dict | None) -> Task:
@@ -97,12 +99,12 @@ def _lists() -> dict | None:
 
 
 def technology_built(recipe: dict, name: str, dossier: str, measures: list[dict], fabrics: list[dict],
-                     ls: dict | None = None) -> recipes.Built:
+                     ls: dict | None = None, previous: str = engine.NO_PREVIOUS) -> recipes.Built:
     from agent.classifier.classify import classification_tasks, list_values
     tasks = [Task("fabric_relevance", "fabric_relevance", "Choose the fabrics to assess",
                   {"fabrics": engine.fabric_list(fabrics)}),
              *(_measure_task(m, None) for m in measures if scope(m) == "technology"),
-             Task("watch_metrics", "watch_metrics", "Suggest metrics to watch")]
+             Task("watch_metrics", "watch_metrics", "Suggest metrics to watch", {"previous": previous})]
     if ls is not None:  # when the recipe carries them: domain, readiness (TRL) and availability
         classification = classification_tasks(list_values(ls), with_evidence_and_nascent=False)
         if set(recipe.get("skills") or []) >= {t.skill for t in classification}:
@@ -124,15 +126,16 @@ def technology_call(llm: LLM, run: dict, entry: dict, dossier: str, measures: li
     measures, watch_metrics, classification, retries}."""
     from agent.classifier.classify import FIELD_OF, validators as classification_checks
     ls = _lists()
-    built = technology_built(_recipe(run, "technology"), entry["name"], dossier, measures, fabrics, ls)
+    built = technology_built(_recipe(run, "technology"), entry["name"], dossier, measures, fabrics, ls,
+                             engine.previous_watch(entry["tech_id"], run["_id"]))
     checks = {"fabric_relevance": _relevance_check(fabrics), "measure_scoring": _measure_check,
-              "watch_metrics": _watch_check, **(classification_checks(ls, pages or []) if ls is not None else {})}
+              "watch_metrics": _watch_check(engine.page_urls(pages)), **(classification_checks(ls, pages or []) if ls is not None else {})}
     # a gate that fails widens scoring to every fabric, never narrows it; a
     # failed classification answer isn't asked again (Classify has one from the pages)
     out, retries = _ask(llm, built, run["_id"], checks,
                         {"fabric_relevance": lambda why: [f["_id"] for f in fabrics], "watch_metrics": lambda why: []},
                         not_again=FIELD_OF)
-    return {"gates": out["fabric_relevance"],
+    return {"gates": engine.keep_worked_on(entry["tech_id"], out["fabric_relevance"], fabrics),
             "measures": {m["_id"]: out[f"measure:{m['_id']}"] for m in measures if scope(m) == "technology"},
             "watch_metrics": out["watch_metrics"],
             "classification": {FIELD_OF[k]: v for k, v in out.items() if k in FIELD_OF and not isinstance(v, Failure)},
@@ -175,8 +178,11 @@ def assess(run_id: str, tech_id: str, llm: LLM, executor: ThreadPoolExecutor) ->
     done = (run.get("tech_calls") or {}).get(tech_id)
     if done is None:
         done = technology_call(llm, run, entry, dossier, measures, fabrics, built["pages"])
-        get_collection("scoring_runs").update_one({"_id": run_id}, {"$set": {f"gates.{tech_id}": done["gates"],
-                                                                             f"tech_calls.{tech_id}": done}})
+        # the call's answers in a record of their own (one per technology), so the run's record stays small
+        get_collection("scoring_tech_calls").replace_one(
+            {"_id": f"{run_id}:{tech_id}"}, {"_id": f"{run_id}:{tech_id}", "run_id": run_id, "tech_id": tech_id, "done": done},
+            upsert=True)
+        get_collection("scoring_runs").update_one({"_id": run_id}, {"$set": {f"gates.{tech_id}": done["gates"]}})
         if done.get("classification"):
             at = now_utc()
             get_collection("technologies").update_one({"_id": tech_id}, {"$set": {

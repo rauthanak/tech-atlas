@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
 import time
 
 import json_repair
@@ -81,6 +82,25 @@ def call_with_backoff(fn, cancelled=None):
             time.sleep(delay)
 
 
+_clients: dict[tuple, object] = {}  # one SDK client (and its connection pool) per provider and key
+_clients_lock = threading.Lock()
+
+
+def _client_for(provider: str, settings) -> object:
+    """The provider's client, made once and shared: the SDK clients are safe
+    across threads, and each carries its own pool of connections."""
+    key = settings.anthropic_api_key if provider == "anthropic" else settings.openai_api_key
+    with _clients_lock:
+        if (provider, key) not in _clients:
+            if provider == "anthropic":
+                from anthropic import Anthropic
+                _clients[(provider, key)] = Anthropic(api_key=key)
+            else:
+                from openai import OpenAI
+                _clients[(provider, key)] = OpenAI(api_key=key)
+        return _clients[(provider, key)]
+
+
 class LLM:
     def __init__(self, provider: str, model_name: str, client: object) -> None:
         self.provider = provider
@@ -91,19 +111,15 @@ class LLM:
     def initialize(cls, model_name: str | None = None) -> "LLM":
         """Create a ready-to-use client for `model_name` (default: MODEL_NAME in .env)."""
         settings = get_settings()
+        if settings.model_provider == "standin":  # the scale test's stand-in: no model, no cost (services/llm/standin)
+            from app.services.llm.standin import StandIn
+            return StandIn()  # type: ignore[return-value]
         name = model_name or settings.model_name
         provider = "anthropic" if name.startswith("claude") else (
             "openai" if name.startswith(("gpt", "o")) else settings.model_provider
         )
 
-        if provider == "anthropic":
-            from anthropic import Anthropic
-
-            return cls(provider, name, Anthropic(api_key=settings.anthropic_api_key))
-
-        from openai import OpenAI
-
-        return cls(provider, name, OpenAI(api_key=settings.openai_api_key))
+        return cls(provider, name, _client_for(provider, settings))
 
     def chat_model(self):
         """A LangChain chat model for deep agents — the only place LangChain

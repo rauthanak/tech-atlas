@@ -94,27 +94,6 @@ def test_the_register_by_state_filtered_before_paging(db):
     assert client.get("/api/technologies", params={"state": "bogus"}).status_code == 422
 
 
-def test_never_assessed_technologies_that_reached_the_last_page_bar(db):
-    db["measures"].insert_one({"_id": "m1"})
-    db["fabrics"].insert_one({"_id": "cloud", "enabled": True})
-    tech(db)                                            # the run below assesses it
-    tech(db, "quic", "quic")                            # 3 pages since: over the bar
-    tech(db, "lifi", "li-fi")                           # 1 page: under it
-    tech(db, "old", "old tech", enabled=False)          # switched off: never offered
-    db["technologies"].update_many({"_id": {"$in": ["quic", "old"]}}, {"$set": {"page_count": 3}})
-    db["technologies"].update_one({"_id": "lifi"}, {"$set": {"page_count": 1}})
-    assert client.get("/api/technologies").json()["over_floor"] is None  # no run by page count yet
-
-    run(db, "r1", 2, params={"min_docs": 3})
-    assessment(db, "r1", 2, pages=[page(db, "a", 1)])
-    assert client.get("/api/technologies").json()["over_floor"] == {
-        "min_pages": 3, "started_at": "2026-09-02T00:00:00+00:00", "tech_ids": ["quic"],
-        "technologies": 1, "calls": 3, "calls_max": 3}  # 2 + 1 measure x 1 fabric
-
-    run(db, "r2", 4, status="running", techs=("quic",), params={"technologies": ["quic"]})
-    assert client.get("/api/technologies").json()["over_floor"] is None  # being assessed now
-
-
 def test_the_register_says_what_each_assessment_came_to(db):
     tech(db)
     tech(db, "quic", "quic")                            # never assessed: nothing to say
@@ -123,7 +102,7 @@ def test_the_register_says_what_each_assessment_came_to(db):
     assessment(db, "r1", 2, pages=[a1], scores=[7, None, 5])                      # placed
     assessment(db, "r1", 2, pages=[a1], fabric="network", scores=[None, None, 4], priority=None)
     rows = {t["_id"]: t for t in client.get("/api/technologies").json()["technologies"]}
-    assert rows["edge-ai"]["measures"] == {"scored": 3, "of": 6}
+    assert rows["edge-ai"]["measures"] == {"scored": 3, "of": 6, "waiting": 0}
     assert rows["edge-ai"]["priorities"] == [{"fabric_id": "cloud", "fabric": "Cloud", "priority": "P2", "override": False},
                                              {"fabric_id": "network", "fabric": "Network", "priority": None, "override": False}]
     assert rows["quic"]["measures"] is None and rows["quic"]["priorities"] == []
@@ -131,5 +110,5 @@ def test_the_register_says_what_each_assessment_came_to(db):
     db["assessments"].update_one({"_id": "r1:edge-ai:cloud"}, {"$set": {"placement.priority": None}})
     assert client.get("/api/technologies").json()["no_priority_counts"] == {"no_pov": 1}
     summary = client.get("/api/technologies/edge-ai/summary").json()["assessment"]
-    assert summary["measures"] == {"scored": 3, "of": 6}
-    assert [f["measures"] for f in summary["fabrics"]] == [{"scored": 2, "of": 3}, {"scored": 1, "of": 3}]
+    assert summary["measures"] == {"scored": 3, "of": 6, "waiting": 0}
+    assert [f["measures"] for f in summary["fabrics"]] == [{"scored": 2, "of": 3, "waiting": 0}, {"scored": 1, "of": 3, "waiting": 0}]

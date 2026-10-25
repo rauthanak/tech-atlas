@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from agent.find_evidence import job as finder
 from app.main import app
 from app.services import websearch
-from factories import page, tech
+from factories import as_if_relinked_in_full, page, tech
 from stacked_fakes import load_seeded
 
 client = TestClient(app)
@@ -60,6 +60,7 @@ def test_known_pages_are_skipped_new_ones_filed_and_only_classify_runs_again(db,
     assert j["summary"].startswith("1 new page filed under edge ai from 3 results (1 already collected); "
                                    "1 couldn't be read (the site answered 404). Classified again")
     assert db["technologies"].find_one({"_id": "edge-ai"})["classification"]["evidence"]["verdict"] == "strong"
+    as_if_relinked_in_full(db)
 
 
 def test_without_a_search_it_says_why_and_a_link_still_works(db, monkeypatch):
@@ -143,14 +144,14 @@ def test_the_query_is_what_the_gap_says_is_missing_cut_at_a_word(db, monkeypatch
 
 def test_each_page_found_by_web_search_counts_as_its_own_site(db):
     from agent.classifier.evidence import pack
-    from agent.resolver import restamp_all
+    from agent.resolver import restamp
     tech(db)
     page(db, "https://arxiv.org/pdf/1", 1, source_id="web_search")
     page(db, "https://partnershiponai.org/r", 1, source_id="web_search")
     page(db, "https://www.arxiv.org/pdf/2", 1, source_id="web_search")  # the same site again
     page(db, "https://collected.example/a", 1)
     assert pack("edge ai", 10)["sources"] == 3
-    restamp_all()
+    restamp(["edge ai"])
     assert db["technologies"].find_one({"_id": "edge-ai"})["source_count"] == 3
 
 
@@ -162,3 +163,81 @@ def test_the_briefing_does_not_count_a_find_evidence_run_as_a_collection(db):
          "run_end_date_time": "2026-10-21T00:01:00+00:00", "totals": {"sources": 0, "new_documents": 0}}])
     fresh = client.get("/api/briefing").json()["freshness"]
     assert fresh["run_id"] == "c1" and fresh["sources"] == 12
+
+
+# ── Add evidence: links and files a person gives, on to the Point of View ──
+
+def _add(db, gap, files=()):
+    db["find_evidence_jobs"].insert_one({
+        "_id": "j9", "gap": {"kind": "links", "tech_id": "edge-ai", **gap}, "query": None, "searched": False,
+        "at": "2026-10-22T00:00:00+00:00", "tz": "America/Chicago", "results": [],
+        "files": [{"name": n, "url": finder.file_url(n, t), "text": t} for n, t in files]})
+
+
+def test_links_and_files_are_read_filed_and_judged_again(db, monkeypatch):
+    _world(db, monkeypatch)
+    _add(db, {"urls": ["https://new.example/b", "https://known.example/a"], "through": "judge"},
+         files=[("trial notes.txt", "A field trial of edge AI began at a Singapore operator. " * 20)])
+    fetch = lambda url: ("A field trial of edge AI began. " * 30, {"title": "B"}, None)
+    finder.run("j9", fetch=fetch, search=lambda q, n: [])
+    j = db["find_evidence_jobs"].find_one({"_id": "j9"})
+    assert [r["status"] for r in j["results"]] == ["filed", "already", "filed"]
+    assert "text" not in j["files"][0]  # read and saved: the copy is dropped
+    names = {d["source_name"] for d in db["documents"].find({"found_by.job_id": "j9"})}
+    assert names == {"new.example (added by hand)", "trial notes.txt (uploaded)"}
+    assert j["summary"].startswith("2 new pages filed under edge ai from 3 links and files (1 already collected).")
+    assert "scoring_run_id" not in j and "Assessed" not in j["summary"]  # judged only, as asked
+    as_if_relinked_in_full(db)
+
+
+def test_through_to_the_point_of_view(db, monkeypatch):
+    _world(db, monkeypatch)
+    import agent.analyzer.agent as agent
+    from agent.analyzer import pov
+    from app.services import radar_status
+
+    def scoring(params):
+        db["scoring_runs"].insert_one({"_id": "s9", "status": "completed", "params": params})
+        return "s9"
+    written = []
+    monkeypatch.setattr(agent, "start_scoring_run", scoring)
+    monkeypatch.setattr(pov, "compose_pov", lambda run_id, tech_id, tz=None, job_id=None: written.append((run_id, tech_id)))
+    monkeypatch.setattr(radar_status, "statuses", lambda ids, *a: {i: {"reason": "Priority P3 in Cloud"} for i in ids})
+    _add(db, {"urls": ["https://new.example/b"], "through": "pov"})
+    finder.run("j9", fetch=lambda url: ("A field trial of edge AI began. " * 30, {}, None), search=lambda q, n: [])
+    j = db["find_evidence_jobs"].find_one({"_id": "j9"})
+    assert j["scoring_run_id"] == "s9" and written == [("s9", "edge-ai")]
+    assert j["summary"].endswith("Assessed: Priority P3 in Cloud. Its Point of View is written; leaders see it once you publish.")
+
+
+def test_thin_evidence_stops_before_assessing_unless_asked(db, monkeypatch):
+    _world(db, monkeypatch)
+    db["technologies"].update_one({"_id": "edge-ai"}, {"$set": {"classification": {"evidence": {"verdict": "thin"}}}})
+    job = {"_id": "j9", "gap": {"kind": "links", "tech_id": "edge-ai", "through": "pov"}}
+    out = finder.follow(job, {"_id": "edge-ai"})
+    assert out.startswith("Its evidence is still judged thin, so it wasn't assessed") and "Assess anyway" in out
+
+
+def test_add_evidence_refuses_with_the_reason(db, monkeypatch):
+    _world(db, monkeypatch)
+    started = []
+    monkeypatch.setattr(finder, "start", lambda gap, tz, files=None: started.append((gap, files)) or "job")
+    post = lambda **kw: client.post("/api/find-evidence/add", data={"tech_id": "edge-ai", **kw.pop("data", {})}, **kw)
+    assert "add at least one link or file" in post().json()["detail"]
+    assert "starting with http" in post(data={"urls": '["x.example"]'}).json()["detail"]
+    assert "never keeps passwords" in post(data={"urls": '["https://me:secret@portal.example/report"]'}).json()["detail"]
+    r = post(files=[("files", ("deck.pptx", b"x", "application/octet-stream"))])
+    assert r.status_code == 422 and "only PDF, text, Markdown or HTML" in r.json()["detail"]
+    r = post(data={"urls": '["https://a.example"]', "through": "pov"}, files=[("files", ("n.txt", b"edge AI trial", "text/plain"))])
+    assert r.status_code == 202
+    gap, files = started[0]
+    assert gap["through"] == "pov" and gap["urls"] == ["https://a.example"] and files == [{"name": "n.txt", "text": "edge AI trial"}]
+
+
+def test_a_job_running_at_start_up_says_it_was_interrupted(db):
+    from agent.find_evidence import job
+
+    db["find_evidence_jobs"].insert_one({"_id": "j1", "status": "running", "at": "2026-10-22T10:00:00+00:00"})
+    job.reconcile_stale()
+    j = db["find_evidence_jobs"].find_one({"_id": "j1"})
+    assert j["status"] == "failed" and "restarted" in j["error"]

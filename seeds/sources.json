@@ -7,7 +7,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://research.google/blog/rss"
@@ -20,7 +20,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -40,7 +40,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -50,7 +50,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -60,7 +60,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -90,7 +90,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -100,7 +100,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -130,7 +130,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -140,7 +140,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -180,7 +180,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free_tier",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -190,7 +190,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free_tier",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -200,7 +200,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free_tier",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -210,7 +210,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.rcrwireless.com/feed"
@@ -243,7 +243,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -253,7 +253,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -334,7 +334,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -344,7 +344,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -354,7 +354,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -377,7 +377,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -387,7 +387,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -407,7 +407,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -417,7 +417,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -542,7 +542,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free_tier",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -558,7 +558,10 @@
         "https://arxiv.org/list/cs.NI/recent",
         "https://arxiv.org/list/cs.CR/recent",
         "https://arxiv.org/list/cs.DC/recent",
-        "https://arxiv.org/list/eess.SP/recent"
+        "https://arxiv.org/list/eess.SP/recent",
+        "https://arxiv.org/list/quant-ph/recent",
+        "https://arxiv.org/list/cs.RO/recent",
+        "https://arxiv.org/list/cs.AI/recent"
       ]
     },
     {
@@ -598,7 +601,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free_tier",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.nature.com/nature.rss"
@@ -611,7 +614,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free_tier",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.science.org/rss/news_current.xml"
@@ -624,7 +627,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.pnas.org/rss/current.xml"
@@ -677,7 +680,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://bair.berkeley.edu/blog/feed.xml"
@@ -690,7 +693,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -700,7 +703,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -710,7 +713,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -720,7 +723,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -770,7 +773,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -780,7 +783,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -790,7 +793,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -800,7 +803,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -830,7 +833,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -840,7 +843,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -870,7 +873,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -880,7 +883,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -910,7 +913,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -950,7 +953,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -970,7 +973,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -990,7 +993,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1023,7 +1026,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1033,7 +1036,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.3gpp.org/dynareport/WI-List",
@@ -1061,7 +1064,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1071,7 +1074,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free_tier",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1081,7 +1084,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1101,7 +1104,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1111,7 +1114,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1121,7 +1124,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1131,7 +1134,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1141,7 +1144,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1151,7 +1154,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://incubator.apache.org/projects"
@@ -1218,7 +1221,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.darpa.mil/rss.xml",
@@ -1254,7 +1257,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.ukri.org/news/feed/",
@@ -1268,7 +1271,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.dfg.de/service/rss/de/324312/feed.rss",
@@ -1282,7 +1285,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://sj.jst.go.jp/feed/rss.xml",
@@ -1317,7 +1320,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1325,9 +1328,9 @@
       "name": "ENISA",
       "url": "https://www.enisa.europa.eu",
       "horizon": "H3",
-      "cluster": "government_funding",
+      "cluster": "regulators",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1335,9 +1338,9 @@
       "name": "CISA",
       "url": "https://www.cisa.gov",
       "horizon": "H3",
-      "cluster": "government_funding",
+      "cluster": "regulators",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1345,9 +1348,9 @@
       "name": "Bureau of Indian Standards",
       "url": "https://www.bis.gov.in",
       "horizon": "H3",
-      "cluster": "government_funding",
+      "cluster": "regulators",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1357,7 +1360,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "query",
       "adapter": "openalex_works",
       "searches": [
@@ -1368,7 +1371,19 @@
         "LEO satellite broadband",
         "zero trust network access",
         "edge AI inference",
-        "network digital twin"
+        "network digital twin",
+        "blockchain interoperability",
+        "decentralized identity",
+        "quantum networking",
+        "quantum sensing",
+        "IoT security",
+        "low-power wide-area network",
+        "digital twin",
+        "edge computing orchestration",
+        "autonomous mobile robots",
+        "confidential computing",
+        "AI agents",
+        "serverless computing"
       ]
     },
     {
@@ -1389,7 +1404,19 @@
         "LEO satellite broadband",
         "zero trust network access",
         "edge AI inference",
-        "network digital twin"
+        "network digital twin",
+        "blockchain interoperability",
+        "decentralized identity",
+        "quantum networking",
+        "quantum sensing",
+        "IoT security",
+        "low-power wide-area network",
+        "digital twin",
+        "edge computing orchestration",
+        "autonomous mobile robots",
+        "confidential computing",
+        "AI agents",
+        "serverless computing"
       ]
     },
     {
@@ -1399,7 +1426,7 @@
       "horizon": "H1",
       "cluster": "company_filings",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "query",
       "adapter": "sec_edgar",
       "searches": [
@@ -1462,7 +1489,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.nsf.gov/rss/rss_www_news.xml",
@@ -1489,7 +1516,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://inc42.com/tag/funding-galore/feed/"
@@ -1502,7 +1529,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://entrackr.com/rss"
@@ -1515,7 +1542,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.tatacommunications.com/press-release/rss.xml"
@@ -1541,7 +1568,7 @@
       "horizon": "H2",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.mplify.net/feed/"
@@ -1554,7 +1581,7 @@
       "horizon": "H2",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1562,7 +1589,7 @@
       "name": "CERT-In advisories",
       "url": "https://www.cert-in.org.in/s2cMainServlet?pageid=PUBADVLIST",
       "horizon": "H1",
-      "cluster": "government_funding",
+      "cluster": "regulators",
       "cost": "free",
       "enabled": true,
       "access": "crawl"
@@ -1572,9 +1599,9 @@
       "name": "Reserve Bank of India press releases",
       "url": "https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx",
       "horizon": "H1",
-      "cluster": "government_funding",
+      "cluster": "regulators",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1582,9 +1609,9 @@
       "name": "SEBI",
       "url": "https://www.sebi.gov.in",
       "horizon": "H1",
-      "cluster": "government_funding",
+      "cluster": "regulators",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
         "https://www.sebi.gov.in/sebirss.xml"
@@ -1597,7 +1624,7 @@
       "horizon": "H2",
       "cluster": "standards_foundations",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {

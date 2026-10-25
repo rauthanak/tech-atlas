@@ -10,11 +10,14 @@ Subdomains of a source's sites count as the same site. Link aggregators
 pages are stored but their own links are not followed. robots.txt is obeyed
 per host, wildcard rules included. The LLM steers which links to descend
 into when a level outgrows the budget; links left unvisited for lack of
-budget are counted and reported, never dropped silently."""
+budget are counted and reported, never dropped silently. One bad link or
+page never stops a source: it is skipped, counted with its reason, and the
+crawl carries on."""
 
 import io
 import logging
 import re
+import threading
 import time
 from urllib.parse import urldefrag, urljoin, urlparse
 
@@ -37,6 +40,7 @@ USER_AGENT = "TechAtlas/0.1 (emerging-technology radar; research use)"
 MIN_TEXT_CHARS = 200          # below this a page is navigation, not content
 LINK_SELECTION_WIDTH = 15     # frontier wider than this per level gets LLM-pruned
 COMMON_FEED_PATHS = ("/feed", "/rss", "/rss.xml", "/feed.xml", "/atom.xml")
+FETCH_ERRORS = (httpx.HTTPError, ValueError, UnicodeError)  # what one fetch may raise
 SKIP_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".css",
                    ".js", ".ico", ".zip", ".mp4", ".mp3", ".woff", ".woff2", ".xml")
 
@@ -65,27 +69,58 @@ def skipped(url: str, patterns: list[str]) -> bool:
             or urlparse(lowered).path.endswith(SKIP_EXTENSIONS))
 
 
+def why_failed(exc: Exception) -> str:
+    """A page or link that couldn't be read, in plain words, grouped so
+    counts add up: the same cause reads the same."""
+    if isinstance(exc, UnicodeError):
+        return "its text had characters that couldn't be stored"
+    if isinstance(exc, ValueError):
+        return "its address is malformed"
+    if isinstance(exc, httpx.TimeoutException):
+        return "the site took too long to answer"
+    if isinstance(exc, httpx.HTTPError):
+        return f"the site couldn't be reached ({type(exc).__name__})"
+    return f"it couldn't be read ({type(exc).__name__}: {str(exc)[:80]})"
+
+
 # ── extraction ───────────────────────────────────────────────────────
 
+# trafilatura (on lxml) isn't safe in several threads at once: a 10-million-page test (24 Oct) lost the
+# worker to memory corruption mid-crawl. One extraction at a time; each takes milliseconds.
+EXTRACTING = threading.Lock()
+
+
+def readable(html: str) -> str | None:
+    """The page's readable text (trafilatura), one page at a time."""
+    with EXTRACTING:
+        return trafilatura.extract(html)
+
+
 def _extract_html(html: str, base_url: str) -> tuple[str | None, list[str], dict]:
-    """(readable text, absolute links, metadata) from an HTML document."""
-    text = trafilatura.extract(html)
+    """(readable text, absolute links, metadata) from an HTML document. A link
+    with a malformed address is left out and listed in meta["bad_links"]."""
+    text = readable(html)
     title = published = None
     try:
-        meta = trafilatura.extract_metadata(html)
+        with EXTRACTING:
+            meta = trafilatura.extract_metadata(html)
         if meta is not None:
             title, published = meta.title, meta.date
     except Exception:
         pass
-    links = []
+    links, bad = [], []
     for a in BeautifulSoup(html, "html.parser").find_all("a", href=True):
-        url = urldefrag(urljoin(base_url, a["href"]))[0]
+        try:
+            url = urldefrag(urljoin(base_url, a["href"]))[0]
+        except ValueError:
+            bad.append(str(a["href"])[:200])
+            continue
         if url.startswith(("http://", "https://")):
             links.append(url)
-    return text, links, {"kind": "article", "title": title, "published_date": published}
+    return text, links, {"kind": "article", "title": title, "published_date": published, "bad_links": bad}
 
 
-def _extract_pdf(content: bytes) -> str | None:
+def extract_pdf(content: bytes) -> str | None:
     try:
         reader = PdfReader(io.BytesIO(content))
         return "\n".join(page.extract_text() or "" for page in reader.pages)
@@ -148,7 +183,7 @@ def _sitemap_pages(client: httpx.Client, scheme: str, root: str,
         fetched += 1
         try:
             response = client.get(sitemap_url)
-        except httpx.HTTPError:
+        except FETCH_ERRORS:
             continue
         if response.status_code != 200:
             continue
@@ -170,7 +205,10 @@ def _advertised_feeds(html: str, base_url: str) -> list[str]:
                 and re.search(r"type=[\"']application/(rss|atom)\+xml", tag, re.I)):
             href = re.search(r"href=[\"']([^\"']+)", tag)
             if href:
-                feeds.append(urljoin(base_url, href.group(1)))
+                try:
+                    feeds.append(urljoin(base_url, href.group(1)))
+                except ValueError:
+                    continue
     return feeds
 
 
@@ -181,7 +219,7 @@ def _feed_pages(client: httpx.Client, candidates: list[str], limit: int) -> list
     for feed_url in candidates[:8]:
         try:
             response = client.get(feed_url)
-        except httpx.HTTPError:
+        except FETCH_ERRORS:
             continue
         if response.status_code != 200 or not is_feed("", response.text):
             continue
@@ -254,7 +292,7 @@ def crawl(ctx: Context, source: dict) -> Outcome:
         return browser.fetch(url, clicks=clicks)
 
     def allowed(client: httpx.Client, url: str) -> bool:
-        parts = urlparse(url)
+        parts = urlparse(url)  # the address was checked when it was queued
         parser = _robots(client, parts.scheme, parts.netloc.lower(), robots_cache)
         if parser is None:
             return True
@@ -266,13 +304,85 @@ def crawl(ctx: Context, source: dict) -> Outcome:
     def queue(link: str, next_frontier: list[str]) -> None:
         """Add a link to the next level: on-site links are followed; with
         follow_outbound, links to other sites are fetched as leaf pages."""
-        if link in visited or link in next_frontier or skipped(link, patterns):
+        try:
+            if link in visited or link in next_frontier or skipped(link, patterns):
+                return
+            on_site = same_site(link, sites)
+            urlparse(link).port  # a malformed port raises here, not mid-crawl
+        except ValueError:
+            outcome.skip(link, "its address is malformed", link=True)
             return
-        if same_site(link, sites):
+        if on_site:
             next_frontier.append(link)
         elif follow_outbound:
             next_frontier.append(link)
             leaves.add(link)
+
+    def visit(client: httpx.Client, url: str, depth: int, next_frontier: list[str]) -> None:
+        """Read one page: store it when it has content, queue its links. A page
+        that can't be read is counted with its reason (outcome.skip)."""
+        nonlocal feed_hints
+        text: str | None = None
+        links: list[str] = []
+        meta: dict = {}
+        fetched = False
+        why: str | None = None
+        response = None
+        try:
+            response = client.get(url)
+        except FETCH_ERRORS as exc:
+            why = why_failed(exc)
+        if response is not None and response.status_code >= 400:
+            why = f"the site answered {response.status_code}"
+        elif response is not None:
+            content_type = response.headers.get("content-type", "")
+            if depth == 0 and is_feed(content_type, response.text):
+                # a feed start page: its items join the next level; the
+                # feed itself is not stored and uses no page budget
+                for link in feed_links(response.text):
+                    queue(link, next_frontier)
+                return
+            fetched = True
+            if "pdf" in content_type or str(response.url).lower().endswith(".pdf"):
+                text = extract_pdf(response.content)
+                meta = {"kind": "pdf", "title": None, "published_date": None}
+            elif "html" in content_type or "xml" in content_type:
+                text, links, meta = _extract_html(response.text, str(response.url))
+                if depth == 0:
+                    feed_hints = _advertised_feeds(
+                        response.text, str(response.url)) + feed_hints
+
+        # Headless browser: JS shells, blocked fetches, and every
+        # entry page (to click 'show more' and expand card grids).
+        thin = not text or len(text.strip()) < MIN_TEXT_CHARS or not links
+        if use_browser and meta.get("kind") != "pdf" and (not fetched or thin or depth == 0):
+            try:
+                html, final_url = render(url)
+                rtext, rlinks, rmeta = _extract_html(html, final_url)
+                if rtext and len(rtext) > len(text or ""):
+                    text = rtext
+                    meta = {**rmeta, **{k: v for k, v in meta.items() if v}}
+                for link in rlinks:
+                    if link not in links:
+                        links.append(link)
+                meta["bad_links"] = sorted(set(meta.get("bad_links") or []) | set(rmeta.get("bad_links") or []))
+                if depth == 0:
+                    feed_hints = _advertised_feeds(html, final_url) + feed_hints
+                fetched = True
+            except Exception as exc:
+                log.debug("browser render failed for %s: %s", url, exc)
+
+        if not fetched:
+            outcome.skip(url, why or "it couldn't be read")
+            return
+        for bad in meta.pop("bad_links", None) or []:
+            outcome.skip(bad, "its address is malformed", link=True)
+        ctx.visited(outcome, source)
+        if text and len(text.strip()) >= MIN_TEXT_CHARS:
+            ctx.save(outcome, source, url, text.strip(), depth=depth, meta=meta)
+        if depth < max_depth and url not in leaves:
+            for link in links:
+                queue(link, next_frontier)
 
     try:
         with httpx.Client(timeout=20, follow_redirects=True,
@@ -293,71 +403,27 @@ def crawl(ctx: Context, source: dict) -> Outcome:
                     if url in visited:
                         continue
                     visited.add(url)
-                    if not allowed(client, url):
-                        continue
-                    time.sleep(delay)
-
-                    text: str | None = None
-                    links: list[str] = []
-                    meta: dict = {}
-                    fetched = False
-                    response = None
                     try:
-                        response = client.get(url)
-                    except httpx.HTTPError:
-                        pass
-                    if response is not None and response.status_code < 400:
-                        content_type = response.headers.get("content-type", "")
-                        if depth == 0 and is_feed(content_type, response.text):
-                            # a feed start page: its items join the next level; the
-                            # feed itself is not stored and uses no page budget
-                            for link in feed_links(response.text):
-                                queue(link, next_frontier)
-                            continue
-                        fetched = True
-                        if "pdf" in content_type or str(response.url).lower().endswith(".pdf"):
-                            text = _extract_pdf(response.content)
-                            meta = {"kind": "pdf", "title": None, "published_date": None}
-                        elif "html" in content_type or "xml" in content_type:
-                            text, links, meta = _extract_html(response.text, str(response.url))
-                            if depth == 0:
-                                feed_hints = _advertised_feeds(
-                                    response.text, str(response.url)) + feed_hints
-
-                    # Headless browser: JS shells, blocked fetches, and every
-                    # entry page (to click 'show more' and expand card grids).
-                    thin = not text or len(text.strip()) < MIN_TEXT_CHARS or not links
-                    if use_browser and meta.get("kind") != "pdf" and (not fetched or thin or depth == 0):
-                        try:
-                            html, final_url = render(url)
-                            rtext, rlinks, rmeta = _extract_html(html, final_url)
-                            if rtext and len(rtext) > len(text or ""):
-                                text = rtext
-                                meta = {**rmeta, **{k: v for k, v in meta.items() if v}}
-                            for link in rlinks:
-                                if link not in links:
-                                    links.append(link)
-                            if depth == 0:
-                                feed_hints = _advertised_feeds(html, final_url) + feed_hints
-                            fetched = True
-                        except Exception as exc:
-                            log.debug("browser render failed for %s: %s", url, exc)
-
-                    if not fetched:
-                        continue
-                    ctx.visited(outcome, source)
-                    if text and len(text.strip()) >= MIN_TEXT_CHARS:
-                        ctx.save(outcome, source, url, text.strip(), depth=depth, meta=meta)
-                    if depth < max_depth and url not in leaves:
-                        for link in links:
-                            queue(link, next_frontier)
+                        if allowed(client, url):
+                            time.sleep(delay)
+                            visit(client, url, depth, next_frontier)
+                    except InterruptedError:
+                        raise
+                    except Exception as exc:  # one bad page never stops the source
+                        log.warning("skipped %s: %s", url, exc)
+                        outcome.skip(url, why_failed(exc))
 
                 if depth == 0:
                     # sitemap + feed articles join the depth-1 frontier: the
                     # content behind 'view more' buttons and JS pagination.
                     # They pass the same relevance gate as followed links.
                     for url in _feed_pages(client, feed_hints, limit=max(50, max_pages)) + sitemap_seed:
-                        if same_site(url, sites):
+                        try:
+                            listed_here = same_site(url, sites)
+                        except ValueError:
+                            outcome.skip(url, "its address is malformed", link=True)
+                            continue
+                        if listed_here:
                             queue(url, next_frontier)
 
                 candidates.update(next_frontier)
@@ -401,18 +467,20 @@ def fetch_page(url: str) -> tuple[str | None, dict, str | None]:
         else:
             content_type = response.headers.get("content-type", "")
             if "pdf" in content_type or str(response.url).lower().endswith(".pdf"):
-                text, meta = _extract_pdf(response.content), {"kind": "pdf", "title": None, "published_date": None}
+                text, meta = extract_pdf(response.content), {"kind": "pdf", "title": None, "published_date": None}
             elif "html" in content_type or "xml" in content_type:
                 text, _, meta = _extract_html(response.text, str(response.url))
+                meta.pop("bad_links", None)
             else:
                 why = f"not a page or a PDF ({content_type or 'unknown type'})"
-    except httpx.HTTPError as exc:
-        why = f"the site couldn't be reached ({type(exc).__name__})"
+    except FETCH_ERRORS as exc:
+        why = why_failed(exc)
     if (not text or len(text.strip()) < MIN_TEXT_CHARS) and meta.get("kind") != "pdf" and get_settings().use_playwright:
         browser = BrowserFetcher(USER_AGENT)
         try:
             html, final_url = browser.fetch(url, clicks=0)
             rtext, _, rmeta = _extract_html(html, final_url)
+            rmeta.pop("bad_links", None)
             if rtext and len(rtext) > len(text or ""):
                 text, meta, why = rtext, {**rmeta, **{k: v for k, v in meta.items() if v}}, None
         except Exception as exc:

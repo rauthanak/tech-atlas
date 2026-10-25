@@ -7,16 +7,17 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from app.services import imports
+from app.services import imports, jobs
 from app.services.db.mongo import get_collection
 from app.services.timezone import now_utc, request_tz
+from app.services.display import display_name
 
 router = APIRouter()
 MAX_BYTES = 10 * 1024 * 1024
 
 
 def _get(import_id: str) -> dict:
-    imp = get_collection("imports").find_one({"_id": import_id})
+    imp = imports.load(import_id)
     if imp is None:
         raise HTTPException(status_code=404, detail="no such import")
     return imp
@@ -26,6 +27,9 @@ def _editable(import_id: str) -> dict:
     imp = _get(import_id)
     if imp["status"] == "confirmed":
         raise HTTPException(status_code=409, detail="this import is already confirmed: reopen it to review it again")
+    if imports.replaced_by(imp):
+        raise HTTPException(status_code=409, detail="a newer import of the same file was confirmed after this one and "
+                                                    "settled its rows: upload the file again to change anything")
     return imp
 
 
@@ -48,7 +52,15 @@ async def upload(file: UploadFile = File(...), tz: str = Depends(request_tz)) ->
 
 @router.get("/imports")
 def list_imports() -> dict:
-    return {"imports": list(get_collection("imports").find({}, {"items": 0, "unknown_values": 0}).sort("at", -1).limit(20))}
+    """The 20 most recent imports, the one waiting for a person first: each
+    with how many proposed matches wait and the newer import that replaced
+    it, if any."""
+    rows = list(get_collection("imports").find({}, {"unknown_values": 0}).sort("at", -1).limit(20))
+    for r in rows:
+        r["waiting"], r["replaced_by"] = imports.waiting(r), imports.replaced_by(r)
+        r.pop("items", None)
+    rows.sort(key=lambda r: not (r["waiting"] and not r["replaced_by"]))  # stable: newest first otherwise
+    return {"imports": rows}
 
 
 @router.get("/imports/{import_id}")
@@ -80,7 +92,7 @@ def decide_items(import_id: str, body: ItemsDecision) -> dict:
         if it["row"] in body.rows and it["group"] == "proposed":
             it["decision"] = body.decision
     imp["counts"] = imports.counts(imp)
-    get_collection("imports").replace_one({"_id": import_id}, imp)
+    imports.save(imp, set(body.rows))
     return imports.view(imp)
 
 
@@ -104,7 +116,7 @@ def map_values(import_id: str, body: list[ValueMap]) -> dict:
                 u["map_to"], u["keep"] = m.map_to, bool(m.keep)
     imp["unknown_values"] = imports.map_values(imp["items"], imp["unknown_values"])
     imp["counts"] = imports.counts(imp)
-    get_collection("imports").replace_one({"_id": import_id}, imp)
+    imports.save(imp, set())  # the rows didn't change
     return imports.view(imp)
 
 
@@ -186,15 +198,15 @@ def add_technology(body: AddOne, tz: str = Depends(request_tz)) -> dict:
 
     group, hit, why = imports.free_match(name)
     if group == "matched":
-        return done("matched", hit["_id"], hit.get("label") or hit["name"])
+        return done("matched", hit["_id"], display_name(hit))
     if body.confirm == "join" and body.into:
         target = techs.find_one({"_id": body.into})
         if target is None:
             raise HTTPException(status_code=404, detail="that technology is gone")
         techs.update_one({"_id": body.into}, {"$addToSet": {"aliases": name.lower()}})
-        from agent.resolver import restamp_all
-        restamp_all()
-        return done("matched", target["_id"], target.get("label") or target["name"])
+        from agent.resolver import restamp
+        jobs.later(restamp, [name.lower()])  # the pages that use that name
+        return done("matched", target["_id"], display_name(target))
     kept_apart = None
     if body.confirm != "new":
         if group != "proposed":

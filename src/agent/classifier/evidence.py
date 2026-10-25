@@ -10,8 +10,9 @@ An incremental call reads only the pages its last classification didn't."""
 
 from app.services.db.mongo import get_collection
 from app.services.websearch import source_of
+from app.services.evidence import page_key
 
-FIELDS ={"end_url": 1, "title": 1, "source_id": 1, "source_name": 1, "scraped_at": 1, "published_date": 1,
+FIELDS ={"end_url": 1, "page_key": 1, "title": 1, "source_id": 1, "source_name": 1, "scraped_at": 1, "published_date": 1,
           "summary_text": 1, "signals": 1, "is_stub": 1, "ref_doc_id": 1, "ignored_by": 1, "kind": 1}
 
 
@@ -25,7 +26,7 @@ def _pages(name: str) -> tuple[list[dict], list[str]]:
     versions: set[str] = set()
     for d in get_collection("documents").find({"technologies_resolved": name, "ignored_by": None}, FIELDS) \
             .sort("scraped_at", -1):
-        latest.setdefault(d.get("end_url") or d["_id"], d)
+        latest.setdefault(page_key(d), d)
         versions.add(version(d))
     return list(latest.values()), list(versions)
 

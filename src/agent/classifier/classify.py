@@ -8,8 +8,8 @@ are switched on and are new, have pages their last classification didn't
 read, or were marked for review when a list definition changed; or on
 demand. A technology classified before gets its current answers and only
 its new pages. The tasks and lists are the same for every technology, so
-they lead the call and are reused. The run stops at its token budget and
-says so; what's left waits for the next run."""
+they lead the call and are reused. A run judges every technology it was
+given: catalog technologies first, then those with the most pages."""
 
 import logging
 import re
@@ -18,7 +18,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from agent.classifier.evidence import pack
-from app.services import decisions
+from app.services import decisions, tech_status
 from app.services.db.mongo import get_collection
 from app.services.llm.context import carry, with_context
 from app.services.llm.llm import LLM
@@ -27,6 +27,7 @@ from app.services.prompts.recipe import Failure, Task
 from app.services.settings_store import radar_settings
 from app.services.timezone import now_utc
 from app.settings import get_settings
+from app.services import jobs
 
 log = logging.getLogger(__name__)
 VERDICTS = ("strong", "enough", "thin", "not_credible")
@@ -176,6 +177,7 @@ def classify_one(llm: LLM, tech: dict, run_id: str, ls: dict, cap: int) -> dict:
         if incremental:  # nothing new to read; an older visit of a page read before is known now too
             get_collection("technologies").update_one({"_id": tech["_id"]},
                                                       {"$addToSet": {"pages_seen": {"$each": ev["known"]}}})
+            tech_status.touch([tech["_id"]])  # it no longer waits for Classify
             return {"status": "unchanged"}
         return {"status": "skipped", "reason": "no pages"}
     values = list_values(ls)
@@ -203,6 +205,7 @@ def classify_one(llm: LLM, tech: dict, run_id: str, ls: dict, cap: int) -> dict:
         {"_id": tech["_id"]},
         {"$set": {"classification": cls}, "$addToSet": {"pages_seen": {"$each": ev["known"]}},
          "$unset": {"classification_stale": ""}})
+    tech_status.touch([tech["_id"]])  # its verdict, domain and availability: the lists show them next pass
     failed = [k for k, v in out.items() if isinstance(v, Failure)]
     return {"status": "classified" if not failed else "partly", "retries": retries,
             **({"reason": "; ".join(f"{k}: {out[k].reason}" for k in failed)} if failed else {})}
@@ -224,27 +227,50 @@ def _propose_subdomain(domain_id: str, name: str, tech_id: str) -> str:
 def pending() -> list[str]:
     """Switched on, with pages, and new, with a page version its last
     classification didn't know (a changed page is a new version), or marked
-    for review."""
-    versions: dict[str, set] = {}
-    for row in get_collection("documents").aggregate([
-            {"$match": {"is_stub": {"$ne": True}, "ignored_by": None}},
-            {"$unwind": "$technologies_resolved"},
-            {"$group": {"_id": "$technologies_resolved", "v": {"$addToSet": "$_id"}}}]):
-        versions[row["_id"]] = set(row["v"])
-    out = []
-    for t in get_collection("technologies").find({"enabled": {"$ne": False}},
-                                                 {"name": 1, "classification.at": 1, "classification_stale": 1,
-                                                  "pages_seen": 1}):
-        have = versions.get(t["name"])
-        if not have:
-            continue  # no pages to read
-        if not t.get("classification") or t.get("classification_stale") or have - set(t.get("pages_seen") or []):
-            out.append(t["_id"])
-    return out
+    for review. Catalog technologies first, then the most pages first, so
+    what matters most is judged first. Read from the answers kept ready
+    (services/tech_status); a technology whose answers wait to be worked out
+    again (its pages just changed) is checked against its pages here, in the
+    database, so memory stays flat however many pages there are."""
+    from app.services import tech_status
+    tech_status.fresh()  # the few waiting are worked out first, as a screen does
+    marked = get_collection("technologies").distinct("name", {tech_status.DIRTY: {"$exists": True}})
+    kept = [(*r["f"]["classify_order"], r["_id"]) for r in get_collection("tech_status").find(
+        {"f.classify_waiting": True, "name": {"$nin": marked}}, {"f.classify_order": 1})]
+    return [tech_id for *_, tech_id in sorted(kept + _pending_from_pages(marked))]
+
+
+def _pending_from_pages(names: list[str]) -> list[tuple]:
+    """pending(), worked out from these technologies' pages: (not in the catalog, -pages, id) each, a few
+    thousand names at a time (a query naming them all can outgrow MongoDB's 16 MB)."""
+    return [r for i in range(0, len(names), 5000) for r in _pending_of(names[i:i + 5000])]
+
+
+def _pending_of(names: list[str]) -> list[tuple]:
+    if not names:
+        return []
+    rows = get_collection("documents").aggregate([
+        {"$match": {"is_stub": {"$ne": True}, "ignored_by": None, "technologies_resolved": {"$in": names}}},
+        {"$unwind": "$technologies_resolved"},
+        {"$match": {"technologies_resolved": {"$in": names}}},
+        {"$group": {"_id": "$technologies_resolved", "v": {"$addToSet": "$_id"}}},
+        {"$lookup": {"from": "technologies", "localField": "_id", "foreignField": "name", "as": "t",
+                     "pipeline": [{"$match": {"enabled": {"$ne": False}}},
+                                  {"$project": {"pages_seen": 1, "classification_stale": 1, "imported": 1, "origin": 1,
+                                                "classified": {"$gt": [{"$size": {"$objectToArray": {
+                                                    "$ifNull": ["$classification", {}]}}}, 0]}}}]}},
+        {"$unwind": "$t"},
+        {"$project": {"_id": 0, "tech_id": "$t._id", "imported": "$t.imported", "origin": "$t.origin",
+                      "pages": {"$size": "$v"},
+                      "due": {"$or": [{"$not": ["$t.classified"]}, {"$eq": ["$t.classification_stale", True]},
+                                      {"$gt": [{"$size": {"$setDifference": ["$v", {"$ifNull": ["$t.pages_seen", []]}]}}, 0]}]}}},
+        {"$match": {"due": True}}], allowDiskUse=True)
+    catalog = {d["tech_id"]: d for d in decisions.active(kinds=["catalog"])}
+    return [(int(not decisions.in_catalog(r, catalog.get(r["tech_id"]))["in"]), -r["pages"], r["tech_id"]) for r in rows]
 
 
 def spent(run_id: str) -> int:
-    """Tokens a run has paid for, counting reused ones at a tenth (their price)."""
+    """Tokens a run has paid for, counting reused ones at a tenth (their price): recorded when it ends."""
     rows = list(get_collection("llm_calls").aggregate([
         {"$match": {"run_id": run_id}},
         {"$group": {"_id": None, "n": {"$sum": {"$add": ["$input_tokens", "$output_tokens", "$cache_write_tokens",
@@ -254,6 +280,18 @@ def spent(run_id: str) -> int:
 
 def active_run() -> dict | None:
     return get_collection("classify_runs").find_one({"status": "running"})
+
+
+def reconcile_stale() -> None:
+    """Start-up: only this process classifies, so a run still 'running' at
+    boot died with the last process. Mark it, or it would block every later
+    Classify; technologies it already judged keep their verdict."""
+    done = get_collection("classify_runs").update_many(
+        {"status": "running"},
+        {"$set": {"status": "terminated", "finished_at": now_utc(),
+                  "error": "the service restarted while it ran; technologies already judged keep their verdict"}})
+    if done.modified_count:
+        log.warning("classify: %d interrupted run(s) marked terminated", done.modified_count)
 
 
 def start(tech_ids: list[str], trigger: str = "on demand", tz: str | None = None, wait: bool = False) -> str | None:
@@ -267,29 +305,25 @@ def start(tech_ids: list[str], trigger: str = "on demand", tz: str | None = None
         get_collection("classify_runs").insert_one({
             "_id": run_id, "status": "running", "trigger": trigger, "started_at": now_utc(), "tz": tz,
             "tech_ids": tech_ids, "total": len(tech_ids), "done": 0, "unchanged": 0, "failed": [], "retries": 0,
-            "budget": int(settings["classify_token_budget"]), "cap": int(settings["classify_pages_cap"])})
+            "cap": int(settings["classify_pages_cap"])})
     if wait:
         _execute(run_id)
     else:
-        threading.Thread(target=_execute, args=(run_id,), name=f"classify-{run_id}", daemon=True).start()
+        jobs.start(_execute, run_id)
     return run_id
 
 
 def _execute(run_id: str) -> None:
     runs = get_collection("classify_runs")
     run = runs.find_one({"_id": run_id})
-    stop = threading.Event()
     try:
         llm = LLM.initialize()
         ls = lists()
         techs = {t["_id"]: t for t in get_collection("technologies").find({"_id": {"$in": run["tech_ids"]}})}
 
         def one(tech_id: str) -> None:
-            if stop.is_set() or (runs.find_one({"_id": run_id}, {"status": 1}) or {}).get("status") != "running":
-                return
-            if spent(run_id) >= run["budget"]:
-                stop.set()
-                return
+            if (runs.find_one({"_id": run_id}, {"status": 1}) or {}).get("status") != "running":
+                return  # stopped by a person
             tech = techs.get(tech_id)
             if tech is None or tech.get("enabled") is False:
                 runs.update_one({"_id": run_id}, {"$inc": {"done": 1, "unchanged": 1}})
@@ -311,12 +345,8 @@ def _execute(run_id: str) -> None:
             for future in [pool.submit(carry(one), t) for t in run["tech_ids"]]:  # each carries the run's context
                 future.result()
         done = runs.find_one({"_id": run_id})
-        left = done["total"] - done["done"]
-        status = "stopped" if stop.is_set() else ("terminated" if done["status"] == "terminating" else "completed")
-        runs.update_one({"_id": run_id}, {"$set": {
-            "status": status, "finished_at": now_utc(), "tokens": spent(run_id),
-            **({"stopped_reason": f"Stopped: the token budget of {run['budget']:,} was reached; "
-                                  f"{left} technologies left for the next run."} if stop.is_set() else {})}})
+        status = "terminated" if done["status"] == "terminating" else "completed"
+        runs.update_one({"_id": run_id}, {"$set": {"status": status, "finished_at": now_utc(), "tokens": spent(run_id)}})
     except Exception as exc:
         log.exception("classify run %s failed", run_id)
         runs.update_one({"_id": run_id}, {"$set": {"status": "failed", "error": str(exc)[:500], "finished_at": now_utc()}})

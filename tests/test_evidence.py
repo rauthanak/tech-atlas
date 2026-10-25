@@ -43,6 +43,8 @@ def test_an_assessment_records_the_page_versions_it_read(db):
 
 
 def test_the_size_guard_records_where_it_cut_and_counts_only_what_it_read(db):
+    tech(db)
+    db["technologies"].update_one({}, {"$set": {"page_count": 2}})  # what's left out is counted from it
     page(db, "old", 1, summary_text="x" * 400)
     kept = page(db, "kept", 2, summary_text="x" * 400)
     built = engine.build_dossier("edge ai", max_tokens=150)  # room for one entry

@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException
 
 from app.api.signals import scope as page_scope
-from app.api.signals import tally
+from app.api.signals import ready_counts, tally
 from app.services.db.mongo import get_collection
 from app.services.runs.store import COLLECTIONS
 
@@ -55,10 +55,16 @@ def briefing(days: str | None = None, run_id: str | None = None, tech: str | Non
         window = {"days": days, "from": since, "to": now.isoformat()}
         match = page_scope(since, now.isoformat(), source_id=source_id)
     name = tech.strip().lower() if tech else None
-    pages = get_collection("documents").count_documents(
-        {"is_stub": False, **match, **({"technologies_resolved": name} if name else {})})
-    found = tally(match, name)
+    if not (run_id or name or source_id):  # a window of everything: read from the findings kept ready a day at a time
+        found = ready_counts(window["from"], window["to"])
+        pages = found["pages"]
+    else:  # narrowed to one collection, technology or source: worked out from its pages
+        pages = get_collection("documents").count_documents(
+            {"is_stub": False, **match, **({"technologies_resolved": name} if name else {})})
+        found = tally(match, name, group=True)  # one finding per story, as the list shows them
     return {"scope": window,
+            # days a Check again changed, still being worked out in the background: the page says so
+            **({"updating_days": found["updating_days"]} if found.get("updating_days") else {}),
             "counts": {"findings": found["findings"], "pages": pages, "older": found["older"]},
             "types": found["types"],
             "freshness": _freshness()}

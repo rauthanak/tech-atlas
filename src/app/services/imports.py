@@ -33,11 +33,13 @@ import uuid
 from collections import defaultdict
 
 import openpyxl
+from pymongo import ReplaceOne
 
-from app.services import classify_effective, decisions
+from app.services import classify_effective, decisions, jobs
 from app.services.classify_effective import IMPORTED
 from app.services.db.mongo import get_collection
 from app.services.timezone import now_utc
+from app.services.display import display_name
 
 HEADERS = ["Technology Name", "Domain", "Sub-domain", "Description", "TRL", "Commercial Availability"]
 FIELD = {"Domain": "domain", "Sub-domain": "subdomain", "Description": "description", "TRL": "trl",
@@ -206,7 +208,7 @@ def target_info(tech_ids: list[str]) -> dict[str, dict]:
     out = {}
     for t in techs:
         e = classify_effective.effective(t, decs, lists)
-        out[t["_id"]] = {"name": t.get("label") or t["name"], "page_count": t.get("page_count") or 0,
+        out[t["_id"]] = {"name": display_name(t), "page_count": t.get("page_count") or 0,
                          "origin": t.get("origin"),
                          "availability": {"name": e["availability"]["name"], "source": e["availability"]["source"]},
                          "domain": {"name": e["domain"]["name"], "subdomain": e["domain"]["subdomain"],
@@ -334,6 +336,32 @@ def set_values(tech_id: str, values: dict, reason: str, tz: str, extra: dict | N
 
 # ── the import record ─────────────────────────────────────────────────
 
+ITEMS = "import_items"  # an import's rows, each its own record (from 24 Oct): no import outgrows a record
+
+
+def load(import_id: str) -> dict | None:
+    """An import with its rows (`items`), in row order. Imports saved before
+    24 Oct hold their rows inside; they move out the next time they're saved."""
+    imp = get_collection("imports").find_one({"_id": import_id})
+    if imp is not None and "items" not in imp:
+        imp["items"] = list(get_collection(ITEMS).find({"import_id": import_id}, {"_id": 0, "import_id": 0}).sort("row", 1))
+    return imp
+
+
+def save(imp: dict, rows: set[int] | None = None) -> None:
+    """Write an import back: its rows apart (only `rows` when given: the ones
+    that changed), the rest as one small record."""
+    import_id = imp["_id"]
+    moving = "items" in (get_collection("imports").find_one({"_id": import_id}, {"items": {"$slice": 1}}) or {})
+    ops = [ReplaceOne({"_id": f"{import_id}:{it['row']}"}, {**it, "_id": f"{import_id}:{it['row']}", "import_id": import_id},
+                      upsert=True)
+           for it in imp["items"] if rows is None or moving or it["row"] in rows]
+    for i in range(0, len(ops), 1000):
+        get_collection(ITEMS).bulk_write(ops[i:i + 1000], ordered=False)
+    get_collection("imports").replace_one({"_id": import_id}, {k: v for k, v in imp.items() if k not in ("items", "targets")},
+                                          upsert=True)
+
+
 def create(content: bytes, filename: str, tz: str) -> dict:
     data = read(content, filename)
     rows = clean(data["rows"])
@@ -348,7 +376,7 @@ def create(content: bytes, filename: str, tz: str) -> dict:
            "tz": tz, "status": "reviewing", "rows": len(data["rows"]), "items": items,
            "unknown_values": map_values(items), "calls": 0}
     doc["counts"] = counts(doc)
-    get_collection("imports").insert_one(doc)
+    save(doc)
     return doc
 
 
@@ -366,8 +394,32 @@ def counts(imp: dict) -> dict:
 
 def view(imp: dict) -> dict:
     """The import as the review screen shows it: with what each technology a
-    row would join is now."""
-    return {**imp, "targets": target_info(sorted({it["target_tech_id"] for it in imp["items"] if it.get("target_tech_id")}))}
+    row would join is now, and the newer import that replaced it, if any."""
+    return {**imp, "targets": target_info(sorted({it["target_tech_id"] for it in imp["items"] if it.get("target_tech_id")})),
+            "replaced_by": replaced_by(imp)}
+
+
+def waiting(imp: dict) -> int:
+    """How many proposed matches wait for a person's decision (none once it is
+    confirmed or discarded)."""
+    if imp.get("status") not in ("reviewing", "ready"):
+        return 0
+    if "items" not in imp:  # its rows are apart: count them there
+        return get_collection(ITEMS).count_documents({"import_id": imp["_id"], "group": "proposed", "decision": None})
+    return sum(1 for i in imp["items"] if i.get("group") == "proposed" and i.get("decision") is None)
+
+
+def replaced_by(imp: dict) -> dict | None:
+    """An import still open for review is replaced when a newer import of the
+    same file has been confirmed: that one settled every row this one asks
+    about. Its id and when it was confirmed, or None."""
+    if imp.get("status") not in ("reviewing", "ready"):
+        return None
+    newer = get_collection("imports").find_one(
+        {"file": imp.get("file"), "status": "confirmed", "at": {"$gt": imp["at"]}},
+        {"at": 1, "tz": 1, "confirmed_at": 1, "confirmed_tz": 1}, sort=[("at", -1)])
+    return {"id": newer["_id"], "at": newer["at"], "tz": newer.get("tz"), "confirmed_at": newer.get("confirmed_at"),
+            "confirmed_tz": newer.get("confirmed_tz")} if newer else None
 
 
 def new_technology(name: str, origin: str, extra: dict) -> str:
@@ -386,13 +438,13 @@ def match(import_id: str, llm=None) -> dict:
     """Proposed matches for the names without an exact one: the organize skill
     folds file names into the register; a name it folds nowhere, or that code
     keeps apart as narrower, is new."""
-    imp = get_collection("imports").find_one({"_id": import_id})
+    imp = load(import_id)
     names = {it["name"].lower(): it for it in imp["items"] if it["group"] == "unmatched"}
     found, kept, calls = propose(list(names), import_id, llm)
     for name, it in names.items():
         target = found.get(name)
         if target:
-            it.update(group="proposed", target_tech_id=target["_id"], target_name=target.get("label") or target["name"])
+            it.update(group="proposed", target_tech_id=target["_id"], target_name=display_name(target))
         else:
             it["group"] = "new"
             if name in kept:
@@ -400,7 +452,7 @@ def match(import_id: str, llm=None) -> dict:
     imp["calls"] = imp.get("calls", 0) + calls
     imp["status"] = "ready"
     imp["counts"] = counts(imp)
-    get_collection("imports").replace_one({"_id": import_id}, imp)
+    save(imp, {it["row"] for it in names.values()})
     return imp
 
 
@@ -433,8 +485,8 @@ def confirm(import_id: str, tz: str) -> dict:
     call, so they stay on this import's record. Values already in force, or
     changed by a person since an import recorded them, aren't recorded again,
     so confirming the same rows again changes nothing."""
-    from agent.resolver import restamp_all
-    imp = get_collection("imports").find_one({"_id": import_id})
+    from agent.resolver import restamp
+    imp = load(import_id)
     techs = get_collection("technologies")
     at, joining = now_utc(), _joining(imp)
     made = joined = shared = 0
@@ -461,7 +513,7 @@ def confirm(import_id: str, tz: str) -> dict:
     result = {"joined": joined, "added": made, "shared": shared}
     get_collection("imports").update_one({"_id": import_id}, {"$set": {"status": "confirmed", "confirmed_at": at,
                                                                      "confirmed_tz": tz, "result": result}})
-    restamp_all()
+    jobs.later(restamp, [it["name"].lower() for it in imp["items"]])  # the pages that use the rows' names
     return result
 
 
@@ -521,9 +573,9 @@ def reopen(import_id: str, rows: list[int] | None, tz: str) -> dict:
     (its name was an alias already), and confirming again applies it under
     the rule for several rows. Confirming again changes nothing for the
     other rows."""
-    from agent.resolver import restamp_all
-    imps, coll, techs = get_collection("imports"), get_collection("decisions"), get_collection("technologies")
-    imp = imps.find_one({"_id": import_id})
+    from agent.resolver import restamp
+    coll, techs = get_collection("decisions"), get_collection("technologies")
+    imp = load(import_id)
     if imp is None:
         raise Refused("no such import")
     if imp["status"] != "confirmed":
@@ -570,8 +622,8 @@ def reopen(import_id: str, rows: list[int] | None, tz: str) -> dict:
     imp["counts"] = counts(imp)
     imp.setdefault("reopened", []).append({"at": at, "tz": tz, "rows": sorted(rows), "withdrawn": withdrawn,
                                            "restored": restored})
-    imps.replace_one({"_id": import_id}, imp)
-    restamp_all()
+    save(imp, set(rows))
+    jobs.later(restamp, [by_row[r]["name"].lower() for r in rows])  # the pages that used the names taken back
     return {"reopened": len(rows), "values_withdrawn": withdrawn, "restored": restored}
 
 

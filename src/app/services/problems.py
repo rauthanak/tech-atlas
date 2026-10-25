@@ -41,8 +41,9 @@ def _failed_pages(run: dict | None) -> dict | None:
         scope.append({"analysis_error.at": {"$gte": job["started_at"]}})
     if not scope:
         return None
+    # "analysis_error.reason" exists only on pages that failed: the partial index holds just those
     pages = list(get_collection("documents").find(
-        {"is_stub": False, "analysis_error": {"$ne": None}, "$or": scope},
+        {"is_stub": False, "analysis_error.reason": {"$exists": True}, "$or": scope},
         {"title": 1, "end_url": 1, "source_id": 1, "analysis_error": 1}).sort("analysis_error.at", -1))
     if not pages:
         return None
@@ -82,12 +83,16 @@ def _latest_run() -> dict | None:
 
 
 def coverage() -> list[dict]:
-    """Websites in the latest collection that reached their page limit. The
-    collection kept everything it read; the limit is in Crawl settings."""
+    """Websites in the latest collection not read to the end, and which limit
+    stopped each: its page limit, or (under it) the link depth, the levels of
+    links a crawl follows. The collection kept everything it read; both
+    limits are in Crawl settings."""
     run = _latest_run()
     access = source_access()
+    budget = ((run or {}).get("crawl_settings") or {}).get("pages_per_source")
     return [{"kind": "didnt_finish", "source_id": row["source_id"], "source_name": row.get("source_name"),
-             "run_id": run["_id"], "note": row.get("incomplete_note") or ""}
+             "run_id": run["_id"], "note": row.get("incomplete_note") or "",
+             "limit": "pages" if budget and (row.get("pages_visited") or 0) >= budget else "depth"}
             for row in (run or {}).get("sources") or [] if didnt_finish(row, access)]
 
 

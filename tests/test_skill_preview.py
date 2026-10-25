@@ -20,6 +20,7 @@ from agent.scout.tools import crawl, summarize
 from agent.supervisor.tools.sources import collectable_query, fetch_sources
 from app.api.prompts import EXPECTED_VARIABLES
 from app.main import app
+from app.services import page_texts
 from app.services.db import seeding
 from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM
@@ -28,7 +29,7 @@ from app.services.prompts import preview as skill_preview
 from app.services.prompts.store import Prompt
 from app.services.signals import snapshot
 from app.settings import get_settings
-from factories import at
+from factories import at, with_text
 
 client = TestClient(app)  # no lifespan: nothing is seeded
 REPLY = '{"fabrics": ["cloud"], "score": 5, "justification": "j", "evidence_urls": ["u"], ' \
@@ -84,7 +85,7 @@ def world(db):
     seeding.load_if_new()
     website = get_collection("sources").find_one({**collectable_query(), "access": "crawl"}, sort=[("name", 1)])
     for i, url in enumerate(["https://example.com/a", "https://example.com/b"], 1):
-        db["documents"].insert_one({
+        with_text(db, {
             "_id": f"doc{i}", "run_id": "c1", "category": website["horizon"], "source_id": website["source_id"],
             "end_url": url, "title": f"Page {i}", "scraped_at": at(i), "is_stub": False, "ref_doc_id": None,
             "extracted_text": f"Edge AI news {i}.", "summary_text": f"summary {i}", "scout_take": f"take {i}",
@@ -127,7 +128,7 @@ def test_page_summary_matches_the_run(world, monkeypatch):
     monkeypatch.setattr(Recorder, "ask", lambda self, prompt, system=None, blocks=None:
                         self.prompts.append("".join([*(blocks or []), prompt])) or REPLY)
     doc = get_collection("documents").find_one({"_id": "doc2"})
-    summarize.summarize_page(recorder, doc["end_url"], doc["extracted_text"], snapshot.build())
+    summarize.summarize_page(recorder, doc["end_url"], page_texts.text("doc2"), snapshot.build())
     assert shown("article_summary", source=world["website"]["source_id"], page="doc2") == recorder.prompts[0]
 
 
@@ -253,7 +254,7 @@ def test_a_draft_is_previewed_and_refused_exactly_as_save_would_refuse_it(world)
     assert refused.json()["detail"] == saved.json()["detail"]
 
     good = client.post("/api/prompts/watch_metrics/preview",
-                       json={"system": None, "prompt": "Say {technology}! {evidence}", "technology": "edge-ai"})
+                       json={"system": None, "prompt": "Say {technology}! {evidence} {previous}", "technology": "edge-ai"})
     assert good.status_code == 200 and good.json()["draft"] is True
     assert "".join(p["text"] for p in good.json()["example"]["parts"]).startswith("Say edge ai! ")
     assert get_collection("prompts").find_one({"_id": "watch_metrics"}) == before  # nothing stored

@@ -13,13 +13,28 @@ def tech(db, tech_id: str = "edge-ai", name: str = "edge ai", enabled: bool = Tr
 
 def page(db, url: str, day: int, tech: str | None = "edge ai", stub_of: str | None = None,
          **extra) -> str:
-    """A visit to `url`; `stub_of` makes it an unchanged revisit of that version."""
+    """A visit to `url`; `stub_of` makes it an unchanged revisit of that version.
+    Marked as storing marks it (services/pages): the page's newest visit, and how many."""
     doc_id = f"{url}@{day}"
-    db["documents"].insert_one({"_id": doc_id, "end_url": url, "title": url, "scraped_at": at(day),
-                                "is_stub": stub_of is not None, "ref_doc_id": stub_of,
-                                "technologies_resolved": [tech] if tech else [],
-                                "source_id": "s", "run_id": "c", **extra})
+    docs = db["documents"]
+    docs.update_many({"page_key": url, "scraped_at": {"$lt": at(day)}}, {"$set": {"latest": False}})
+    docs.insert_one({"_id": doc_id, "end_url": url, "page_key": url, "title": url, "scraped_at": at(day),
+                     "latest": not docs.count_documents({"page_key": url, "scraped_at": {"$gt": at(day)}}),
+                     "visits": docs.count_documents({"page_key": url}) + 1,
+                     "is_stub": stub_of is not None, "ref_doc_id": stub_of,
+                     "technologies_resolved": [tech] if tech else [],
+                     "source_id": "s", "run_id": "c", **extra})
     return doc_id
+
+
+def with_text(db, *docs: dict) -> None:
+    """Visits stored the way storing keeps them: each one's `extracted_text`
+    apart, in page_texts."""
+    for d in docs:
+        text = d.pop("extracted_text")
+        db["documents"].insert_one({**d, "has_text": True})
+        db["page_texts"].insert_one({"_id": d["_id"], "text": text, "page_key": d.get("end_url"),
+                                     "run_id": d.get("run_id"), "superseded": False})
 
 
 def run(db, run_id: str, day: int, status: str = "completed", techs=("edge-ai",),
@@ -57,3 +72,18 @@ def pov(db, run_id: str, day: int, tech_id: str = "edge-ai", fabrics=("cloud",))
                            "technology": tech_id, "sections": {"headline": "h"}, "version": 1,
                            "assessment_ids": [f"{run_id}:{tech_id}:{f}" for f in fabrics],
                            "composed_at": at(day)})
+
+
+def as_if_relinked_in_full(db) -> None:
+    """The links and counts are what re-linking every page would give: a job
+    that re-links only the names it changed (resolver.restamp) missed nothing."""
+    from agent.resolver import resolver
+
+    def now():
+        return (sorted((d["_id"], d.get("technologies_resolved")) for d in db["documents"].find()),
+                sorted((t["_id"], *(t.get(k) or 0 for k in ("doc_count", "page_count", "source_count")))
+                       for t in db["technologies"].find()))
+    before = now()
+    resolver._stamp_documents(resolver._alias_map())
+    resolver.recompute_stats()
+    assert now() == before

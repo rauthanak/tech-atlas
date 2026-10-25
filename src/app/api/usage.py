@@ -2,9 +2,12 @@
 (or several runs') calls and tokens by skill, and every recent run that
 called the model, one row per run and kind, with what it was."""
 
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter
 
 from app.services.db.mongo import get_collection
+from app.services.display import display_name
 
 router = APIRouter()
 
@@ -17,7 +20,7 @@ FIELDS = list(SUMS)
 JOBS = {"collection": ("runs", ("status",)),
         "scoring": ("scoring_runs", ("status",)),
         "resolve": ("resolves", ("status",)),
-        "classify": ("classify_runs", ("status", "tz", "total", "unchanged", "trigger")),
+        "classify": ("classify_runs", ("status", "tz", "total", "unchanged", "trigger", "stopped_reason", "error")),
         "find_evidence": ("find_evidence_jobs", ("status", "tz", "gap", "summary")),
         "import": ("imports", ("status", "tz", "file")),
         "recheck": ("recheck_jobs", ("status", "total")),
@@ -67,8 +70,27 @@ def usage(run_id: str, kind: str | None = None) -> dict:
     # most tokens first: sent, reused, stored for reuse and written back
     by_skill = sorted(merged.values(), key=lambda r: -(r["input_tokens"] + r["output_tokens"]
                                                        + r["cache_read_tokens"] + r["cache_write_tokens"]))
+    failures: dict[str, int] = {}
+    for c in get_collection("llm_calls").find({"run_id": {"$in": run_id.split(",")}, "ok": False,
+                                               **({"run_kind": kind} if kind else {})}, {"error": 1}):
+        why = failed_why(c.get("error"))
+        failures[why] = failures.get(why, 0) + 1
     return {"run_id": run_id, "kind": kind, "by_skill": by_skill, "total": _total(by_skill),
+            "failures": [{"reason": r, "calls": n} for r, n in sorted(failures.items(), key=lambda x: -x[1])],
             "recorded_since": recorded_since()}
+
+
+def failed_why(error) -> str:
+    """Why a model call failed, in words."""
+    text = str(error or "")
+    low = text.lower()
+    if "unable to complete this request" in low or "overloaded" in low or "529" in low:
+        return "the model service was briefly unavailable"
+    if "rate_limit" in low or "429" in low:
+        return "the model service's rate limit was reached"
+    if "timeout" in low or "timed out" in low:
+        return "the model took too long to answer"
+    return text[:160] or "no reason was recorded"
 
 
 def _parents(ids: list[str]) -> dict[str, dict]:
@@ -102,13 +124,26 @@ def _about(rows: list[dict]) -> dict[tuple, dict]:
                     {"_id": {"$in": [i for i in ids if (i, kind) not in out]}}, {"started_at": 1}):
                 out[(run["_id"], kind)] = {"assessment": {"id": run["_id"], "started_at": run["started_at"]}}
         if kind == "find_evidence":
-            techs = {t["_id"]: t.get("label") or t.get("name") for t in get_collection("technologies").find(
+            techs = {t["_id"]: display_name(t) for t in get_collection("technologies").find(
                 {"_id": {"$in": [d["gap"]["tech_id"] for (_, k), d in out.items()
                                  if k == kind and (d.get("gap") or {}).get("tech_id")]}}, {"name": 1, "label": 1})}
             for (_, k), d in out.items():
                 if k == kind and d.get("gap"):
                     d["technology"] = techs.get(d["gap"].get("tech_id"))
     return out
+
+
+@router.get("/usage/skill/{name}")
+def skill_usage(name: str, days: int = 30) -> dict:
+    """One skill's calls in the last `days`, with the tokens written per call:
+    what a skill's page says before its reasoning is switched on or off."""
+    since = (datetime.now(timezone.utc) - timedelta(days=max(1, min(days, 365)))).isoformat()
+    rows = list(get_collection("llm_calls").aggregate([
+        {"$match": {"at": {"$gte": since}, "skills": name}},
+        {"$group": {"_id": None, "calls": {"$sum": 1}, "output_tokens": {"$sum": "$output_tokens"}}}]))
+    calls = rows[0]["calls"] if rows else 0
+    return {"skill": name, "days": days, "calls": calls,
+            "written_per_call": round(rows[0]["output_tokens"] / calls) if calls else 0}
 
 
 @router.get("/usage/recent")

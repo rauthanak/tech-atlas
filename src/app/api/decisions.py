@@ -5,14 +5,14 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.services import classify_effective, decisions, gates
+from app.services import classify_effective, decisions, gates, tech_status
 from app.services.db.mongo import get_collection
 from app.services.timezone import request_tz
 
 router = APIRouter()
 
 Kind = Literal["move", "override", "hand_score", "accept_gap", "tata_entry", "nascent", "catalog", "use_case",
-               "path_step", "finance", "bottlenecks", "commitment"]
+               "path_step", "finance", "bottlenecks", "commitment", "watch_threshold", "watch_crossed"]
 
 
 class DecisionIn(BaseModel):
@@ -52,6 +52,7 @@ def create(d: DecisionIn, tz: str = Depends(request_tz)) -> dict:
     if d.kind == "nascent" and d.value == "yes":
         decisions.create("move", d.tech_id, field="availability", value=_nascent_availability(d.tech_id),
                          reason="Confirmed as possibly nascent", tz=tz)
+    tech_status.touch([d.tech_id], now=True)  # the list shows it moved as soon as it reloads
     return {"decision": doc}
 
 
@@ -73,6 +74,7 @@ def undo(decision_id: str, tz: str = Depends(request_tz)) -> dict:
     doc = decisions.deactivate(decision_id, tz)
     if doc is None:
         raise HTTPException(status_code=404, detail="no such choice in force: it may have been undone or replaced")
+    tech_status.touch([doc["tech_id"]], now=True)
     return {"decision": doc}
 
 
@@ -142,17 +144,7 @@ def described(decs: list[dict]) -> list[dict]:
 
 @router.get("/gates")
 def the_gates() -> dict:
-    """Before scoring (Gate 1) and before publishing (Gate 2), from one read of the states."""
-    from app.services import evidence, radar_status
-    all_states = evidence.states()
-    gate1 = radar_status.gate1(all_states)
-    for item in gate1:
-        if item["kind"] == "nascent":  # each row answers Yes or No in place: say what a Yes would replace
-            ids = [t["tech_id"] for t in item["technologies"]]
-            chosen, lists = decisions.active(ids, ["move"]), classify_effective.names()
-            replaces = {t["_id"]: classify_effective.effective(t, chosen, lists)["nascent"]["yes_replaces"]
-                        for t in get_collection("technologies").find({"_id": {"$in": ids}},
-                                                                      {"classification": 1, "assessed_classification": 1})}
-            for t in item["technologies"]:
-                t["replaces"] = replaces.get(t["tech_id"])
-    return {"gate1": gate1, "gate2": gates.gate2(all_states)}
+    """Before scoring (Gate 1) and before publishing (Gate 2), read from the
+    answers kept ready for each technology (services/tech_status)."""
+    tech_status.fresh()
+    return {"gate1": tech_status.gate1(), "gate2": tech_status.gate2()}

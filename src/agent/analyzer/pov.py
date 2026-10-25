@@ -13,20 +13,22 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
-from app.services import evidence
+from app.services import decisions, evidence, watch
 from app.services.llm.context import with_context
 from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM, parse_json
 from app.services.prompts.store import PromptStore
 from app.services.timezone import now_utc, valid_tz
 from app.settings import get_settings
+from app.services import jobs as background
 
 log = logging.getLogger(__name__)
 
 # one section per score, one for the other measures, then the priority: each
 # measure is discussed once (before v4 of the skill: maturity, market_view and
-# capability_gap, which retold the scores' measures)
-SECTIONS = ("headline", "summary", "maturity", "value", "tora_analysis", "other_measures",
+# capability_gap, which retold the scores' measures); background (v11 on) is
+# the one written from general knowledge, for a reader new to the technology
+SECTIONS = ("headline", "background", "summary", "maturity", "value", "tora_analysis", "other_measures",
             "placement_rationale", "evidence_gaps", "recommendation")
 CITE = re.compile(r"\[(\d+)\]")
 
@@ -122,9 +124,15 @@ def _assessment_digest(assessments: list[dict], method: dict[str, dict], grid: d
         lines.append(_priority_line(a.get("placement") or {}, inputs))
         blocks.append("\n".join(lines))
     wm = next((a["watch_metrics"] for a in assessments if a.get("watch_metrics")), [])  # one per technology
+    tech_id = next((a["tech_id"] for a in assessments if a.get("tech_id")), None)
+    if wm and tech_id:  # a person's threshold, or their "not crossed", is what the Point of View says
+        wm = watch.apply(wm, decisions.active([tech_id], ["watch_threshold", "watch_crossed"]))
     if wm:
-        blocks.append("SIGNS TO WATCH (suggested by the assessment, not tracked automatically):\n" + "\n".join(
-            f"  - {m.get('metric')} | now: {m.get('current_value')} | threshold: {m.get('inflection_threshold')}"
+        crossed = {True: " | CROSSED its threshold since the last assessment", False: " | not crossed yet"}
+        blocks.append("SIGNS TO WATCH (suggested by the assessment and checked at the next one):\n" + "\n".join(
+            f"  - {m.get('metric')} | now: {m.get('current_value')}"
+            + (f" | was: {m['previous_value']}" if m.get("previous_value") else "")
+            + f" | threshold: {m.get('inflection_threshold')}{crossed.get(m.get('crossed'), '')}"
             f" | if crossed: {m.get('implication')}" + (
                 (f" | source:{cite([m['source']])}" if cite and str(m["source"]).startswith("http")
                  else f" | source: {m['source']}") if m.get("source") else "")
@@ -251,6 +259,12 @@ def _extras(tech: dict, applied: list[dict], decs: list[dict], src: Sources) -> 
              f"- Domain: {c['domain']['name']}" + (f" › {c['domain']['subdomain']}" if c["domain"].get("subdomain") else ""),
              (f"- Evidence: judged {c['evidence']['verdict'].replace('_', ' ')}: {c['evidence'].get('reason')}"
               + src.cite_docs(c["evidence"].get("pages") or []) if c.get("evidence") else "- Evidence: not judged yet")]
+    from app.services import market
+    size = next((s for s in (market.market_size(a.get("measures")) for a in applied) if s), None)
+    if size:  # the band the page shows; quote it as a band, with the figure it comes from
+        lines.append(f"- Market size: the {size['band']} band, from a figure of ${size['amount_usd_bn']:g}B"
+                     f" ({', '.join(str(x) for x in (size.get('scope'), size.get('year')) if x)}){src.cite_urls([size['url']])}"
+                     if size["band"] else "- Market size: no page gives a market figure")
     accepted = {d["key"] for d in decs if d["kind"] == "use_case" and d["value"] == "accept"}
     value = ["VALUE, per fabric (cite as [n]; never write a figure):"]
     for a in applied:
@@ -274,7 +288,7 @@ def _extras(tech: dict, applied: list[dict], decs: list[dict], src: Sources) -> 
                              f"Evidence that would show one: {a['no_use_case'].get('evidence_needed') or 'not said'}")
             elif not ok:
                 value.append(f"- {a['fabric']}: not mapped yet")
-    from app.services import decisions
+
     path = finance.steps()
     steps = ["TATA'S PLAN (typed in by Tata's people on each fabric's tab, not from the pages: Tata's own record; "
              "quote it exactly and never cite a page number for it), per fabric:"]
@@ -398,9 +412,14 @@ def pov_view(pov: dict) -> dict:
     for a in latest:
         for uc in a.get("use_cases") or []:
             src.docs([*(uc.get("pages") or []), *(p for lv in uc.get("levers") or [] for p in lv.get("pages") or [])])
-    return {"classification": cls, "fabrics": fabrics, "sources": src.items,
+    from app.services import market
+    size = next((s for s in (market.market_size(a.get("measures")) for a in applied) if s), None)
+    if size and size.get("url"):
+        size["refs"] = src.urls([size["url"]])
+    return {"classification": cls, "fabrics": fabrics, "market_size": size, "sources": src.items,
             "measures": [{k: m.get(k) for k in ("_id", "code", "name", "axis", "weight")} for m in method],
-            "watch_metrics": next((a["watch_metrics"] for a in applied if a.get("watch_metrics")), []),
+            "watch_metrics": watch.apply(next((a["watch_metrics"] for a in applied if a.get("watch_metrics")), []),
+                                         decisions.active([tech_id], ["watch_threshold", "watch_crossed"])),
             "latest_assessment": {"scoring_run_id": latest[0]["scoring_run_id"], "fabric_ids": [a["fabric_id"] for a in latest],
                                   "assessed_at": min(a.get("created_at") or "" for a in latest)} if latest else None}
 
@@ -467,7 +486,6 @@ def compose_pov(run_id: str, tech_id: str, tz: str | None = None, job_id: str | 
 # --- compose-all: one background job over every uncomposed technology -------
 
 _batch_lock = threading.Lock()
-_batch_active = False
 
 _STALE_AFTER_S = 180  # a running job whose heartbeat is older than this died
                       # with the process — surface it as interrupted
@@ -476,7 +494,7 @@ _STALE_AFTER_S = 180  # a running job whose heartbeat is older than this died
 def batch_status() -> dict | None:
     """The latest compose-all job, for the Points of View tab's polling."""
     job = get_collection("pov_compose_jobs").find_one(sort=[("started_at", -1)])
-    if job and job["status"] == "running" and not _batch_active:
+    if job and job["status"] == "running":  # its heartbeat says whether it's still going (it may run in the worker)
         last = job.get("heartbeat_at") or job["started_at"]
         age = (datetime.now(timezone.utc) - datetime.fromisoformat(last)).total_seconds()
         if age > _STALE_AFTER_S:
@@ -492,24 +510,21 @@ def start_compose_all(targets: list[dict], recompose: bool = False, tz: str | No
     """Compose PoVs for every (scoring_run_id, tech_id) in targets, in a
     background thread pool. None when a job is already running. `recompose`
     is recorded on the job so the portal can badge composed rows as queued."""
-    global _batch_active
     with _batch_lock:
-        if _batch_active:
+        job = batch_status()
+        if job and job["status"] == "running":
             return None
-        _batch_active = True
     job_id = uuid.uuid4().hex[:12]
     get_collection("pov_compose_jobs").insert_one(
         {"_id": job_id, "status": "running", "recompose": recompose,
          "total": len(targets), "done": 0,
          "current": [], "failed": [], "started_at": now_utc(),
          "heartbeat_at": now_utc()})
-    threading.Thread(target=_run_batch, args=(job_id, targets, tz),
-                     name=f"pov-batch-{job_id}", daemon=True).start()
+    background.start(_run_batch, job_id, targets, tz)
     return job_id
 
 
 def _run_batch(job_id: str, targets: list[dict], tz: str | None = None) -> None:
-    global _batch_active
     jobs = get_collection("pov_compose_jobs")
 
     def one(t: dict) -> None:
@@ -539,5 +554,4 @@ def _run_batch(job_id: str, targets: list[dict], tz: str | None = None) -> None:
         jobs.update_one({"_id": job_id},
                         {"$set": {"status": "failed", "error": str(exc),
                                   "current": [], "finished_at": now_utc()}})
-    finally:
-        _batch_active = False
+

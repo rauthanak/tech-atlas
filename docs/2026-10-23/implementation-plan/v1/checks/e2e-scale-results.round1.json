@@ -1,0 +1,136 @@
+{
+ "start": {
+  "api_first_answer_s": 18346.2,
+  "upgrade_log": "INFO app.services.db.upgrade_pages: upgraded 11438000 of 11438000 page records (14728 s)",
+  "indexes_built_after_s": 24367.1,
+  "after_api_answered_s": 6019.0,
+  "index_builds": [
+   "INFO app.services.db.bootstrap: index documents [('signals.technologies_resolved', 1), ('latest', 1), ('scraped_at', -1)] built in 926 s",
+   "INFO app.services.db.bootstrap: index documents [('technologies_resolved', 1)] built in 447 s",
+   "INFO app.services.db.bootstrap: index documents [('technologies_resolved', 1), ('scraped_at', -1)] built in 428 s",
+   "INFO app.services.db.bootstrap: index documents [('signals.signal_id', 1)] built in 436 s",
+   "INFO app.services.db.bootstrap: index documents [('ignored_by', 1)] built in 463 s",
+   "INFO app.services.db.bootstrap: index documents [('signals_hash', 1)] built in 528 s",
+   "INFO app.services.db.bootstrap: index documents [('is_stub', 1), ('scraped_at', 1)] built in 485 s",
+   "INFO app.services.db.bootstrap: index documents [('source_id', 1), ('scraped_at', -1)] built in 418 s",
+   "INFO app.services.db.bootstrap: index documents [('analysis_error.at', 1)] built in 459 s",
+   "INFO app.services.db.bootstrap: index documents [('mentions', 1)] built in 475 s",
+   "INFO app.services.db.bootstrap: index technologies [('doc_count', 1)] built in 4 s",
+   "INFO app.services.db.bootstrap: index technologies [('name', 1)] built in 3 s",
+   "INFO app.services.db.bootstrap: index technologies [('imported.import_id', 1)] built in 1 s",
+   "INFO app.services.db.bootstrap: index technologies [('enabled', 1)] built in 1 s",
+   "INFO app.services.db.bootstrap: index scoring_runs [('started_at', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index assessments [('scoring_run_id', 1)] built in 2 s",
+   "INFO app.services.db.bootstrap: index assessments [('tech_id', 1)] built in 1 s",
+   "INFO app.services.db.bootstrap: index assessments [('tech_id', 1), ('created_at', -1)] built in 1 s",
+   "INFO app.services.db.bootstrap: index assessments [('evidence_runs', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index povs [('scoring_run_id', 1)] built in 1 s",
+   "INFO app.services.db.bootstrap: index povs [('tech_id', 1), ('composed_at', -1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index povs [('composed_at', -1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index llm_calls [('run_id', 1)] built in 1 s",
+   "INFO app.services.db.bootstrap: index llm_calls [('at', 1)] built in 1 s",
+   "INFO app.services.db.bootstrap: index decisions [('tech_id', 1), ('kind', 1), ('active', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index decisions [('active', 1), ('kind', 1), ('at', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index classify_runs [('started_at', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index imports [('at', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index find_evidence_jobs [('at', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index tag_runs [('started_at', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index tech_status [('f.status', 1), ('doc_count', -1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index tech_status [('f.views', 1), ('doc_count', -1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index tech_status [('doc_count', -1), ('_id', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index tech_status [('f.state', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index tech_status [('f.classify_waiting', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index tech_status [('f.nascent_open', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index tech_status [('at', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index technologies [('status_dirty_at', 1)] built in 2 s",
+   "INFO app.services.db.bootstrap: index assessments [('created_at', 1)] built in 1 s",
+   "INFO app.services.db.bootstrap: index decisions [('at', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index documents [('run_id', 1), ('analysis_error.at', -1)] built in 420 s",
+   "INFO app.services.db.bootstrap: index edition_rows [('edition_id', 1), ('kind', 1), ('n', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index edition_rows [('edition_id', 1), ('tech_id', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index import_items [('import_id', 1), ('row', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index import_items [('import_id', 1), ('group', 1), ('decision', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index scoring_tech_calls [('run_id', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index documents [('technologies', 1)] built in 448 s",
+   "INFO app.services.db.bootstrap: index documents [('to_organize', 1)] built in 383 s",
+   "INFO app.services.db.bootstrap: index page_texts [('superseded', 1), ('run_id', 1)] built in 314 s",
+   "INFO app.services.db.bootstrap: index briefing_rows [('older', 1), ('rank', 1), ('date', -1), ('scraped_at', -1), ('doc_id', 1), ('n', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index briefing_rows [('day', 1), ('build', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index briefing_rows [('build', 1), ('scraped_at', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index briefing_rows [('signal_id', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index tech_status_rows [('target.scoring_run_id', 1)] built in 0 s",
+   "INFO app.services.db.bootstrap: index jobs [('status', 1), ('queued_at', 1)] built in 0 s"
+  ],
+  "at": "2026-10-24 18:10"
+ },
+ "upkeep": {
+  "waiting_at_start": {
+   "technologies": 315420,
+   "briefing_days": 746
+  },
+  "total_s": 2234.0,
+  "at": "2026-10-24 18:47"
+ },
+ "collection": {
+  "run_id": "f2d2457c021f",
+  "status": "terminated",
+  "answered_start_s": 0.26,
+  "total_s": 361.3,
+  "stages_s": {
+   "orchestrating": 0.2,
+   "crawling": 348.8
+  },
+  "pages": 541,
+  "new_pages": 526,
+  "sources": 46,
+  "stand_in_calls": {
+   "article_summary": 532,
+   "link_selection": 44
+  },
+  "model_would_add_s": 535.4,
+  "at": "2026-10-24 18:56"
+ },
+ "assessment": {
+  "run_id": "1564c97e6420",
+  "technologies": 50,
+  "status": "completed",
+  "answered_start_s": 0.43,
+  "total_s": 253.4,
+  "per_technology_s": 5.07,
+  "assessments": 80,
+  "stand_in_calls": {
+   "technology": 50,
+   "fabric": 80
+  },
+  "model_would_add_s": 698.1,
+  "at": "2026-10-24 19:00"
+ },
+ "povs": {
+  "job_id": "694ec868948a",
+  "written": 50,
+  "failed": 0,
+  "total_s": 68.0,
+  "per_pov_s": 1.36,
+  "stand_in_calls": {
+   "pov": 50
+  },
+  "model_would_add_s": 480.2,
+  "at": "2026-10-24 19:01"
+ },
+ "publish": {
+  "error": "timeout: timed out",
+  "at": "2026-10-24 19:11"
+ },
+ "import": {
+  "error": "timeout: timed out",
+  "at": "2026-10-24 19:24"
+ },
+ "rename": {
+  "error": "timeout: timed out",
+  "at": "2026-10-24 19:36"
+ },
+ "recheck": {
+  "error": "timeout: timed out",
+  "at": "2026-10-24 19:46"
+ }
+}

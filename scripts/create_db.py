@@ -1,4 +1,5 @@
-"""Create the Tech Atlas database: the sources collection and its indexes.
+"""Create the Tech Atlas database's collections (the indexes are built in the
+background by the process that runs the jobs: services/jobs.upkeep).
 
 This also runs automatically on app start-up (app.bootstrap); keep the script
 for manual use. Run from the project root with the venv active:

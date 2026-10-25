@@ -238,7 +238,7 @@ def gate1(all_states: dict | None = None) -> list[dict]:
                and s["classification"]["nascent"]["decision"] is None]
     if nascent:
         items.append({"kind": "nascent", "count": len(nascent),
-                      "sentence": f"{len(nascent)} possibly nascent {'technology' if len(nascent) == 1 else 'technologies'} to confirm",
+                      "sentence": f"{len(nascent):,} possibly nascent {'technology' if len(nascent) == 1 else 'technologies'} to confirm",
                       "sub": "A strong early sign; a person says yes or no. Yes lets it be assessed and moves it to Research or Pilot; No sets it aside until a new page flags it.",
                       "href": "/admin/technologies?view=nascent",
                       "technologies": [{"tech_id": i, "name": name(i),
@@ -257,7 +257,7 @@ def gate1(all_states: dict | None = None) -> list[dict]:
     if ready:
         cost = estimate(ready)
         items.append({"kind": "ready_to_assess", "count": len(ready), "calls": cost["calls"], "tech_ids": ready,
-                      "sentence": f"{len(ready)} {'technology is' if len(ready) == 1 else 'technologies are'} ready to assess",
+                      "sentence": f"{len(ready):,} {'technology is' if len(ready) == 1 else 'technologies are'} ready to assess",
                       "sub": f"Their evidence was judged enough. About {cost['calls']:,} model calls.",
                       "href": "/admin/technologies?view=not_assessed&status=ready"})
     woke = [i for i, s in all_s.items() if s["status"] == "off" and (i in techs)]
@@ -266,7 +266,7 @@ def gate1(all_states: dict | None = None) -> list[dict]:
     woke = [i for i in woke if since.get(i, 0) >= wake]
     if woke:
         items.append({"kind": "switched_off_with_pages", "count": len(woke),
-                      "sentence": f"{len(woke)} switched-off {'technology has' if len(woke) == 1 else 'technologies have'} new pages",
+                      "sentence": f"{len(woke):,} switched-off {'technology has' if len(woke) == 1 else 'technologies have'} new pages",
                       "sub": f"{wake} or more pages since each was switched off: have a look.",
                       "href": "/admin/technologies?view=off",
                       "technologies": [{"tech_id": i, "name": name(i), "note": _pages(since[i], "new ")} for i in woke]})

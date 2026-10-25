@@ -135,3 +135,15 @@ def test_a_findings_own_technologies_win_over_its_pages(db):
     assert [(h["signal_id"], h["technologies"][0]) for h in about_edge] == [("funding", "edge ai")]  # filtered first
     about_quic = client.get("/api/signals/found", params={"tech": "quic"}).json()
     assert about_quic["total"] == 2
+
+
+def test_each_signals_count_is_every_finding_on_every_page_kept_a_day_at_a_time(db):
+    """The Signals list adds up each day's counts (services/briefing_days), never reading every page."""
+    from app.api.signals import hit_counts, list_signals
+    from app.services.db import seeding
+    seeding.load_if_new()
+    sid = db["signals"].find_one({"mode": "never_miss"})["_id"]
+    page(db, "a", "2026-10-20T09:00:00+00:00", None, [{"signal_id": sid, "what": "x"}, {"signal_id": sid, "what": "y"}])
+    page(db, "b", "2026-10-22T09:00:00+00:00", None, [{"signal_id": sid, "what": "z"}])
+    row = next(r for r in list_signals()["signals"] if r["_id"] == sid)
+    assert row["hits_total"] == hit_counts({"is_stub": False})[sid] == 3

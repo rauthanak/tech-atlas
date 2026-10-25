@@ -15,16 +15,23 @@
      filed, set aside (by which rule) or not read (why). Whenever the job is
      shown (`view`), each page's status is read again from its document.
 
+Add evidence (kind `links`) takes several links and uploaded files a person
+gives for one technology, reads them like the rest, and judges its evidence
+again. With `through: "pov"` it carries on by itself: once its evidence is
+judged enough (or the person chose to assess anyway) it's assessed, then its
+Point of View is written. Each step that can't go on says why.
+
 The daily budget of searches is checked when it starts (api/find_evidence)."""
 
+import hashlib
 import logging
 import re
-import threading
+import time
 import uuid
 from collections import Counter
 from datetime import date
 
-from agent.scout.tools.crawl import fetch_page
+from agent.scout.tools.crawl import fetch_page, why_failed
 from agent.scout.tools.summarize import summarize_page
 from app.services.db.mongo import get_collection
 from app.services.llm.context import with_context
@@ -33,6 +40,8 @@ from app.services.runs import store
 from app.services.signals import snapshot
 from app.services.timezone import now_utc
 from app.services import websearch
+from app.services.display import display_name
+from app.services import jobs as background
 
 log = logging.getLogger(__name__)
 QUERY_CHARS = 120  # a search, not a sentence: cut at a word
@@ -47,7 +56,7 @@ def query_for(gap: dict) -> str:
     qualifiers), cut at a word to about QUERY_CHARS characters. A thin
     verdict names nothing, so it asks for the kinds of signal that count."""
     tech = get_collection("technologies").find_one({"_id": gap["tech_id"]}, {"name": 1, "label": 1}) or {}
-    parts = [tech.get("label") or tech.get("name") or gap["tech_id"]]
+    parts = [display_name(tech, gap["tech_id"])]
     if gap.get("fabric_id"):
         f = get_collection("fabrics").find_one({"_id": gap["fabric_id"]}, {"name": 1}) or {}
         parts.append(f.get("name") or "")
@@ -89,13 +98,36 @@ def latest_assessment(tech_id: str, fabric_id: str | None) -> dict | None:
     return get_collection("assessments").find_one({"_id": fab["assessment_id"]}) if fab else None
 
 
-def start(gap: dict, tz: str) -> str:
+WAIT_S = 10  # how often an Add evidence job looks whether an assessment already going has finished
+PASTED = ("link", "links")  # kinds a person gives the pages for: no search
+
+
+def file_url(name: str, text: str) -> str:
+    """An uploaded file's address: its name and what's in it, so the same file
+    given twice is read once."""
+    return f"upload:{hashlib.sha1(text.encode()).hexdigest()[:12]}/{name}"
+
+
+def start(gap: dict, tz: str, files: list[dict] | None = None) -> str:
+    """`files`: uploaded files already turned into text, [{name, text}]."""
     job_id = uuid.uuid4().hex[:12]
     get_collection("find_evidence_jobs").insert_one({
         "_id": job_id, "gap": gap, "status": "running", "at": now_utc(), "tz": tz, "results": [],
-        "query": None if gap.get("kind") == "link" else query_for(gap), "searched": gap.get("kind") != "link"})
-    threading.Thread(target=run, args=(job_id,), name=f"find-evidence-{job_id}", daemon=True).start()
+        "files": [{"name": f["name"], "url": file_url(f["name"], f["text"]), "text": f["text"]} for f in files or []],
+        "query": None if gap.get("kind") in PASTED else query_for(gap), "searched": gap.get("kind") not in PASTED})
+    background.start(run, job_id)
     return job_id
+
+
+def reconcile_stale() -> None:
+    """Start-up: a job still 'running' at boot died with the last process.
+    Say so on it; pages it already read and filed are kept."""
+    done = get_collection("find_evidence_jobs").update_many(
+        {"status": "running"},
+        {"$set": {"status": "failed", "finished_at": now_utc(),
+                  "error": "the service restarted while it ran; pages already read are kept"}})
+    if done.modified_count:
+        log.warning("find evidence: %d interrupted job(s) marked failed", done.modified_count)
 
 
 def run(job_id: str, fetch=fetch_page, search=websearch.search) -> None:
@@ -119,6 +151,9 @@ def _run(job: dict, fetch, search) -> None:
     n = int(radar_settings()["find_evidence_results"])
     if gap.get("kind") == "link":
         found = [{"url": gap["url"], "title": None}]
+    elif gap.get("kind") == "links":
+        found = [{"url": u, "title": None} for u in gap.get("urls") or []] + \
+                [{"url": f["url"], "title": f["name"]} for f in job.get("files") or []]
     else:
         with with_context(skills=["web_search"]):
             found = list({r["url"]: r for r in search(job["query"], n)}.values())  # each address once
@@ -132,15 +167,28 @@ def _run(job: dict, fetch, search) -> None:
         jobs.update_one({"_id": job["_id"]}, {"$set": {"run_id": run_id}})
         snap = get_collection("runs").find_one({"_id": run_id}, {"signal_list": 1, "signals_hash": 1, "crawl_settings": 1})
         llm = LLM.initialize()
+        uploaded = {f["url"]: f for f in job.get("files") or []}
         for r in fresh:
-            text, meta, why = fetch(r["url"])
-            if not text:
-                r.update(status="failed", reason=why or "no text came back")
+            try:
+                if r["url"] in uploaded:
+                    f = uploaded[r["url"]]
+                    text, meta, why = f["text"], {"kind": "pdf" if f["name"].lower().endswith(".pdf") else "document",
+                                                  "title": f["name"], "published_date": None}, None
+                else:
+                    text, meta, why = fetch(r["url"])
+                if not text:
+                    r.update(status="failed", reason=why or "no text came back")
+                    continue
+                given = "uploaded" if r["url"] in uploaded else "added by hand" if gap.get("kind") in PASTED else "web search"
+                site = uploaded[r["url"]]["name"] if r["url"] in uploaded else websearch.site(r["url"])
+                source = {**websearch.SOURCE, "url": r["url"], "name": f"{site} ({given})"}
+                with with_context(run_kind="find_evidence", run_id=run_id):
+                    store.save_document(run_id, source["horizon"], source, r["url"], text,
+                                        lambda url, t: summarize_page(llm, url, t, snap), meta=meta)
+            except Exception as exc:  # one bad page never stops the others
+                log.warning("find evidence %s: %s couldn't be read: %s", job["_id"], r["url"], exc)
+                r.update(status="failed", reason=why_failed(exc))
                 continue
-            source = {**websearch.SOURCE, "url": r["url"], "name": f"{websearch.site(r['url'])} (web search)"}
-            with with_context(run_kind="find_evidence", run_id=run_id):
-                store.save_document(run_id, source["horizon"], source, r["url"], text,
-                                    lambda url, t: summarize_page(llm, url, t, snap), meta=meta)
             doc = documents.find_one({"end_url": r["url"], "run_id": run_id})
             error = doc.get("analysis_error")
             if error and not doc.get("partial"):  # read, but the model couldn't summarise it: nothing to file
@@ -153,9 +201,11 @@ def _run(job: dict, fetch, search) -> None:
                          "found_by": {"job_id": job["_id"], "at": job["at"], "tz": job.get("tz")}}})
             r.update(doc_id=doc["_id"])
         store.finish_run(run_id, "completed")
+        if uploaded:  # read and saved: the copy isn't needed
+            jobs.update_one({"_id": job["_id"]}, {"$unset": {"files.$[].text": ""}})
         if any(r.get("doc_id") for r in fresh):
-            from agent.resolver import restamp_all
-            restamp_all()  # a set-aside page loses the technology here, as any set-aside page does
+            from agent.resolver import restamp
+            restamp([tech["name"]])  # the pages filed under it (a set-aside one loses it here, as any set-aside page does)
     settle(results)
     jobs.update_one({"_id": job["_id"]}, {"$set": {"results": results, "stage": "re-running"}})
     if not any(r["status"] == "filed" for r in results):
@@ -166,10 +216,54 @@ def _run(job: dict, fetch, search) -> None:
         except Exception as exc:  # the pages stay filed; only the call failed
             log.exception("find evidence %s: the call behind the gap failed", job["_id"])
             outcome = f"Its call couldn't be run again: {str(exc)[:200]}."
+    if gap.get("through") == "pov" and any(r["status"] == "filed" for r in results):
+        outcome += " " + follow(job, tech)
     done = {**job, "results": results, "rerun": {"kind": gap["kind"], "outcome": outcome}}
     jobs.update_one({"_id": job["_id"]}, {"$set": {"status": "completed", "stage": "done", "finished_at": now_utc(),
-                                                   "summary": describe(done, tech.get("label") or tech["name"]),
+                                                   "summary": describe(done, display_name(tech)),
                                                    "rerun": done["rerun"]}})
+
+
+# ── Add evidence, on to the Point of View ────────────────────────────
+
+def follow(job: dict, tech: dict) -> str:
+    """After its evidence is judged again: assess the technology (waiting for an
+    assessment already going), then write its Point of View. Returns what came
+    of it, in words; each step that can't go on says why."""
+    from agent.analyzer import pov
+    from agent.analyzer.agent import start_scoring_run
+    from agent.analyzer.engine import RUNNING_STATES
+    from app.services import busy, radar_status
+    jobs, runs = get_collection("find_evidence_jobs"), get_collection("scoring_runs")
+    tech_id = tech["_id"]
+    verdict = (((get_collection("technologies").find_one({"_id": tech_id}, {"classification": 1}) or {})
+                .get("classification") or {}).get("evidence") or {}).get("verdict")
+    if verdict not in ("strong", "enough") and not job["gap"].get("assess_anyway"):
+        return (f"Its evidence is still judged {verdict or 'not yet'}, so it wasn't assessed. Add more, or choose "
+                "Assess anyway.")
+    jobs.update_one({"_id": job["_id"]}, {"$set": {"stage": "assessing"}})
+    run_id = None
+    while run_id is None:  # one assessment at a time: wait for one already going
+        try:
+            run_id = start_scoring_run({"technologies": [tech_id]})
+        except busy.Busy:
+            pass
+        if run_id is None:
+            time.sleep(WAIT_S)
+    jobs.update_one({"_id": job["_id"]}, {"$set": {"scoring_run_id": run_id}})
+    while (run := runs.find_one({"_id": run_id}, {"status": 1, "error": 1}))["status"] in RUNNING_STATES:
+        time.sleep(WAIT_S)
+    if run["status"] != "completed":
+        return f"Its assessment didn't finish: {run.get('error') or run['status']}."
+    status = radar_status.statuses([tech_id])[tech_id]
+    assessed = f"Assessed: {status['reason']}."
+    jobs.update_one({"_id": job["_id"]}, {"$set": {"stage": "writing"}})
+    try:
+        pov.compose_pov(run_id, tech_id, job.get("tz"))
+    except Exception as exc:  # the assessment stands; only the writing failed
+        log.exception("add evidence %s: the Point of View couldn't be written", job["_id"])
+        return f"{assessed} Its Point of View couldn't be written: {str(exc)[:200]}."
+    return f"{assessed} Its Point of View is written; leaders see it once you publish."
 
 
 # ── the one call behind the gap, run again ───────────────────────────
@@ -276,7 +370,7 @@ def describe(job: dict, name: str) -> str:
     then = f" {outcome}" if outcome else ""
     if not results:
         return "Nothing found." + (f' The search was: "{job["query"]}".' if job.get("query") else "")
-    if not job.get("searched"):  # a pasted link: one page
+    if job["gap"].get("kind") == "link":  # a pasted link: one page
         r = results[0]
         return {"filed": f"The page was read and filed under {name}.",
                 "already": "That page is already collected, so it wasn't read again.",
@@ -284,7 +378,9 @@ def describe(job: dict, name: str) -> str:
                              f"so it isn't filed under {name}.",
                 "failed": f"The page couldn't be read: {r.get('reason')}."}.get(r["status"], "") + then
     count = Counter(r["status"] for r in results)
-    parts = [f"{_n(count['filed'], 'new page')} filed under {name} from {_n(len(results), 'result')}"
+    given = "result" if job.get("searched") else "link or file" if len(results) == 1 else "links and files"
+    parts = [f"{_n(count['filed'], 'new page')} filed under {name} from "
+             + (_n(len(results), given) if job.get("searched") or len(results) == 1 else f"{len(results)} {given}")
              + (f" ({count['already']} already collected)" if count["already"] else "")]
     parts += [f'{n} set aside by the Can ignore rule "{rule}"'
               for rule, n in Counter(r.get("rule") for r in results if r["status"] == "set_aside").items()]
@@ -299,7 +395,7 @@ def _n(n: int, one: str) -> str:
 
 def name_of(tech_id: str) -> str:
     t = get_collection("technologies").find_one({"_id": tech_id}, {"name": 1, "label": 1}) or {}
-    return t.get("label") or t.get("name") or tech_id
+    return display_name(t, tech_id)
 
 
 def view(job: dict, name: str | None = None) -> dict:
@@ -307,6 +403,8 @@ def view(job: dict, name: str | None = None) -> dict:
     it's done, the summary written from them, so a job from before set-aside
     pages were told apart, or a page set aside since, reads true."""
     settle(job.get("results") or [])
+    for f in job.get("files") or []:
+        f.pop("text", None)  # an uploaded file's text stays on the server
     if job.get("status") == "completed":
         job["summary"] = describe(job, name or name_of(job["gap"]["tech_id"]))
     return job

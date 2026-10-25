@@ -64,7 +64,8 @@ def make_collect_tool(run_id: str, category: str, sources: list[dict], llm,
             log.exception("collecting %s failed", source["source_id"])
             outcome = Outcome(error=str(exc)[:300])
         store.finish_source(run_id, source["source_id"], outcome.pages, outcome.docs,
-                            outcome.new_docs, outcome.error, outcome.incomplete_note)
+                            outcome.new_docs, outcome.error, outcome.incomplete_note,
+                            skipped=outcome.skipped_list())
         if outcome.error == "run cancelled":
             return "RUN CANCELLED"
         report = outcome.report(source["name"])

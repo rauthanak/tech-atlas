@@ -35,7 +35,6 @@
       "evidence_floor": 3,
       "classify_after_collection": true,
       "classify_pages_cap": 10,
-      "classify_token_budget": 8000000,
       "emerging_availability": [
         "research",
         "pilot",

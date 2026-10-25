@@ -1,0 +1,857 @@
+{
+  "_about": "Every index the API needs. Created at start-up when missing (services/db/bootstrap.py); never dropped by the app. Not part of the configuration lists, so editing this file never reloads them.",
+  "indexes": [
+    {
+      "collection": "sources",
+      "keys": [
+        [
+          "horizon",
+          1
+        ]
+      ],
+      "why": "Sources list by horizon"
+    },
+    {
+      "collection": "sources",
+      "keys": [
+        [
+          "access",
+          1
+        ]
+      ],
+      "why": "Sources by how they are read"
+    },
+    {
+      "collection": "runs",
+      "keys": [
+        [
+          "run_start_date_time",
+          1
+        ]
+      ],
+      "why": "collections, newest first"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "run_id",
+          1
+        ]
+      ],
+      "why": "a collection's pages"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "end_url",
+          1
+        ],
+        [
+          "scraped_at",
+          1
+        ]
+      ],
+      "why": "a page's earlier visits"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "page_key",
+          1
+        ],
+        [
+          "scraped_at",
+          -1
+        ]
+      ],
+      "why": "a page's visits, newest first (services/pages)"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "content_hash",
+          1
+        ]
+      ],
+      "why": "the same page under another link: same site, title and text"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "technologies_resolved",
+          1
+        ],
+        [
+          "latest",
+          1
+        ],
+        [
+          "scraped_at",
+          -1
+        ]
+      ],
+      "why": "a technology's pages, one visit each (the newest), newest first"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "signals.technologies_resolved",
+          1
+        ],
+        [
+          "latest",
+          1
+        ],
+        [
+          "scraped_at",
+          -1
+        ]
+      ],
+      "why": "an assessment's evidence: a technology's pages with a finding about it first, newest first"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "technologies_resolved",
+          1
+        ]
+      ],
+      "why": "pages filed under a technology"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "technologies_resolved",
+          1
+        ],
+        [
+          "scraped_at",
+          -1
+        ]
+      ],
+      "why": "a technology's newest pages (new pages since its assessment)"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "signals.signal_id",
+          1
+        ]
+      ],
+      "why": "findings by signal"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "ignored_by",
+          1
+        ]
+      ],
+      "why": "set-aside pages"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "signals_hash",
+          1
+        ]
+      ],
+      "why": "pages to check again after a signal edit"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "is_stub",
+          1
+        ],
+        [
+          "scraped_at",
+          1
+        ]
+      ],
+      "why": "time windows (Briefing)"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "source_id",
+          1
+        ],
+        [
+          "scraped_at",
+          -1
+        ]
+      ],
+      "why": "a source's pages"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "analysis_error.at",
+          1
+        ]
+      ],
+      "why": "pages the model couldn't read (Problems, polled)"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "mentions",
+          1
+        ]
+      ],
+      "why": "pages naming a technology in passing"
+    },
+    {
+      "collection": "technologies",
+      "keys": [
+        [
+          "doc_count",
+          1
+        ]
+      ],
+      "why": "technologies by page count"
+    },
+    {
+      "collection": "technologies",
+      "keys": [
+        [
+          "name",
+          1
+        ]
+      ],
+      "why": "a technology by its name (resolve, edit, merge)"
+    },
+    {
+      "collection": "technologies",
+      "keys": [
+        [
+          "imported.import_id",
+          1
+        ]
+      ],
+      "why": "technologies from one imported file"
+    },
+    {
+      "collection": "technologies",
+      "keys": [
+        [
+          "enabled",
+          1
+        ]
+      ],
+      "why": "switched-off technologies"
+    },
+    {
+      "collection": "scoring_runs",
+      "keys": [
+        [
+          "started_at",
+          1
+        ]
+      ],
+      "why": "assessment runs, newest first"
+    },
+    {
+      "collection": "assessments",
+      "keys": [
+        [
+          "scoring_run_id",
+          1
+        ]
+      ],
+      "why": "a run's assessments"
+    },
+    {
+      "collection": "assessments",
+      "keys": [
+        [
+          "tech_id",
+          1
+        ]
+      ],
+      "why": "a technology's assessments"
+    },
+    {
+      "collection": "assessments",
+      "keys": [
+        [
+          "tech_id",
+          1
+        ],
+        [
+          "created_at",
+          -1
+        ]
+      ],
+      "why": "a technology's latest assessment"
+    },
+    {
+      "collection": "assessments",
+      "keys": [
+        [
+          "evidence_runs",
+          1
+        ]
+      ],
+      "why": "assessments that used a collection"
+    },
+    {
+      "collection": "povs",
+      "keys": [
+        [
+          "scoring_run_id",
+          1
+        ]
+      ],
+      "why": "a run's Points of View"
+    },
+    {
+      "collection": "povs",
+      "keys": [
+        [
+          "tech_id",
+          1
+        ],
+        [
+          "composed_at",
+          -1
+        ]
+      ],
+      "why": "a technology's latest Point of View"
+    },
+    {
+      "collection": "povs",
+      "keys": [
+        [
+          "composed_at",
+          -1
+        ]
+      ],
+      "why": "Points of View written in a window"
+    },
+    {
+      "collection": "llm_calls",
+      "keys": [
+        [
+          "run_id",
+          1
+        ]
+      ],
+      "why": "a job's model calls"
+    },
+    {
+      "collection": "llm_calls",
+      "keys": [
+        [
+          "at",
+          1
+        ]
+      ],
+      "why": "model calls by time (History, usage)"
+    },
+    {
+      "collection": "decisions",
+      "keys": [
+        [
+          "tech_id",
+          1
+        ],
+        [
+          "kind",
+          1
+        ],
+        [
+          "active",
+          1
+        ]
+      ],
+      "why": "a technology's choices by people"
+    },
+    {
+      "collection": "decisions",
+      "keys": [
+        [
+          "active",
+          1
+        ],
+        [
+          "kind",
+          1
+        ],
+        [
+          "at",
+          1
+        ]
+      ],
+      "why": "all choices of one kind in force (catalog, path)"
+    },
+    {
+      "collection": "classify_runs",
+      "keys": [
+        [
+          "started_at",
+          1
+        ]
+      ],
+      "why": "Classify runs, newest first"
+    },
+    {
+      "collection": "imports",
+      "keys": [
+        [
+          "at",
+          1
+        ]
+      ],
+      "why": "imported files, newest first"
+    },
+    {
+      "collection": "find_evidence_jobs",
+      "keys": [
+        [
+          "at",
+          1
+        ]
+      ],
+      "why": "Find evidence jobs, newest first"
+    },
+    {
+      "collection": "tag_runs",
+      "keys": [
+        [
+          "started_at",
+          1
+        ]
+      ],
+      "why": "linking runs, newest first"
+    },
+    {
+      "collection": "tech_status",
+      "keys": [
+        [
+          "f.status",
+          1
+        ],
+        [
+          "doc_count",
+          -1
+        ]
+      ],
+      "why": "the Technologies list by status, most pages first"
+    },
+    {
+      "collection": "tech_status",
+      "keys": [
+        [
+          "f.views",
+          1
+        ],
+        [
+          "doc_count",
+          -1
+        ]
+      ],
+      "why": "the Technologies list by view, most pages first"
+    },
+    {
+      "collection": "tech_status",
+      "keys": [
+        [
+          "doc_count",
+          -1
+        ],
+        [
+          "_id",
+          1
+        ]
+      ],
+      "why": "the Technologies list, most pages first"
+    },
+    {
+      "collection": "tech_status",
+      "keys": [
+        [
+          "f.state",
+          1
+        ]
+      ],
+      "why": "what waits: assess, write, stopped runs (status pill)"
+    },
+    {
+      "collection": "tech_status",
+      "keys": [
+        [
+          "f.classify_waiting",
+          1
+        ]
+      ],
+      "why": "technologies Classify would judge (status pill, To do)"
+    },
+    {
+      "collection": "tech_status",
+      "keys": [
+        [
+          "f.nascent_open",
+          1
+        ]
+      ],
+      "why": "possibly nascent technologies to confirm (To do)"
+    },
+    {
+      "collection": "tech_status",
+      "keys": [
+        [
+          "at",
+          1
+        ]
+      ],
+      "why": "the safety net: the records worked out longest ago"
+    },
+    {
+      "collection": "technologies",
+      "keys": [
+        [
+          "status_dirty_at",
+          1
+        ]
+      ],
+      "why": "technologies whose stored answers wait to be worked out again"
+    },
+    {
+      "collection": "assessments",
+      "keys": [
+        [
+          "created_at",
+          1
+        ]
+      ],
+      "why": "assessments made since a time (the stored answers' updater)"
+    },
+    {
+      "collection": "decisions",
+      "keys": [
+        [
+          "at",
+          1
+        ]
+      ],
+      "why": "choices made since a time (the stored answers' updater)"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "run_id",
+          1
+        ],
+        [
+          "analysis_error.at",
+          -1
+        ]
+      ],
+      "options": {
+        "partialFilterExpression": {
+          "analysis_error.reason": {
+            "$exists": true
+          }
+        },
+        "name": "failed_pages_by_run"
+      },
+      "why": "a collection's pages the model couldn't read (the status pill and Problems, polled): only failed pages are in it"
+    },
+    {
+      "collection": "edition_rows",
+      "keys": [
+        [
+          "edition_id",
+          1
+        ],
+        [
+          "kind",
+          1
+        ],
+        [
+          "n",
+          1
+        ]
+      ],
+      "why": "an edition's placements in its order, by kind and fabric (Rule 3: each placement its own record)"
+    },
+    {
+      "collection": "edition_rows",
+      "keys": [
+        [
+          "edition_id",
+          1
+        ],
+        [
+          "tech_id",
+          1
+        ]
+      ],
+      "why": "one technology's placements in an edition (its Point of View, the technology page)"
+    },
+    {
+      "collection": "import_items",
+      "keys": [
+        [
+          "import_id",
+          1
+        ],
+        [
+          "row",
+          1
+        ]
+      ],
+      "why": "an import's rows in order (Rule 3: each row its own record)"
+    },
+    {
+      "collection": "import_items",
+      "keys": [
+        [
+          "import_id",
+          1
+        ],
+        [
+          "group",
+          1
+        ],
+        [
+          "decision",
+          1
+        ]
+      ],
+      "why": "proposed matches still waiting, counted for To do"
+    },
+    {
+      "collection": "scoring_tech_calls",
+      "keys": [
+        [
+          "run_id",
+          1
+        ]
+      ],
+      "why": "an assessment run's technology calls (Rule 3: one record per technology)"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "technologies",
+          1
+        ]
+      ],
+      "why": "the pages that name a technology by a given name: a rename, merge or moved alias re-links only those"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "to_organize",
+          1
+        ]
+      ],
+      "options": {
+        "partialFilterExpression": {
+          "to_organize": {
+            "$exists": true
+          }
+        },
+        "name": "waiting_to_organize"
+      },
+      "why": "the visits the next Organize works on"
+    },
+    {
+      "collection": "documents",
+      "keys": [
+        [
+          "is_stub",
+          1
+        ],
+        [
+          "has_text",
+          1
+        ],
+        [
+          "signals_hash",
+          1
+        ]
+      ],
+      "why": "the pages Check again can read, and how many were checked against the current signal list (counted in the index)"
+    },
+    {
+      "collection": "page_texts",
+      "keys": [
+        [
+          "page_key",
+          1
+        ]
+      ],
+      "why": "a page's older versions, superseded when a new one is stored"
+    },
+    {
+      "collection": "page_texts",
+      "keys": [
+        [
+          "superseded",
+          1
+        ],
+        [
+          "run_id",
+          1
+        ]
+      ],
+      "options": {
+        "partialFilterExpression": {
+          "superseded": true
+        },
+        "name": "superseded_by_run"
+      },
+      "why": "retention: superseded texts from older collections"
+    },
+    {
+      "collection": "briefing_rows",
+      "keys": [
+        [
+          "older",
+          1
+        ],
+        [
+          "rank",
+          1
+        ],
+        [
+          "date",
+          -1
+        ],
+        [
+          "scraped_at",
+          -1
+        ],
+        [
+          "doc_id",
+          1
+        ],
+        [
+          "n",
+          1
+        ]
+      ],
+      "why": "the Briefing's list in its order, read 15 at a time (findings kept ready a day at a time)"
+    },
+    {
+      "collection": "briefing_rows",
+      "keys": [
+        [
+          "day",
+          1
+        ],
+        [
+          "build",
+          1
+        ]
+      ],
+      "why": "a day's kept findings, replaced when the day is worked out again"
+    },
+    {
+      "collection": "briefing_rows",
+      "keys": [
+        [
+          "build",
+          1
+        ],
+        [
+          "scraped_at",
+          1
+        ]
+      ],
+      "why": "the first and last day of a window, counted from their rows"
+    },
+    {
+      "collection": "briefing_rows",
+      "keys": [
+        [
+          "signal_id",
+          1
+        ]
+      ],
+      "why": "re-ranking a kind when the signal list's order changes"
+    },
+    {
+      "collection": "briefing_rows",
+      "keys": [
+        [
+          "signal_id",
+          1
+        ],
+        [
+          "rank",
+          1
+        ]
+      ],
+      "why": "re-ranking after the signal list changes: only the kinds that moved are read and written"
+    },
+    {
+      "collection": "technologies",
+      "keys": [
+        [
+          "status_dirty_at",
+          1
+        ]
+      ],
+      "options": {
+        "partialFilterExpression": {
+          "status_dirty_at": {
+            "$exists": true
+          }
+        },
+        "name": "waiting_to_be_worked_out"
+      },
+      "why": "the technologies whose stored answers wait to be worked out again (every list checks): only those are in it"
+    },
+    {
+      "collection": "tech_status_rows",
+      "keys": [
+        [
+          "target.scoring_run_id",
+          1
+        ]
+      ],
+      "options": {
+        "sparse": true,
+        "name": "with_a_latest_assessment"
+      },
+      "why": "counting what Rewrite all would write, from the index"
+    },
+    {
+      "collection": "jobs",
+      "keys": [
+        [
+          "status",
+          1
+        ],
+        [
+          "queued_at",
+          1
+        ]
+      ],
+      "why": "the worker takes the oldest queued job"
+    }
+  ]
+}

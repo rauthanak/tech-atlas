@@ -18,6 +18,7 @@ name: tech-radar
 services:
   mongo:
     image: mongo:8
+    restart: unless-stopped   # back by itself after a crash (23 Oct: killed for memory, stayed down)
     environment:
       # MongoDB 8 crashes on Linux kernel 6.19+ (TCMalloc/rseq, SERVER-121912);
       # letting glibc claim rseq makes tcmalloc fall back to a safe path.
@@ -34,10 +35,15 @@ services:
 
   atlas:
     build: .
+    restart: unless-stopped
+    # a small init as process 1 reaps the headless browsers the crawler starts,
+    # so none is left behind as a zombie process
+    init: true
     env_file: .env
     environment:
       MONGO_URI: mongodb://mongo:27017
       HOST: 0.0.0.0
+      JOBS_IN_WORKER: "true"   # collections, assessments and the other jobs run in `worker`, not here
     ports:
       - "8100:8100"
     volumes:
@@ -48,7 +54,27 @@ services:
       mongo:
         condition: service_healthy
 
+  # The worker: the same code, running the background jobs the API queues (a
+  # collection, an assessment run, Classify, Points of View, Check again, Find
+  # evidence, Organize). A big job never slows the web pages, and rebuilding
+  # the API never stops one. Rebuild the worker only when no job is running.
+  worker:
+    build: .
+    restart: unless-stopped
+    init: true   # reaps the headless browsers the crawler starts
+    env_file: .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      JOBS_IN_WORKER: "true"
+    command: ["python", "-m", "app.worker"]
+    depends_on:
+      mongo:
+        condition: service_healthy
+      atlas:
+        condition: service_started   # the API loads the seeding data first
+
   lens:
+    restart: unless-stopped
     build:
       context: ../tech-lens
       args:
@@ -63,6 +89,7 @@ services:
   # own address. APP_SIDE is read by the portal's proxy.ts on every request,
   # so it's set here at run time; it isn't a build arg.
   frontier:
+    restart: unless-stopped
     build:
       context: ../tech-lens
       args:
@@ -75,5 +102,62 @@ services:
     depends_on:
       - atlas
 
+  # ── The speed check's own database and API (docs/2026-10-23/.../checks) ──
+  # Started only on request: docker compose --profile scale up -d
+  # Its own database server, never the live one; no API keys (its jobs use the
+  # stand-in model). No memory caps since the 10-million-page test (24 Oct).
+  mongo-scale:
+    profiles: ["scale"]
+    image: mongo:8
+    # no container cap (24 Oct, the 10-million-page test). Its cache is 4 GB: at 6 GB, the copy's database plus a
+    # crawl's browsers outgrew this Mac's 12 GB for Docker (the database was stopped for memory twice)
+    command: ["--wiredTigerCacheSizeGB", "4"]
+    environment:
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
+    volumes:
+      - mongo-scale-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  atlas-scale:
+    profiles: ["scale"]
+    build: .
+    init: true
+    restart: on-failure   # back after a call runs it out of memory, so the check can go on
+    ports:
+      - "127.0.0.1:8199:8100"   # this Mac only
+    environment:
+      MONGO_URI: mongodb://mongo-scale:27017
+      MONGO_DB: tech_atlas_scale
+      LIVE_URI: mongodb://mongo:27017   # read by scale_copy.py only, to copy from
+      HOST: 0.0.0.0
+      JOBS_IN_WORKER: "true"   # as in production: the copy's own worker does the heavy work
+      MODEL_PROVIDER: standin  # the stand-in model: the copy's jobs never call (or pay for) a real one
+    volumes:
+      - ./seeds:/app/seeds:ro
+    depends_on:
+      mongo-scale:
+        condition: service_healthy
+
+  # The copy's worker: the stress check gives it the heaviest work while the screens are timed.
+  worker-scale:
+    profiles: ["scale"]
+    build: .
+    init: true
+    restart: on-failure
+    environment:
+      MONGO_URI: mongodb://mongo-scale:27017
+      MONGO_DB: tech_atlas_scale
+      JOBS_IN_WORKER: "true"
+      MODEL_PROVIDER: standin
+    command: ["python", "-m", "app.worker"]
+    depends_on:
+      mongo-scale:
+        condition: service_healthy
+
 volumes:
   mongo-data:
+  mongo-scale-data:

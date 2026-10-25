@@ -23,11 +23,33 @@ def list_changes() -> dict:
     return seeding.changes()
 
 
-@router.post("/changes/update-seeding-data")
-def update_seeding_data(params: UpdateSeedingData) -> dict:
+@router.get("/changes/count")
+def count_changes() -> dict:
+    """What the Setup badge shows, without the items (polled by every page)."""
+    found = seeding.changes()
+    return {"count": found["count"], "awaiting_review": found["awaiting_review"]}
+
+
+def _known(params: UpdateSeedingData) -> None:
     unknown = sorted({i.collection for i in params.items} - set(seeding.ID_FIELDS))
     if unknown:
         raise HTTPException(status_code=422, detail=f"unknown list(s): {', '.join(unknown)}")
+
+
+@router.post("/changes/revert")
+def revert(params: UpdateSeedingData) -> dict:
+    """Put back the default: the ticked items return to the seeding data."""
+    _known(params)
+    done = seeding.revert([i.model_dump() for i in params.items])
+    if any(i.collection == "signals" for i in params.items):
+        from app.services import briefing_days
+        briefing_days.rerank()  # a kind's place in the Briefing's order may have changed back
+    return done
+
+
+@router.post("/changes/update-seeding-data")
+def update_seeding_data(params: UpdateSeedingData) -> dict:
+    _known(params)
     try:
         return seeding.update_seeding_data([i.model_dump() for i in params.items])
     except OSError as exc:

@@ -123,7 +123,7 @@ def test_a_page_visited_twice_is_not_pending_once_classified_nor_after_nothing_n
     assert set(db["technologies"].find_one({"_id": "edge-ai"})["pages_seen"]) == {old, new}
 
 
-def test_the_run_skips_switched_off_and_stops_at_its_budget(db, monkeypatch):
+def test_the_run_skips_switched_off_and_judges_all_it_was_given(db, monkeypatch):
     _world(db)
     tech(db, "quic", "quic", enabled=False)
     monkeypatch.setattr(classify.LLM, "initialize", classmethod(lambda cls, *a, **k: Model()))
@@ -131,13 +131,19 @@ def test_the_run_skips_switched_off_and_stops_at_its_budget(db, monkeypatch):
     run = db["classify_runs"].find_one({"_id": run_id})
     assert run["status"] == "completed" and run["done"] == 2 and run["unchanged"] == 1
     assert "quic" not in classify.pending()
-    db["settings"].insert_one({"_id": "radar", "classify_token_budget": 0})
-    db["llm_calls"].insert_one({"run_id": "x", "input_tokens": 1, "output_tokens": 0, "cache_read_tokens": 0,
-                                "cache_write_tokens": 0})
-    db["technologies"].update_one({"_id": "edge-ai"}, {"$set": {"classification_stale": True}})
-    run_id = classify.start(["edge-ai"], wait=True)
-    run = db["classify_runs"].find_one({"_id": run_id})
-    assert run["status"] == "stopped" and "token budget of 0 was reached; 1 technologies left" in run["stopped_reason"]
+    assert "budget" not in run and "stopped_reason" not in run  # no token limit: a run judges everything
+
+
+def test_catalog_technologies_are_judged_first_then_the_most_pages(db):
+    tech(db, "a", "a")
+    tech(db, "b", "b")
+    tech(db, "c", "c")
+    db["technologies"].update_one({"_id": "c"}, {"$set": {"origin": "imported"}})  # in the catalog
+    for n in range(3):
+        page(db, f"b{n}", n + 1, tech="b")
+    page(db, "a0", 1, tech="a")
+    page(db, "c0", 1, tech="c")
+    assert classify.pending() == ["c", "b", "a"]
 
 
 def test_a_person_then_the_assessment_then_the_pages_then_the_catch_all(db):
@@ -185,3 +191,24 @@ def test_removing_a_list_item_moves_its_technologies_to_the_flagged_catch_all(db
     assert TestClient(app).delete("/api/lists/availability/pilot").json()["moved_to_catch_all"] == 1
     t = db["technologies"].find_one({"_id": "edge-ai"})
     assert t["classification"]["availability"]["value_id"] == "not_judged" and t["classification_stale"]
+
+
+def test_a_classify_running_at_start_up_is_marked_and_no_longer_blocks(db):
+    from agent.classifier import classify
+
+    db["classify_runs"].insert_one({"_id": "c1", "status": "running", "started_at": "2026-10-22T10:00:00+00:00"})
+    assert classify.active_run()
+    classify.reconcile_stale()
+    run = db["classify_runs"].find_one({"_id": "c1"})
+    assert run["status"] == "terminated" and "restarted" in run["error"]
+    assert classify.active_run() is None
+
+
+def test_who_waits_for_classify_is_read_from_the_answers_kept_ready_or_the_pages_for_marked_ones(db, monkeypatch):
+    """The same list whether a technology's answers are worked out (read from them) or marked (read from its pages)."""
+    from app.services import tech_status
+    test_catalog_technologies_are_judged_first_then_the_most_pages(db)       # the stored answers, worked out
+    monkeypatch.setattr(tech_status, "ALWAYS_FRESH", False)
+    tech_status.touch(["a", "b", "c"])                                         # marked: their pages just changed
+    monkeypatch.setattr(tech_status, "FRESH_MAX", 0)                          # nothing worked out at once
+    assert classify.pending() == ["c", "b", "a"]

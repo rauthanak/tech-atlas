@@ -128,6 +128,13 @@ def test_a_section_nested_in_another_goes_back_to_its_place(db, monkeypatch):
     assert s["tora_analysis"] == {"market_potential": "m"}
 
 
+def test_the_background_for_a_new_reader_is_kept(db, monkeypatch):
+    w = Writer()
+    w.ask = lambda prompt, system=None, **kw: json.dumps({"headline": "h", "background": "Edge AI runs models near the data."})
+    _world(db, monkeypatch, w)
+    assert pov.compose_pov("r1", "edge-ai")["sections"]["background"] == "Edge AI runs models near the data."
+
+
 def test_its_calls_are_recorded_under_its_own_compose_job(db, monkeypatch):
     w = Writer()
     _world(db, monkeypatch, w)
@@ -137,7 +144,7 @@ def test_its_calls_are_recorded_under_its_own_compose_job(db, monkeypatch):
 
     job = pov.start_compose_all([{"scoring_run_id": "r1", "tech_id": "edge-ai"}])
     for t in threading.enumerate():
-        if t.name == f"pov-batch-{job}":
+        if t.name == f"_run_batch-{job}":  # started through services/jobs, named after its function
             t.join(10)
     assert w.contexts[1]["run_id"] == job
     assert db["povs"].find_one()["compose_job_id"] == job
@@ -171,3 +178,23 @@ def test_the_skill_states_overrides_and_sources_every_number():
     skill = next(p for p in json.loads((SEEDS / "prompts.json").read_text())["prompts"] if p["name"] == "pov")
     assert "A priority set by a person" in skill["system"] and "guesstimate" in skill["system"]
     assert "Where a person set a priority" in skill["prompt"]
+
+
+def test_the_list_comes_a_page_at_a_time_with_its_filters_and_counts(db):
+    """P2-11: the Points of View list is filtered, sorted and paged on the
+    server; the counts the page's lines use cover every one."""
+    for t in ("edge-ai", "quic", "lidar"):
+        tech(db, t, t.replace("-", " "))
+    run(db, "r1", 2, techs=("edge-ai", "quic", "lidar"))
+    for t, prio in (("edge-ai", "P3"), ("quic", "P1"), ("lidar", None)):
+        assessment(db, "r1", 2, pages=[page(db, f"https://{t}.example/a", 1, tech=t.replace("-", " "))], tech_id=t,
+                   priority=prio)
+        written(db, "r1", 2, tech_id=t)
+    body = client.get("/api/scoring/povs", params={"limit": 2, "sort": "priority"}).json()
+    assert body["total"] == body["count"] == 3 and "uncomposed" not in body and "uncomposed_count" in body
+    assert [p["tech_id"] for p in body["povs"]] == ["quic", "edge-ai"]
+    assert [p["tech_id"] for p in client.get("/api/scoring/povs", params={"limit": 2, "sort": "priority", "skip": 2}).json()["povs"]] == ["lidar"]
+    assert client.get("/api/scoring/povs", params={"limit": 48, "priority": "P1"}).json()["total"] == 1
+    assert client.get("/api/scoring/povs", params={"limit": 48, "priority": "none"}).json()["total"] == 1
+    assert client.get("/api/scoring/povs", params={"limit": 48, "q": "qui"}).json()["total"] == 1
+    assert client.get("/api/scoring/povs", params={"limit": 48, "unsent": True}).json()["total"] == 3  # nothing published: lets go

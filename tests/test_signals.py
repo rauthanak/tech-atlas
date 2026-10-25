@@ -7,6 +7,7 @@ from agent.scout.tools import summarize
 from agent.scout.tools.summarize import normalise, split_text, summarize_page
 from app.services.db import seeding
 from app.services.signals import snapshot
+from factories import with_text
 
 ROWS = [
     {"_id": "funding-round", "name": "Funding round", "look_for": "money", "mode": "never_miss"},
@@ -171,9 +172,9 @@ def test_a_failed_check_keeps_the_earlier_analysis_and_says_why(db, monkeypatch)
     monkeypatch.setattr(recheck.LLM, "initialize", staticmethod(lambda *a, **k: llm))
     snap = _snap(db, 120000)
     docs = db["documents"]
-    docs.insert_one({"_id": "d1", "end_url": "https://example.com/a", "is_stub": False,
-                     "extracted_text": "FAIL " * 100, "summary_text": "earlier summary",
-                     "signals_hash": None})
+    with_text(db, {"_id": "d1", "end_url": "https://example.com/a", "is_stub": False,
+                   "extracted_text": "FAIL " * 100, "summary_text": "earlier summary",
+                   "signals_hash": None})
     docs.insert_one({"_id": "s1", "end_url": "https://example.com/a", "is_stub": True,
                      "ref_doc_id": "d1", "summary_text": "earlier summary"})
     db["recheck_jobs"].insert_one({"_id": "j1", "status": "running", "done": 0, "failed": 0})
@@ -185,7 +186,7 @@ def test_a_failed_check_keeps_the_earlier_analysis_and_says_why(db, monkeypatch)
     assert stub["analysis_error"] == page["analysis_error"]              # its stub says the same
     assert db["recheck_jobs"].find_one({"_id": "j1"})["failed"] == 1
 
-    docs.update_one({"_id": "d1"}, {"$set": {"extracted_text": "alpha " * 100}})
+    db["page_texts"].update_one({"_id": "d1"}, {"$set": {"text": "alpha " * 100}})
     recheck._run("j1", ["d1"], snap)                                     # a later success clears it
     page = docs.find_one({"_id": "d1"})
     assert page["analysis_error"] is None and page["summary_text"].startswith("part with")
@@ -198,10 +199,10 @@ def test_a_check_counts_what_it_found_and_why_pages_failed(db, monkeypatch):
     monkeypatch.setattr(agent.resolver, "run_resolve_sync", lambda: None)
     monkeypatch.setattr(recheck.LLM, "initialize", staticmethod(lambda *a, **k: FakeLLM()))
     snap = _snap(db, 120000)
-    db["documents"].insert_many([
-        {"_id": "news", "end_url": "u1", "is_stub": False, "extracted_text": "alpha money " * 50},
-        {"_id": "job-ad", "end_url": "u2", "is_stub": False, "extracted_text": "alpha " * 50},
-        {"_id": "broken", "end_url": "u3", "is_stub": False, "extracted_text": "FAIL " * 50}])
+    with_text(db,
+              {"_id": "news", "end_url": "u1", "is_stub": False, "extracted_text": "alpha money " * 50},
+              {"_id": "job-ad", "end_url": "u2", "is_stub": False, "extracted_text": "alpha " * 50},
+              {"_id": "broken", "end_url": "u3", "is_stub": False, "extracted_text": "FAIL " * 50})
     db["recheck_jobs"].insert_one({"_id": "j2", "status": "running", "done": 0, "failed": 0, "found": 0,
                                    "other": 0, "set_aside": 0, "failed_reasons": {}})
     recheck._run("j2", ["news", "job-ad", "broken"], snap)

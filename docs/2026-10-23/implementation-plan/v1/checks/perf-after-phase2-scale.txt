@@ -1,0 +1,18 @@
+screen                                                8199
+                                 one · five at once · size
+Status pill (every page)        0.27s    0.01s      82 KB     
+Setup badge (every page)        0.02s    0.04s       0 KB     
+Briefing                       37.33s   37.29s       3 KB SLOW
+Briefing: To do                 1.41s    1.10s    4623 KB SLOW
+Briefing: findings             42.41s   42.12s      21 KB SLOW
+Technologies                    0.87s    0.74s     485 KB SLOW
+Technologies, a filter          0.44s    0.40s     489 KB     
+Technology                      0.00s    0.01s      18 KB     
+Technology: pages               2.10s    0.58s     227 KB SLOW
+Points of View                  1.35s    2.08s    2390 KB SLOW
+Assessment runs                 0.02s    0.03s     633 KB     
+Operations: problems            0.01s    0.01s      13 KB     
+Collections                     0.01s    0.03s     105 KB     
+Leaders' view                   0.02s    0.03s     621 KB     
+
+http://localhost:8199: 105,140 technologies; 6 of 14 calls over 0.5 s: Briefing, Briefing: To do, Briefing: findings, Technologies, Technology: pages, Points of View

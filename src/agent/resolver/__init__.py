@@ -1,1 +1,1 @@
-from agent.resolver.resolver import label_missing, restamp_all, run_resolve_sync, start_resolve  # noqa: F401
+from agent.resolver.resolver import label_missing, restamp, run_resolve_sync, start_resolve  # noqa: F401

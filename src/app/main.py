@@ -2,7 +2,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
 from app.services.db import bootstrap
 from app.api.briefing import router as briefing_router
@@ -13,6 +13,7 @@ from app.api.finance import router as finance_router
 from app.api.editions import router as editions_router
 from app.api.frontier import router as frontier_router
 from app.api.find_evidence import router as find_evidence_router
+from app.api.tagging import router as tagging_router
 from app.api.health import router as health_router
 from app.api.imports import router as imports_router
 from app.api.lists import router as lists_router
@@ -35,22 +36,40 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(messag
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from app.services.runs import runner, store
-    from app.services.signals import recheck
-
-    from agent.analyzer import engine as scoring_engine
+    from app.services import jobs
 
     bootstrap.run()  # ensure the database exists; abort start-up if MongoDB is down
-    store.reconcile_stale_runs()  # a 'running' run at boot died with the last process
-    scoring_engine.reconcile_stale_scoring_runs()
-    recheck.reconcile_stale()  # a re-check 'running' at boot was interrupted
+    if jobs.in_worker():  # the worker container runs the jobs, recovers them and does the upkeep
+        yield
+        return
+    jobs.recover()   # a job still 'running' at boot died with the last process
+    jobs.upkeep()    # each technology's answers and the Briefing's days, kept ready (plan 10, rule 1)
     yield
-    runner.shutdown()  # running runs die with this process — record it
-    scoring_engine.shutdown()
+    jobs.shutdown()  # jobs running in this process end with it, and say so
+
+
+# edits to these can move any technology's answers (a list's names, the evidence floor, the
+# priority grid, weights, an import): every stored answer is worked out again, in the background
+CONFIG_PATHS = ("/api/settings", "/api/lists", "/api/scoring/measures", "/api/scoring/config",
+                "/api/scoring/fabrics", "/api/imports")
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Tech Atlas", version="0.1.0", lifespan=lifespan)
+
+    @app.middleware("http")
+    async def config_changed(request: Request, call_next):
+        response = await call_next(request)
+        if request.method != "GET":
+            from app.api import pipeline
+            from app.services import editions
+            pipeline.refresh_now()  # an action may have started or ended something: the next poll is fresh
+            editions.forget_since()
+        if request.method != "GET" and response.status_code < 400 and request.url.path.startswith(CONFIG_PATHS):
+            from app.services import tech_status
+            tech_status.touch_all()
+        return response
+
     app.include_router(health_router, prefix="/api")
     app.include_router(sources_router, prefix="/api")
     app.include_router(runs_router, prefix="/api")
@@ -71,6 +90,7 @@ def create_app() -> FastAPI:
     app.include_router(classify_router, prefix="/api")
     app.include_router(lists_router, prefix="/api")
     app.include_router(find_evidence_router, prefix="/api")
+    app.include_router(tagging_router, prefix="/api")
     app.include_router(imports_router, prefix="/api")
     app.include_router(finance_router, prefix="/api")
     app.include_router(frontier_router, prefix="/api")

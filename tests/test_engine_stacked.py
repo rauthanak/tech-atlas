@@ -55,6 +55,9 @@ def test_a_task_left_out_is_asked_again_alone_and_resume_doesnt_re_ask(db):
     assert len(model.calls) == 1 + 1 + 1  # the fit measure, alone
     a = db["assessments"].find_one({"scoring_run_id": run_id})
     assert a["measures"]["fabric-fit"]["score"] == 6 and a["calls"]["retries"] == 1
+    # Rule 3: the technology call's answers in a record of their own, not on the run
+    assert "tech_calls" not in db["scoring_runs"].find_one({"_id": run_id})
+    assert db["scoring_tech_calls"].count_documents({"run_id": run_id, "tech_id": "edge-ai"}) == 1
     again = StackedModel()
     with ThreadPoolExecutor(2) as ex:
         engine.assess_technology(run_id, "edge-ai", again, ex)

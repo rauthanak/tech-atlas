@@ -72,7 +72,7 @@ def test_the_run_page_and_the_points_of_view_list_show_what_a_hand_score_places(
     pov(db, "r1", 3)
 
     def shown():
-        a = client.get("/api/scoring/runs/r1").json()["assessments"][0]
+        a = client.get("/api/scoring/runs/r1/rows").json()["rows"][0]  # the run's table, a page at a time
         placed = client.get("/api/scoring/povs").json()["povs"][0]["placements"][0]
         return a["placement"]["priority"], placed["priority"], placed["computed_priority"]
 
@@ -157,3 +157,24 @@ def test_a_technology_history_says_each_choice_in_plain_words(db):
     ds = client.get("/api/decisions", params={"tech_id": "edge-ai", "include_inactive": True}).json()["decisions"]
     assert [d["what"] for d in ds] == ["Priority in Cloud set to P3", "Step reached in Cloud: Evaluation"]  # held: nothing computed
     assert ds[0]["from_file"] is None
+
+
+def test_the_run_table_comes_a_page_at_a_time_counted_by_cell(db):
+    """P2-5: the run's own answer is a summary; its table is filtered, counted
+    by grid cell, sorted and paged on the server; a person's priority wins."""
+    _setup(db, {"maturity-trl": 7, "commercial-adoption": 7, "growth": 8, "addressable-market": 8})
+    run = client.get("/api/scoring/runs/r1").json()
+    assert "assessments" not in run and run["assessed"] == 1 and run["fabrics"][0]["id"] == "cloud"
+    body = client.get("/api/scoring/runs/r1/rows").json()
+    assert body["total"] == body["scoped"] == 1 and sum(body["grid"].values()) == 1
+    row = body["rows"][0]
+    assert "use_cases" not in row and "watch_metrics" not in row and "measures" not in row
+    cell = next(iter(body["grid"]))
+    assert client.get("/api/scoring/runs/r1/rows", params={"cell": cell}).json()["total"] == 1
+    assert client.get("/api/scoring/runs/r1/rows", params={"cell": "far_low" if cell != "far_low" else "near_high"}).json()["total"] == 0
+    assert client.get("/api/scoring/runs/r1/rows", params={"q": "nothing like it"}).json()["scoped"] == 0
+    assert client.get("/api/scoring/runs/r1/rows", params={"skip": 1}).json()["rows"] == []
+    client.post("/api/decisions", json={"kind": "override", "tech_id": "edge-ai", "fabric_id": "cloud",
+                                        "value": "P6", "reason": "not for us this year"})
+    row = client.get("/api/scoring/runs/r1/rows").json()["rows"][0]
+    assert row["placement"]["priority"] == "P6" and row["override"]["priority"] == "P6"

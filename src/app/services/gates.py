@@ -20,16 +20,22 @@ def latest_applied(tech_ids: list[str] | None = None, all_states: dict | None = 
     """Each technology's latest assessment, fabric by fabric, as people left
     it (`chosen`: their choices in force, when already read)."""
     states = all_states if all_states is not None else evidence.states(tech_ids)
-    ids = [f["assessment_id"] for s in states.values() if s.get("assessment") for f in s["assessment"]["fabrics"]]
+    return applied([f["assessment_id"] for s in states.values() if s.get("assessment") for f in s["assessment"]["fabrics"]],
+                   chosen)
+
+
+def applied(ids: list[str], chosen: list[dict] | None = None) -> dict[str, list[dict]]:
+    """These assessment rows, fabric by fabric, as people left them, by technology."""
     if not ids:
         return {}
     rows = list(get_collection("assessments").find({"_id": {"$in": ids}}))
     measures = list(get_collection("measures").find())
     config = list(get_collection("scoring_config").find())
     chosen = decisions.active(sorted({r["tech_id"] for r in rows})) if chosen is None else chosen
+    mine = decisions.by_tech(chosen)
     out: dict[str, list[dict]] = {}
     for r in sorted(rows, key=lambda a: a["fabric_id"]):
-        out.setdefault(r["tech_id"], []).append(eff.apply(r, chosen, measures, config))
+        out.setdefault(r["tech_id"], []).append(eff.apply(r, mine.get(r["tech_id"], []), measures, config))
     return out
 
 
@@ -62,11 +68,12 @@ def gate2(all_states: dict | None = None) -> list[dict]:
     lists = classify_effective.names()
     techs = {t["_id"]: t for t in get_collection("technologies").find(
         {"_id": {"$in": list(applied)}}, {"label": 1, "name": 1, "classification": 1, "assessed_classification": 1})}
+    grouped = decisions.by_tech(chosen)
     for tech_id, fabrics in applied.items():
         name = (techs[tech_id].get("label") or techs[tech_id]["name"]) if tech_id in techs else tech_id
         row = {"tech_id": tech_id, "name": name, "best": _best(fabrics),
                "fabrics": [f["fabric_id"] for f in fabrics]}
-        mine = [d for d in chosen if d["tech_id"] == tech_id]
+        mine = grouped.get(tech_id, [])
         opens = [fabric_open(tech_id, f, mine, path) for f in fabrics]
         unscored = sum(o["unscored"] for o in opens)
         if unscored:
@@ -94,7 +101,7 @@ def gate2(all_states: dict | None = None) -> list[dict]:
         if ready:
             items["ready_next_step"].append({**row, "steps": ready})
         # the readiness level and the Maturity score should tell the same story
-        level = classify_effective.effective(techs[tech_id], chosen, lists)["trl"]["level"] if tech_id in techs else None
+        level = classify_effective.effective(techs[tech_id], mine, lists)["trl"]["level"] if tech_id in techs else None
         maturity = next((f["measures"].get(MATURITY, {}).get("score") for f in fabrics
                          if f["measures"].get(MATURITY, {}).get("score") is not None), None)
         if level and maturity is not None and trl_band(level) != score_band(maturity):

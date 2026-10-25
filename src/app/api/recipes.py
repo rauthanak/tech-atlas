@@ -5,8 +5,9 @@ for a fabric call, a fabric: built by the same functions a run uses."""
 from fastapi import APIRouter, HTTPException
 
 from agent.analyzer import stacked
-from agent.analyzer.engine import build_dossier, dossier_limit
+from agent.analyzer.engine import build_dossier, dossier_limit, previous_watch
 from app.services.db.mongo import get_collection
+from app.services.display import display_name
 
 router = APIRouter()
 CHARS_PER_TOKEN = 4
@@ -43,10 +44,11 @@ def recipe_preview(recipe_id: str, technology: str | None = None, fabric: str | 
         from app.services.settings_store import radar_settings
         ev = pack(tech["name"], int(radar_settings()["classify_pages_cap"]))
         built = recipes.build(recipe, classification_tasks(list_values(lists())),
-                              {"technology": tech.get("label") or tech["name"], "evidence": ev["text"], "facts": ev["facts"]})
+                              {"technology": display_name(tech), "evidence": ev["text"], "facts": ev["facts"]})
         chosen = None
     elif recipe_id == "technology":
-        built = stacked.technology_built(recipe, tech["name"], dossier, measures, fabrics, stacked._lists())
+        built = stacked.technology_built(recipe, tech["name"], dossier, measures, fabrics, stacked._lists(),
+                                         previous_watch(tech["_id"], ""))
         chosen = None
     else:
         chosen = next((f for f in fabrics if f["_id"] == fabric), fabrics[0] if fabrics else None)
@@ -61,7 +63,7 @@ def recipe_preview(recipe_id: str, technology: str | None = None, fabric: str | 
     parts.append({"label": "Sent each time", "reused": False, "text": built.user})
     chars = sum(len(p["text"]) for p in parts)
     return {"recipe": recipe_id, "name": recipe.get("name"), "keys": built.keys, "skills": built.skills,
-            "technology": {"id": tech["_id"], "label": tech.get("label") or tech["name"]},
+            "technology": {"id": tech["_id"], "label": display_name(tech)},
             "fabric": {"id": chosen["_id"], "name": chosen.get("name")} if chosen else None,
             "fabrics": [{"id": f["_id"], "name": f.get("name")} for f in fabrics],
             "parts": parts, "characters": chars, "tokens_about": round(chars / CHARS_PER_TOKEN)}

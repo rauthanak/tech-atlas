@@ -2,22 +2,25 @@
 
 runs       — one small doc per run: status, timings, per-source stats, and
              the snapshot it used (signal list + hash, crawl settings).
-documents  — one doc per collected page: text, summary, signals, cross-run
-             references.
+documents  — one doc per visit of a page: summary, signals, cross-run
+             references. Which page it is of: `page_key` (services/pages);
+             its full text is kept apart (services/page_texts).
 
 Dedupe: a page whose extracted text hash matches its latest stored version is
 saved as a stub referencing that document instead of storing the text again.
 Retention: superseded raw text older than the last KEEP_FULL_TEXT_RUNS runs is
-pruned; the latest full text per end_url and every summary are kept forever.
+pruned; the latest full text per page and every summary are kept forever.
 """
 
 import hashlib
 import logging
+import re
 import uuid
 
 from app.services.db.mongo import get_collection
 from app.services.timezone import now_utc
 from app.settings import get_settings
+from app.services import briefing_days, page_texts, pages
 
 log = logging.getLogger(__name__)
 
@@ -144,12 +147,14 @@ def signal_counts(analysis: dict | None) -> dict:
 
 
 def finish_source(run_id: str, source_id: str, pages: int, docs: int, new_docs: int,
-                  error: str | None = None, incomplete_note: str | None = None) -> None:
+                  error: str | None = None, incomplete_note: str | None = None,
+                  skipped: list[dict] | None = None) -> None:
     """Close a source's row. Counters accumulated live via bump_source; the
     scout's absolute counts reconcile the per-source row (totals keep the
     live-accumulated values — any drift there would mean a missed bump).
     `incomplete_note` says what was left for lack of budget, e.g. "didn't
-    finish: 120 links left" or "25 still to collect"."""
+    finish: 120 links left" or "25 still to collect". `skipped`: pages and
+    links left out because they couldn't be read, by reason (Outcome.skip)."""
     get_collection("runs").update_one(
         {"_id": run_id, "sources.source_id": source_id},
         {"$set": {
@@ -160,6 +165,7 @@ def finish_source(run_id: str, source_id: str, pages: int, docs: int, new_docs: 
             "sources.$.error": error,
             "sources.$.incomplete": bool(incomplete_note),
             "sources.$.incomplete_note": incomplete_note,
+            "sources.$.skipped": skipped or [],
         }},
     )
 
@@ -179,6 +185,13 @@ def reconcile_stale_runs() -> None:
 # ── documents ────────────────────────────────────────────────────────
 
 ANALYSIS_FIELDS = ("signals", "ignored_by", "signals_hash", "partial", "analysis_error")
+SURROGATES = re.compile(r"[\ud800-\udfff]")
+
+
+def clean_text(text: str | None) -> str | None:
+    """Text as it can be stored: lone surrogates (left by broken entities such
+    as &#xD83D; on a page) can't be encoded, so each becomes \ufffd."""
+    return SURROGATES.sub("\ufffd", text) if text else text
 
 
 def save_document(run_id: str, category: str, source: dict, end_url: str,
@@ -188,10 +201,12 @@ def save_document(run_id: str, category: str, source: dict, end_url: str,
     content, None when it was unchanged (stored as a stub, with no model
     call). `summarize(url, text)` returns the summarizing step's dict."""
     docs = get_collection("documents")
-    meta = meta or {}
+    meta = {**(meta or {}), "title": clean_text((meta or {}).get("title"))}
+    extracted_text = clean_text(extracted_text)
     content_hash = hashlib.sha256(extracted_text.encode()).hexdigest()
+    page_key = pages.key_for(end_url, meta.get("title"), content_hash)
     previous = docs.find_one(
-        {"end_url": end_url, "is_stub": False},
+        {"page_key": page_key, "is_stub": False},
         sort=[("scraped_at", -1)],
     )
 
@@ -202,6 +217,9 @@ def save_document(run_id: str, category: str, source: dict, end_url: str,
         "source_id": source["source_id"],
         "source_url": source["url"],
         "end_url": end_url,
+        "page_key": page_key,
+        "latest": True,
+        "visits": pages.visits(page_key) + 1,
         "depth": depth,
         "kind": meta.get("kind", "article"),
         "title": meta.get("title"),
@@ -213,18 +231,23 @@ def save_document(run_id: str, category: str, source: dict, end_url: str,
 
     if previous and previous["content_hash"] == content_hash:
         # unchanged since last time — store a stub, not the text again
-        # (an unchanged page is never paid for twice, but still shows its signals)
+        # (an unchanged page is never paid for twice, but still shows its signals),
+        # linked as the version it repeats is
         docs.insert_one({**base, "is_stub": True, "ref_doc_id": previous["_id"],
-                         "extracted_text": None, "text_pruned": False,
+                         "has_text": False, "text_pruned": False,
                          "summary_text": previous.get("summary_text"),
                          "technologies": previous.get("technologies", []),
+                         "technologies_resolved": previous.get("technologies_resolved", []),
+                         **({"to_organize": True} if previous.get("to_organize") else {}),  # linked with it
                          "scout_take": previous.get("scout_take"),
                          **{f: previous.get(f) for f in ANALYSIS_FIELDS}})
+        pages.mark_newest(base)
         return None
 
     analysis = summarize(end_url, extracted_text)
-    docs.insert_one({**base, "is_stub": False, "ref_doc_id": None,
-                     "extracted_text": extracted_text, "text_pruned": False,
+    page_texts.put(base["_id"], extracted_text, page_key, run_id)
+    docs.insert_one({**base, "is_stub": False, "ref_doc_id": None, "to_organize": True,  # for the next Organize
+                     "has_text": True, "text_pruned": False,
                      "summary_text": analysis["summary"],
                      "technologies": analysis["technologies"],
                      "scout_take": analysis["scout_take"],
@@ -234,32 +257,18 @@ def save_document(run_id: str, category: str, source: dict, end_url: str,
                      "parts": analysis["parts"],
                      "partial": analysis["partial"],
                      "analysis_error": analysis.get("analysis_error")})
+    pages.mark_newest(base)
+    briefing_days.touch(base["scraped_at"])  # the Briefing works its day out again when next read
     return analysis
 
 
 def prune_old_text() -> None:
-    """Retention: strip extracted_text from superseded documents outside the
-    last KEEP_FULL_TEXT_RUNS runs. The latest full text per end_url survives."""
-    runs = get_collection("runs")
-    docs = get_collection("documents")
-    keep = get_settings().keep_full_text_runs
-    recent = [r["_id"] for r in runs.find({}, {"_id": 1})
-              .sort("run_start_date_time", -1).limit(keep)]
-
-    candidates = docs.find(
-        {"run_id": {"$nin": recent}, "is_stub": False,
-         "text_pruned": False, "extracted_text": {"$ne": None}},
-        {"end_url": 1, "scraped_at": 1},
-    )
-    pruned = 0
-    for doc in candidates:
-        superseded = docs.find_one({
-            "end_url": doc["end_url"], "is_stub": False,
-            "scraped_at": {"$gt": doc["scraped_at"]},
-        }, {"_id": 1})
-        if superseded:  # a newer full version exists — this text has no remaining use
-            docs.update_one({"_id": doc["_id"]},
-                            {"$set": {"extracted_text": None, "text_pruned": True}})
-            pruned += 1
+    """Retention: delete the text of superseded versions outside the last
+    KEEP_FULL_TEXT_RUNS runs. The latest full text per page survives."""
+    recent = [r["_id"] for r in get_collection("runs").find({}, {"_id": 1})
+              .sort("run_start_date_time", -1).limit(get_settings().keep_full_text_runs)]
+    pruned = page_texts.prune(recent)
     if pruned:
-        log.info("retention: pruned text from %d superseded document(s)", pruned)
+        get_collection("documents").update_many({"_id": {"$in": pruned}},
+                                                {"$set": {"has_text": False, "text_pruned": True}})
+        log.info("retention: pruned text from %d superseded document(s)", len(pruned))

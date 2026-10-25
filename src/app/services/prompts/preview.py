@@ -12,7 +12,7 @@ from collections import Counter
 from string import Formatter
 
 from agent.analyzer.engine import (build_dossier, dossier_limit, fabric_relevance_values, fabric_values,
-                                   measure_scoring_values, watch_metrics_values)
+                                   measure_scoring_values, previous_watch, watch_metrics_values)
 from agent.analyzer.pov import pov_inputs
 from agent.resolver.resolver import LABEL_BATCH, known_register, label_values, resolve_values
 from agent.scout.agent import scout_values
@@ -22,7 +22,7 @@ from agent.scout.tools.summarize import article_summary_values, split_text
 from agent.supervisor.agent import supervisor_values
 from agent.supervisor.tools.sources import collectable_query, fetch_sources
 from app.horizons import HORIZONS
-from app.services import evidence
+from app.services import evidence, page_texts
 from app.services.db.mongo import get_collection
 from app.services.prompts.store import Prompt
 from app.services.signals import snapshot
@@ -95,6 +95,16 @@ BLANKS: dict[str, dict[str, dict]] = {
     "technology_label": {
         "names": _blank("technology names without a display label yet", "Technologies", REGISTER),
     },
+    "technology_names": {
+        "technologies": _blank("known technologies without names to look for yet: id, name, Tata's description",
+                               "Technologies", REGISTER),
+    },
+    "name_check": {
+        "technology": _blank("the technology, the names it's looked for by, and Tata's description", "the technology",
+                             ("The technology chosen below", None)),
+        "passages": _blank("up to 10 passages from pages that name it, with each page's title", "collected pages",
+                           ("Stored pages that name it, found by name at no model cost", None)),
+    },
     "analyzer": {},
     "fabric_relevance": {
         "technology": TECHNOLOGY,
@@ -112,7 +122,10 @@ BLANKS: dict[str, dict[str, dict]] = {
         "tcl_today": _blank("what TCL has in this fabric today", "Fabrics", FABRICS),
         "evidence": EVIDENCE,
     },
-    "watch_metrics": {"technology": TECHNOLOGY, "evidence": EVIDENCE},
+    "watch_metrics": {"technology": TECHNOLOGY, "evidence": EVIDENCE,
+                      "previous": _blank("the metrics its last assessment set to watch, to check against the pages",
+                                         "the metrics before",
+                                         ("Its latest earlier assessment (none: its first)", None))},
     "value_levers": {
         "technology": TECHNOLOGY,
         "fabric_name": _blank("the fabric's name", "Fabrics", FABRICS),
@@ -414,8 +427,7 @@ def _article_summary(choices: dict) -> dict:
                                   "no source {!r} is switched on")
     page_options: list[dict] = []
     if source:
-        readable = {"source_id": source["value"], "is_stub": {"$ne": True},
-                    "extracted_text": {"$nin": [None, ""]}}
+        readable = {"source_id": source["value"], "is_stub": {"$ne": True}, "has_text": True}
         shown = {"title": 1, "end_url": 1, "scraped_at": 1}
         docs = list(get_collection("documents").find(readable, shown).sort("scraped_at", -1).limit(PAGES_LISTED))
         wanted = choices.get("page")
@@ -428,8 +440,8 @@ def _article_summary(choices: dict) -> dict:
                               "no page {!r} from this source")
     values = note = why = None
     if page:
-        doc = get_collection("documents").find_one({"_id": page["value"]}, {"end_url": 1, "extracted_text": 1})
-        text = doc["extracted_text"]
+        doc = get_collection("documents").find_one({"_id": page["value"]}, {"end_url": 1})
+        text = page_texts.text(doc["_id"]) or ""
         parts = split_text(text, size)
         if len(parts) > 1:
             note = (f"This page is longer than {size:,} characters, so it's split into {len(parts)} parts: "
@@ -509,6 +521,63 @@ def _technology_label(choices: dict) -> dict:
         "stand_in": stand_in,
         "why_missing": None if names else "No technologies yet: run a collection, then organize technologies.",
         "built_from": "Today's technology register.",
+    }
+
+
+def _technology_names(choices: dict) -> dict:
+    from agent.tagger.tagger import NAMES_BATCH, known, names_values
+    techs = known()
+    waiting = [t for t in techs if not t.get("look_for")]
+    shown, stand_in = waiting[:NAMES_BATCH], None
+    if not shown:
+        shown = techs[:NAMES_BATCH] or list(get_collection("technologies").find(
+            {}, {"name": 1, "label": 1, "imported": 1}).sort("page_count", -1).limit(NAMES_BATCH))
+        if shown:
+            stand_in = ("No catalog technology is waiting for its names today, so {technologies} here is "
+                        f"{'the first' if techs else 'the most collected'} {len(shown)} technologies.")
+    run = _newest("tag_runs", "started_at")
+    batches = math.ceil(len(waiting) / NAMES_BATCH)
+    return {
+        "fires": "When known names are linked (after each collection, or the catch-up on Operations): once per "
+                 f"batch of up to {NAMES_BATCH} catalog technologies that have no names to look for yet.",
+        "versions": _versions(f"One per batch of up to {NAMES_BATCH}. "
+                              + (f"{_n(len(waiting), 'technology')} waiting today, so {_n(batches, 'prompt')}."
+                                 if waiting else "None are waiting today."), batches, "linking"),
+        "last_run": _last("linking", run, "started_at"),
+        "values": names_values(shown) if shown else None,
+        "stand_in": stand_in,
+        "why_missing": None if shown else "No catalog technologies yet: import Tata's catalog.",
+        "built_from": "Tata's catalog.",
+    }
+
+
+def _name_check(choices: dict) -> dict:
+    from agent.tagger.tagger import check_values
+    techs, docs = get_collection("technologies"), get_collection("documents")
+    tech = techs.find_one({"look_for.0": {"$exists": True}}, sort=[("page_count", -1)])
+    if tech is None:  # before any has names: a technology with a page stands in
+        filed = docs.find_one({"technologies_resolved.0": {"$exists": True}}, {"technologies_resolved": 1})
+        tech = techs.find_one({"name": filed["technologies_resolved"][0]}) if filed else None
+    tech = tech or {}
+    page = docs.find_one({"technologies_resolved": tech.get("name")},
+                         {"title": 1, "end_url": 1, "summary": 1}) if tech else None
+    if page:
+        page["extracted_text"] = page_texts.text(page["_id"]) or page.get("summary") or ""
+    run = _newest("tag_runs", "started_at")
+    values = check_values(tech, [{"title": page.get("title"), "url": page.get("end_url"), "count": 1,
+                                  "passage": (page.get("extracted_text") or "")[:600].replace("\n", " ")}]) \
+        if tech and page else None
+    return {
+        "fires": "When known names are linked: for each catalog technology named on pages it isn't filed under, one "
+                 "prompt per 10 such pages.",
+        "versions": _versions("One per 10 pages that name a known technology and haven't been checked for it.",
+                              None, "linking"),
+        "last_run": _last("linking", run, "started_at"),
+        "values": values,
+        "stand_in": f"A page already filed under {tech.get('label') or tech.get('name')} stands in for a page found "
+                    "by its name." if values else None,
+        "why_missing": None if values else "No technology has names to look for yet: link known names first.",
+        "built_from": "A catalog technology's names and Tata's description, and passages from pages that name it.",
     }
 
 
@@ -604,7 +673,7 @@ def _watch_metrics(choices: dict) -> dict:
         "versions": _versions("One per technology, built from its own pages.", 1, "technology", set_in=(GRID,)),
         "last_run": _last("assessment run", run, "started_at", sent),
         "switches": [switch],
-        "values": watch_metrics_values(tech["name"], dossier) if dossier else None,
+        "values": watch_metrics_values(tech["name"], dossier, previous_watch(tech["tech_id"], "")) if dossier else None,
         "why_missing": why,
         "built_from": SCORING_BUILT_FROM,
     }
@@ -701,6 +770,8 @@ VIEWS = {
     "article_summary": _article_summary,
     "technology_resolve": _technology_resolve,
     "technology_label": _technology_label,
+    "technology_names": _technology_names,
+    "name_check": _name_check,
     "analyzer": _analyzer,
     "fabric_relevance": _fabric_relevance,
     "measure_scoring": _measure_scoring,

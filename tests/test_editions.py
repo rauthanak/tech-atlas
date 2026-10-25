@@ -68,8 +68,30 @@ def test_a_move_says_new_scores_or_override_undone(db):
     db["assessments"].update_one({"tech_id": "edge-ai"}, {"$set": {"placement.priority": "P2"}})
     publish()
     moved = {p["tech_id"]: p["moved"] for p in client.get("/api/frontier").json()["placed"]}
-    assert moved == {"edge-ai": {"from": "P3", "by_person": False, "reason": "new scores"},
-                     "quic": {"from": "P1", "by_person": False, "reason": "a person's override was undone"}}
+    assert moved == {"edge-ai": {"from": "P3", "by_person": False, "reason": "new scores", "why": None},
+                     "quic": {"from": "P1", "by_person": False, "reason": "a person's override was undone", "why": None}}
+
+
+def test_a_move_says_which_score_moved_and_leaders_see_why_the_priority(db):
+    """E2, E3, E5: each placement carries its evidence word and pages; a move
+    names the score that moved and the new pages; an edition published before
+    moves carried that gets it from the edition before; the Point of View's
+    fabrics carry how soon, how big and its band, as the edition holds them."""
+    _world(db)
+    db["assessments"].update_many({}, {"$set": {"doc_count": 10}})
+    publish()
+    db["assessments"].update_one({"tech_id": "edge-ai"}, {"$set": {"placement.priority": "P2", "doc_count": 50,
+                                                                  "placement.potential": {"score": 8}}})
+    publish()
+    placed = {p["tech_id"]: p for p in client.get("/api/frontier").json()["placed"]}
+    assert placed["edge-ai"]["moved"]["why"] == "how big 7 → 8 after 40 new pages"
+    assert placed["edge-ai"]["pages"] == 50 and "evidence" in placed["edge-ai"]
+    # an edition from before moves carried a why: worked out when read
+    db["edition_rows"].update_many({}, {"$unset": {"moved.why": ""}})
+    again = {p["tech_id"]: p for p in client.get("/api/frontier").json()["placed"]}
+    assert again["edge-ai"]["moved"]["why"] == "how big 7 → 8 after 40 new pages"
+    fabric = client.get("/api/frontier/pov/edge-ai").json()["fabrics"][0]
+    assert fabric["placement"] == {"how_soon": 6, "how_big": 8, "big_band": "high"}
 
 
 def test_a_technology_with_no_point_of_view_says_so(db):
@@ -122,8 +144,40 @@ def test_the_briefing_says_what_changed_since_the_edition(db):
 
 def test_a_point_of_view_says_which_version_leaders_see(db):
     _world(db)
-    assert client.get("/api/editions/pov/quic").json() == {"edition": None, "composed_at": None, "composed_tz": None}
+    assert client.get("/api/editions/pov/quic").json() == {"edition": None, "composed_at": None, "composed_tz": None,
+                                                          "views": None}
     publish("FY27 Q2")
     seen = client.get("/api/editions/pov/quic").json()
     assert seen["edition"]["label"] == "FY27 Q2" and seen["composed_at"] == db["povs"].find_one({"_id": "r1:quic"})["composed_at"]
     assert client.get("/api/editions/pov/nothing").json()["composed_at"] is None
+
+
+def test_an_edition_keeps_each_placement_apart_and_older_ones_still_read(db):
+    """Rule 3: an edition's record stays small, its placements one record each;
+    an edition published before that, with them inside, reads the same."""
+    _world(db)
+    e = publish().json()["edition"]
+    doc = db["editions"].find_one({"_id": e["_id"]})
+    assert "placed" not in doc and doc["rows"] == "separate"
+    assert db["edition_rows"].count_documents({"edition_id": e["_id"], "kind": "placed"}) == 2
+    new = client.get("/api/frontier").json()
+    # the same edition as it was kept before: placements inside
+    placed = list(db["edition_rows"].find({"edition_id": e["_id"], "kind": "placed"}, {"_id": 0, "edition_id": 0, "kind": 0, "n": 0}).sort("n", 1))
+    db["edition_rows"].delete_many({})
+    db["editions"].update_one({"_id": e["_id"]}, {"$set": {"placed": placed, "held": []}, "$unset": {"rows": ""}})
+    old = client.get("/api/frontier").json()
+    assert old["placed"] == new["placed"] and old["held"] == new["held"]
+    assert client.get("/api/frontier", params={"fabric": "cloud"}).json()["placed"] == [p for p in new["placed"] if p["fabric_id"] == "cloud"]
+
+
+def test_a_publish_reads_each_latest_assessment_from_the_answers_kept_ready(db):
+    """The same assessments as working each technology's state out from its pages."""
+    from app.services import evidence, gates, tech_status
+    _world(db)
+    run(db, "r2", 5, techs=("edge-ai",))                  # a newer assessment of one of them
+    assessment(db, "r2", 5, tech_id="edge-ai", priority="P1")
+    from_pages = gates.latest_applied(all_states=evidence.states())
+    kept = gates.applied(tech_status.latest_assessments())
+    assert {t: [a["_id"] for a in rows] for t, rows in kept.items()} == \
+        {t: [a["_id"] for a in rows] for t, rows in from_pages.items()}
+    assert kept["edge-ai"][0]["scoring_run_id"] == "r2"

@@ -7,20 +7,22 @@ anything still 'running' at boot to terminated (layer 4) — a run can never
 stay 'running' forever."""
 
 import logging
-import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 from agent.orchestrator.agent import run_orchestrator
 from agent.orchestrator.tools.categories import category_keys
 from agent.supervisor.agent import Supervisor
 from app.services.llm.context import with_context
-from app.services import busy
+from app.services import busy, jobs
 from app.services.db.mongo import get_collection
 from app.services.llm import LLM
 from app.services.runs import store
 from app.services.signals import snapshot
 from app.services.timezone import now_utc
 from app.settings import get_settings
+
+CLASSIFY_WAIT_S = 10  # how often a collection looks whether a Classify (or a linking run) already going has finished
 
 log = logging.getLogger(__name__)
 
@@ -40,8 +42,7 @@ def start_run(params: dict) -> str:
         if reason:
             raise busy.Busy(reason)
         run_id = store.create_run(params, snapshot.build())
-    threading.Thread(target=_execute, args=(run_id, params),
-                     name=f"run-{run_id}", daemon=True).start()
+    jobs.start(_execute, run_id, params)
     return run_id
 
 
@@ -91,6 +92,18 @@ def _execute(run_id: str, params: dict) -> None:
             except Exception:  # resolution can be re-run any time from the portal
                 log.exception("resolve stage failed; run continues to completion")
 
+        # then link known technologies named on this collection's pages (Organize's second part)
+        if not store.cancelled(run_id):
+            store.set_stage(run_id, "linking")
+            try:
+                from agent import tagger
+                # a catch-up someone started may still be going: wait for it, then link this collection's pages
+                while tagger.start(trigger=f"after collection {run_id}", query={"run_id": run_id}, wait=True) is None \
+                        and not store.cancelled(run_id):
+                    time.sleep(CLASSIFY_WAIT_S)
+            except Exception:  # linking can be run again from Operations
+                log.exception("linking stage failed; run continues to completion")
+
         # then Classify the technologies with new pages (radar setting classify_after_collection)
         if not store.cancelled(run_id):
             from app.services.settings_store import radar_settings
@@ -98,7 +111,10 @@ def _execute(run_id: str, params: dict) -> None:
                 store.set_stage(run_id, "classifying")
                 try:
                     from agent.classifier import classify
-                    ids = classify.pending()
+                    # a Classify someone started may still be going: wait for it, then judge what it left
+                    while classify.active_run() and not store.cancelled(run_id):
+                        time.sleep(CLASSIFY_WAIT_S)
+                    ids = [] if store.cancelled(run_id) else classify.pending()
                     classify_id = classify.start(ids, trigger=f"after collection {run_id}", wait=True) if ids else None
                     if classify_id:
                         get_collection("runs").update_one({"_id": run_id}, {"$set": {"classify_id": classify_id}})

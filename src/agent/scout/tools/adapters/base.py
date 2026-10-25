@@ -23,6 +23,7 @@ from datetime import date, timedelta
 
 import httpx
 
+from agent.scout.tools.crawl import why_failed
 from agent.scout.tools.context import Context, Outcome
 from app.services.db.mongo import get_collection
 from app.services.llm import call_with_backoff
@@ -182,10 +183,17 @@ def _window(ctx: Context, outcome: Outcome, source: dict, adapter: Adapter,
         except Exception as exc:  # stays new, so the next run tries it again
             log.warning("%s: could not read %s: %s", source["source_id"], item.url, exc)
             continue
-        ctx.visited(outcome, source)
-        ctx.save(outcome, source, item.url, item.text, depth=0,
-                 meta={"kind": item.kind, "title": item.title,
-                       "published_date": item.published_date})
+        try:
+            ctx.visited(outcome, source)
+            ctx.save(outcome, source, item.url, item.text, depth=0,
+                     meta={"kind": item.kind, "title": item.title,
+                           "published_date": item.published_date})
+        except InterruptedError:
+            raise
+        except Exception as exc:  # one bad item never ends the search; it stays new for the next run
+            log.warning("%s: could not save %s: %s", source["source_id"], item.url, exc)
+            outcome.skip(item.url, why_failed(exc))
+            continue
         taken += 1
     entry["remaining"] = len(new) - taken
     entry["too_broad"] = total > MAX_RESULTS

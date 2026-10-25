@@ -21,6 +21,8 @@ from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM, call_with_backoff, parse_json
 from app.services.prompts.store import PromptStore
 from app.services.timezone import now_utc
+from app.services.evidence import page_key
+from app.services.pages import NEWEST as pages_newest
 
 log = logging.getLogger(__name__)
 
@@ -128,32 +130,34 @@ def shutdown() -> None:
 # ── evidence dossier ─────────────────────────────────────────────────
 
 def build_dossier(tech_name: str, max_tokens: int, signals_first: bool = False) -> dict:
-    """Every stamped document's summary — full dossier, no doc cap. Deduped by
-    URL keeping the newest visit. With `signals_first`, pages carrying a kept
-    finding about this technology come first, then the rest, each group
-    newest first. The token ceiling is a guard for pathological volume only:
-    the last entries drop first (the oldest, after the findings), and the
-    dossier says so. Returns the `text` with what it read: `pages`, the page versions (an
+    """Each linked page's summary, as its newest visit — full dossier, no doc
+    cap — newest first. With `signals_first`, pages carrying a kept finding
+    about this technology come first, then the rest, each group newest first.
+    The token ceiling is a guard for pathological volume only: pages are read
+    only until it's reached, so the last entries drop (the oldest, after the
+    findings), and the dossier says how many. Returns the `text` with what it read: `pages`, the page versions (an
     unchanged revisit counts as the version it repeats); `runs`, the
     collection runs those visits came from; and `from`, the newest-visit time
     of the oldest page read, set only when the guard dropped pages."""
-    seen: dict[str, dict] = {}
-    for d in get_collection("documents").find(
-            {"technologies_resolved": tech_name},
-            {"end_url": 1, "title": 1, "kind": 1, "published_date": 1,
-             "scraped_at": 1, "summary_text": 1, "scout_take": 1,
-             "source_id": 1, "run_id": 1, "is_stub": 1, "ref_doc_id": 1,
-             "signals.technologies_resolved": 1, "ignored_by": 1}).sort("scraped_at", -1):
-        seen.setdefault(d.get("end_url") or str(d["_id"]), d)
-    if signals_first:
-        def has_finding(d: dict) -> bool:
-            return not d.get("ignored_by") and any(tech_name in (s.get("technologies_resolved") or [])
-                                                  for s in d.get("signals") or [])
-        ordered = sorted(seen.items(), key=lambda kv: not has_finding(kv[1]))  # stable: newest first within each
-        seen = dict(ordered)
+    docs = get_collection("documents")
+    fields = {"end_url": 1, "page_key": 1, "title": 1, "kind": 1, "published_date": 1,
+              "scraped_at": 1, "summary_text": 1, "scout_take": 1,
+              "source_id": 1, "run_id": 1, "is_stub": 1, "ref_doc_id": 1}
+    linked = {"technologies_resolved": tech_name, **pages_newest}
+    groups = [{**linked, "ignored_by": None, "signals.technologies_resolved": tech_name}, linked] \
+        if signals_first else [linked]
+
+    def newest_first():  # each page once, as its newest visit
+        seen: set[str] = set()
+        for query in groups:
+            for d in docs.find(query, fields).sort("scraped_at", -1):
+                if page_key(d) not in seen:
+                    seen.add(page_key(d))
+                    yield d
+
     kept, pages, runs, cutoff, last_visit = [], [], set(), None, None
     total_chars, budget = 0, max_tokens * 4  # ~4 chars per token
-    for d in seen.values():  # newest first; oldest fall off if the guard trips
+    for d in newest_first():  # the oldest fall off if the guard trips
         mark = f"[{len(pages) + 1}]" if signals_first else "-"  # numbered: answers can cite pages by number
         lines = [f"{mark} [{d.get('kind') or 'article'}] {d.get('title') or d.get('end_url')}",
                  f"  url: {d.get('end_url')} · source: {d.get('source_id')}"
@@ -165,8 +169,9 @@ def build_dossier(tech_name: str, max_tokens: int, signals_first: bool = False) 
             lines.append(f"  scout take: {d['scout_take']}")
         text = "\n".join(lines)
         if total_chars + len(text) > budget:
+            linked_pages = (get_collection("technologies").find_one({"name": tech_name}, {"page_count": 1}) or {})
             kept.append(f"[dossier truncated at ~{max_tokens} tokens — "
-                        f"{len(seen) - len(pages)} oldest entries omitted]")
+                        f"{max(0, (linked_pages.get('page_count') or 0) - len(pages))} oldest entries omitted]")
             cutoff = last_visit
             break
         kept.append(text)
@@ -215,8 +220,47 @@ def measure_scoring_values(measure: dict, technology: str, fabric: dict, dossier
     }
 
 
-def watch_metrics_values(technology: str, dossier: str) -> dict:
-    return {"technology": technology, "evidence": dossier}
+NO_PREVIOUS = "None: this is the technology's first assessment."
+
+
+def previous_watch(tech_id: str, run_id: str) -> str:
+    """The metrics the technology's latest earlier assessment set to watch,
+    for this one to check against the evidence: said to have crossed or not."""
+    a = get_collection("assessments").find_one(
+        {"tech_id": tech_id, "scoring_run_id": {"$ne": run_id}, "watch_metrics.0": {"$exists": True}},
+        {"watch_metrics": 1, "created_at": 1}, sort=[("created_at", -1)])
+    if not a:
+        return NO_PREVIOUS
+    from app.services import decisions, watch
+    fixed = watch.fixed_thresholds(decisions.active([tech_id], ["watch_threshold"]))
+    return f"Set on {str(a.get('created_at'))[:10]}:\n" + "\n".join(
+        f"- {m.get('metric')} | then: {m.get('current_value')} | threshold: "
+        + (f"{fixed[k]} (set by a person: keep it exactly as written)" if (k := watch.sign_key(m.get("metric") or "")) in fixed
+           else str(m.get("inflection_threshold")))
+        + f" | direction: {m.get('direction')}" for m in a["watch_metrics"])
+
+
+def watch_metrics_values(technology: str, dossier: str, previous: str = NO_PREVIOUS) -> dict:
+    return {"technology": technology, "evidence": dossier, "previous": previous}
+
+
+def page_urls(pages: list[str] | None) -> set[str]:
+    """The addresses of the page versions an assessment read."""
+    return {d.get("end_url") or d.get("source_url") for d in
+            get_collection("documents").find({"_id": {"$in": list(pages or [])}}, {"end_url": 1, "source_url": 1})}
+
+
+def watch_result(data, urls: set[str] | None = None) -> list:
+    """The metrics to watch under their rules: each names what's measured, and
+    a crossing counts only when its source is a page the assessment read."""
+    out = []
+    for m in data if isinstance(data, list) else []:
+        if not isinstance(m, dict) or not m.get("metric"):
+            continue
+        if m.get("crossed") is True and urls is not None and m.get("source") not in urls:
+            m = {**m, "crossed": None, "crossed_note": "said to have crossed, but on a page this assessment didn't read"}
+        out.append(m)
+    return out
 
 
 # ── scoring ──────────────────────────────────────────────────────────
@@ -236,6 +280,16 @@ def _ask_json(llm: LLM, rendered: str, run_id: str):
         except ValueError as exc:
             log.warning("scoring call returned bad JSON (attempt %d): %s", attempt, exc)
     return None
+
+
+def keep_worked_on(tech_id: str, chosen: list[str], fabrics: list[dict]) -> list[str]:
+    """The fabrics to assess: the ones judged relevant, plus every fabric
+    where people recorded something for this technology (Tata's plan, a
+    priority, a hand score, an accepted gap), so a new run never drops what
+    they worked on from its page, its Point of View or the leaders' view."""
+    worked = set(get_collection("decisions").distinct(
+        "fabric_id", {"tech_id": tech_id, "active": True, "fabric_id": {"$ne": None}}))
+    return [f["_id"] for f in fabrics if f["_id"] in set(chosen) | worked]
 
 
 def _relevant_fabrics(llm: LLM, run_id: str, tech_name: str,
@@ -273,6 +327,18 @@ def unscored(why: str) -> dict:
             "justification": None, "evidence_urls": [], "counter_case": None}
 
 
+def _figure(f, cited: list) -> dict | None:
+    """A market figure a measure rests on, kept only when it is a number from
+    a page the measure cites: the radar never shows a figure the model made up."""
+    if not isinstance(f, dict) or f.get("url") not in cited:
+        return None
+    try:
+        amount = float(f.get("amount_usd_bn"))
+    except (TypeError, ValueError):
+        return None
+    return {"amount_usd_bn": amount, "year": f.get("year"), "scope": f.get("scope"), "url": f["url"]} if amount > 0 else None
+
+
 def measure_result(data: dict) -> dict:
     """A measure's answer under the scoring rules: the score clamped to 0–10,
     and a score that cites no pages doesn't count."""
@@ -288,6 +354,7 @@ def measure_result(data: dict) -> dict:
         "counter_case": data.get("counter_case"),
         "unscorable": bool(data.get("unscorable")) or score is None,
         "missing": data.get("missing"),
+        "figure": _figure(data.get("figure"), data.get("evidence_urls") or []),
     }
     if result["score"] is not None and not result["evidence_urls"]:
         # the prompt's own rule: a score without citations is invalid
@@ -329,9 +396,16 @@ def _load(run_id: str, tech_id: str, signals_first: bool = False) -> tuple[dict,
     """(the run, the technology's entry in it, its evidence dossier), or what
     to say instead when there's nothing to assess (no evidence is recorded as
     a skip)."""
-    run = get_collection("scoring_runs").find_one({"_id": run_id})
+    runs = get_collection("scoring_runs")
+    # the run's per-technology records (gates, tech_calls) grow with its size:
+    # read only this technology's, not every technology's each time
+    run = runs.find_one({"_id": run_id}, {"gates": 0, "tech_calls": 0})
     if run is None:
         return f"unknown scoring run {run_id}"
+    own = runs.find_one({"_id": run_id}, {f"gates.{tech_id}": 1, f"tech_calls.{tech_id}": 1})
+    # its technology call's answers: their own record; a run from before 24 Oct kept them on the run
+    call = get_collection("scoring_tech_calls").find_one({"_id": f"{run_id}:{tech_id}"}, {"done": 1})
+    run.update(gates=own.get("gates") or {}, tech_calls={tech_id: call["done"]} if call else own.get("tech_calls") or {})
     entry = next((t for t in run["technologies"] if t["tech_id"] == tech_id), None)
     if entry is None:
         return f"{tech_id} is not part of this scoring run"
@@ -404,7 +478,7 @@ def _assess_per_measure(run_id: str, tech_id: str, llm: LLM, executor: ThreadPoo
     gated_ids = run.get("gates", {}).get(tech_id)
     if gated_ids is None:
         gated = _relevant_fabrics(llm, run_id, entry["name"], fabrics, dossier)
-        gated_ids = [f["_id"] for f in gated]
+        gated_ids = keep_worked_on(tech_id, [f["_id"] for f in gated], fabrics)
         get_collection("scoring_runs").update_one(
             {"_id": run_id}, {"$set": {f"gates.{tech_id}": gated_ids}})
     assessed = []
@@ -431,7 +505,8 @@ def _assess_per_measure(run_id: str, tech_id: str, llm: LLM, executor: ThreadPoo
     if not has_watch and not cancelled(run_id) and \
             get_collection("assessments").count_documents(
                 {"scoring_run_id": run_id, "tech_id": tech_id}) > 0:
-        metrics = watch_metrics_call(llm, run_id, entry["name"], dossier)
+        metrics = watch_metrics_call(llm, run_id, entry["name"], dossier, previous_watch(tech_id, run_id),
+                                     page_urls(built["pages"]))
         get_collection("assessments").update_many(
             {"scoring_run_id": run_id, "tech_id": tech_id},
             {"$set": {"watch_metrics": metrics}})
@@ -440,14 +515,16 @@ def _assess_per_measure(run_id: str, tech_id: str, llm: LLM, executor: ThreadPoo
     return f"{entry['name']}: assessed in {', '.join(assessed) or 'no new fabrics'}"
 
 
-def watch_metrics_call(llm: LLM, run_id: str, tech_name: str, dossier: str) -> list:
-    """The metrics to watch, in one call of their own; none when it fails."""
+def watch_metrics_call(llm: LLM, run_id: str, tech_name: str, dossier: str, previous: str = NO_PREVIOUS,
+                       urls: set[str] | None = None) -> list:
+    """The metrics to watch, in one call of their own, the previous ones
+    checked; none when it fails."""
     try:
         with with_context(skills=["watch_metrics"]):
             data = _ask_json(llm, PromptStore.get("watch_metrics").render(
-                **watch_metrics_values(tech_name, dossier)), run_id)
+                **watch_metrics_values(tech_name, dossier, previous)), run_id)
         if isinstance(data, list):
-            return [m for m in data if isinstance(m, dict) and m.get("metric")]
+            return watch_result(data, urls)
     except Exception:
         log.exception("watch metrics failed for %s", tech_name)
     return []

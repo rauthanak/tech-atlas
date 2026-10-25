@@ -35,7 +35,7 @@ def preview(ids: str | None = None, pending: bool = False) -> dict:
     sample = [len(pack(n, cap)["text"]) // CHARS_PER_TOKEN + 600 for n in names] or [1500]
     per = sum(sample) // len(sample)
     return {"technologies": len(targets), "calls": len(targets), "tokens_about": per * len(targets),
-            "budget": int(radar_settings()["classify_token_budget"]), "running": classify.active_run() is not None}
+            "running": classify.active_run() is not None}
 
 
 @router.post("/classify", status_code=202)

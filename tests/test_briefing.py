@@ -72,3 +72,80 @@ def test_the_briefings_two_tabs_recent_findings_and_older_articles(db):
     recent, older = get("false"), get("true")
     assert older["total"] == 1 and [h["doc_id"] for h in older["hits"]] == ["a2"]
     assert recent["total"] == 5 and all(not h["older"] for h in recent["hits"])
+
+
+def test_copies_of_one_story_are_one_finding_that_says_where_else(db):
+    setup(db)
+    for n, site in enumerate(("entrackr", "inc42")):  # on one page it's the second finding, on the other the first
+        doc(db, f"https://{site}.example/karta", 1, signals=["partnership", "funding"] if n else ["funding"])
+        db["documents"].update_one({"_id": f"https://{site}.example/karta"},  # each site titles its page its own way
+                                   {"$set": {"title": f"{site}: Karta AI funding", "source_id": site,
+                                             # each site's finding in its own words; the company and day match
+                                             f"signals.{n}.what": f"Karta AI raised $3 million ({site})",
+                                             f"signals.{n}.who": "Karta AI; PeerCapital", "published_date": "2026-10-22"}})
+    db["sources"].insert_many([{"_id": "entrackr", "name": "Entrackr"}, {"_id": "inc42", "name": "Inc42"}])
+    found = client.get("/api/signals/found", params={"sort": "briefing", "older": "false"}).json()
+    karta = [h for h in found["hits"] if "karta" in h["url"] and h["signal_id"] == "funding"]
+    assert len(karta) == 1 and karta[0]["also"][0]["source"] in ("Entrackr", "Inc42")
+    assert client.get("/api/briefing", params={"days": "7"}).json()["counts"]["findings"] == found["total"]
+
+
+def test_the_briefing_reads_findings_kept_ready_and_stays_current(db):
+    """Findings kept ready a day at a time (services/briefing_days): the same
+    counts and order as working them out from the pages; a page stored later
+    shows on the next read; reordering the signal list reorders the list."""
+    from app.api.signals import hits, scope, tally
+    from app.services import briefing_days
+    setup(db)
+    for days in ("7", "all"):
+        body = client.get("/api/briefing", params={"days": days}).json()
+        since, until = body["scope"]["from"], body["scope"]["to"]
+        live = tally(scope(since, until), group=True)
+        assert (body["counts"]["findings"], body["counts"]["older"], body["types"]) == (live["findings"], live["older"], live["types"])
+        ready = client.get("/api/signals/found", params={"sort": "briefing", "since": since or "", "until": until}).json()
+        items, total = hits(scope(since, until), sort="briefing", group=True)
+        assert ready["total"] == total and [(h["doc_id"], h["n"]) for h in ready["hits"]] == [(h["doc_id"], h["n"]) for h in items]
+        assert ready["hits"][0]["technologies"] == items[0]["technologies"]
+    assert db["briefing_days"].count_documents({"build": {"$exists": True}}) >= 2
+
+    doc(db, "late", 0.01, ["alpha"], ["funding"])     # stored while a collection runs
+    briefing_days.touch(db["documents"].find_one({"_id": "late"})["scraped_at"])
+    assert client.get("/api/briefing").json()["counts"]["findings"] == 7
+
+    order = lambda: [h["signal_id"] for h in client.get("/api/signals/found", params={"sort": "briefing", "older": "false"}).json()["hits"]]  # noqa: E731
+    assert order().index("funding") < order().index("launch")
+    client.put("/api/signals/order", json={"ids": ["launch", "funding"]})
+    assert order().index("launch") < order().index("funding")
+
+
+def test_days_changed_in_bulk_catch_up_in_the_background_and_say_so(db, monkeypatch):
+    """Today's and yesterday's changes are worked out when read; older changed
+    days (a Check again) show as last kept, the Briefing says how many are
+    being brought up to date, and catch_up brings them."""
+    from app.services import briefing_days
+    setup(db)
+    assert client.get("/api/briefing", params={"days": "all"}).json()["counts"]["findings"] == 7
+    monkeypatch.setattr(briefing_days, "ALWAYS_NOW", False)
+    db["documents"].update_one({"_id": "old"}, {"$set": {"signals": []}})      # a Check again changed an old page
+    briefing_days.touch(db["documents"].find_one({"_id": "old"})["scraped_at"])
+    body = client.get("/api/briefing", params={"days": "all"}).json()
+    assert body["updating_days"] == 1 and body["counts"]["findings"] == 7      # as last kept, and it says so
+    assert briefing_days.catch_up() == 1
+    body = client.get("/api/briefing", params={"days": "all"}).json()
+    assert "updating_days" not in body and body["counts"]["findings"] == 6
+
+
+def test_switching_a_signal_off_moves_only_its_own_findings(db):
+    """Each kept finding holds its signal's own place in the whole list (signals.places): switching one
+    off puts its findings after every listed one's, and leaves the others' as they were."""
+    from app.services import briefing_days
+    setup(db)
+    client.get("/api/briefing", params={"days": "all"})              # the days kept ready
+    rows = db["briefing_rows"]
+    launch_before = sorted(r["rank"] for r in rows.find({"signal_id": "launch"}))
+    db["signals"].update_one({"_id": "funding"}, {"$set": {"enabled": False}})
+    briefing_days.rerank()
+    assert sorted(r["rank"] for r in rows.find({"signal_id": "launch"})) == launch_before
+    assert {r["rank"] for r in rows.find({"signal_id": "funding"})} == {1000}   # after every listed one's
+    order = [h["signal_id"] for h in client.get("/api/signals/found", params={"sort": "briefing", "older": "false"}).json()["hits"]]
+    assert "funding" not in order or order.index("launch") < order.index("funding")

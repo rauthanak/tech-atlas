@@ -2,6 +2,7 @@
 admin edits here (rename, alias moves, enable/disable) restamp documents
 deterministically — no LLM involved — so corrections are cheap and safe."""
 
+import json
 from collections import Counter
 from typing import Literal
 
@@ -9,11 +10,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from agent.analyzer.estimate import estimate
-from agent.resolver import restamp_all, start_resolve
-from app.services import decisions, evidence
+from agent.resolver import restamp, start_resolve
+from app.services import decisions, evidence, jobs, latest_povs, pages, tech_status, watch
 from app.services.db.mongo import get_collection
 from app.services.settings_store import radar_settings
 from app.services.timezone import now_utc, request_tz
+from app.services.display import display_name
 
 router = APIRouter()
 
@@ -21,18 +23,39 @@ router = APIRouter()
 STATES = Literal["new_evidence", "no_pov", "not_assessed", "stopped_partway", "assessing", "current", "off"]
 
 
-def _over_floor(ids: list[str], found: dict[str, dict]) -> dict | None:
-    """Technologies never assessed that now have as many pages as the latest
-    assessment by page count asked for: they got there after it ran, so no
-    run included them. The Not assessed filter offers them, with the cost."""
-    run = get_collection("scoring_runs").find_one({"params.min_docs": {"$gte": 1}},
-                                                  {"params": 1, "started_at": 1}, sort=[("started_at", -1)])
-    if run is None:
-        return None
-    floor = run["params"]["min_docs"]
-    over = [i for i in ids if found[i]["state"] == "not_assessed" and found[i]["new_pages"] >= floor]
-    return {"min_pages": floor, "started_at": run["started_at"], "tech_ids": over,
-            **estimate(over)} if over else None
+# what each list filter reads in the stored answers (services/tech_status)
+FILTER_FIELDS = {"availability": "f.availability", "domain": "f.domain", "subdomain": "f.subdomain",
+                 "evidence": "f.evidence", "fabric": "f.fabrics", "catalog": "f.catalog"}
+
+
+def _filter_match(f: dict, leave_out: tuple = ()) -> dict:
+    """The list's filters as a query on the stored answers, without `leave_out`'s keys."""
+    m: dict = {field: f[key] for key, field in FILTER_FIELDS.items() if f.get(key) and key not in leave_out}
+    trl: dict = {}
+    if f.get("trl_min") is not None and "trl_min" not in leave_out:
+        trl["$gte"] = f["trl_min"]
+    if f.get("trl_max") is not None and "trl_max" not in leave_out:
+        trl["$lte"] = f["trl_max"]
+    if trl:
+        m["f.trl"] = {**trl, "$ne": None}
+    return m
+
+
+def _counts(asks: dict[str, tuple[dict, str, bool]]) -> dict[str, dict]:
+    """For each ask (name: (match, field, unwind)), how many stored answers
+    matching `match` hold each value of `field`. Asks with the same match are
+    counted in one pass over the stored answers, not one pass each."""
+    by_match: dict[str, dict] = {}
+    for name, (match, field, unwind) in asks.items():
+        key = json.dumps(match, sort_keys=True, default=str)
+        by_match.setdefault(key, {"match": match, "facets": {}})["facets"][name] = [
+            *([{"$unwind": f"${field}"}] if unwind else []), {"$group": {"_id": f"${field}", "n": {"$sum": 1}}}]
+    out: dict[str, dict] = {}
+    for one in by_match.values():
+        got = next(get_collection("tech_status").aggregate(
+            [{"$match": one["match"]}, {"$facet": one["facets"]}], allowDiskUse=True))
+        out.update({name: {r["_id"]: r["n"] for r in rows} for name, rows in got.items()})
+    return out
 
 
 @router.get("/technologies")
@@ -50,83 +73,87 @@ def list_technologies(q: str = "", state: STATES | None = None, view: str | None
     out only its own choice: `view_counts` cover the search and filters;
     `status_counts` the view and filters too; `facets` (per filter value)
     everything but that filter. `ids_only` answers with every row's id, for
-    "select all in this view"."""
+    "select all in this view". Read from the answers kept ready for each
+    technology (services/tech_status), so it costs the same at any size."""
     import re as _re
     from app.services import radar_status
-    coll = get_collection("technologies")
-    query: dict = {}
-    if q.strip():
-        rx = _re.compile(_re.escape(q.strip().lower()))
-        query = {"$or": [{"name": rx}, {"aliases": rx}, {"label": _re.compile(_re.escape(q.strip()), _re.I)}]}
     if view is not None and view not in radar_status.VIEWS:
         raise HTTPException(status_code=422, detail=f"unknown view {view!r}")
-    ids = [t["_id"] for t in coll.find(query, {"_id": 1}).sort([("doc_count", -1), ("_id", 1)])]
-    st = radar_status.statuses(ids)
-    ids = [i for i in ids if i in st]
+    tech_status.fresh()
+    found = get_collection("tech_status")
+    base: dict = {"search": _re.compile(_re.escape(q.strip().lower()))} if q.strip() else {}
     filters = {"availability": availability, "domain": domain, "subdomain": subdomain, "trl_min": trl_min,
                "trl_max": trl_max, "evidence": evidence_verdict, "fabric": fabric, "catalog": catalog}
     # the view, the Briefing's state and the status pill: everything but the filters
-    scoped = [i for i in ids if (not view or radar_status.in_view(view, st[i])) and (not state or st[i]["state"] == state)]
-    shown = [i for i in scoped if not status or st[i]["status"] == status]
-    filtered = [i for i in shown if radar_status.matches(st[i], filters)]
-    filtered = radar_status.ordered(view, filtered, st)
+    scoped = {**base, **({"f.views": view} if view else {}), **({"f.state": state} if state else {})}
+    shown = {**scoped, **({"f.status": status} if status else {})}
+    filtered = {**shown, **_filter_match(filters)}
+    order = ([("f.avail_order", 1), ("f.trl_sort", 1)] if view in radar_status.BY_AVAILABILITY
+             else [("f.nascent_settled", 1)] if view == "nascent" else []) + [("doc_count", -1), ("_id", 1)]
     if ids_only:
-        return {"ids": filtered, "total": len(filtered)}
-    in_filters = [i for i in ids if radar_status.matches(st[i], filters)]
-    view_counts = {"all": len(in_filters), **{v: sum(radar_status.in_view(v, st[i]) for i in in_filters)
-                                              for v in radar_status.VIEWS}}
-    status_counts = Counter(st[i]["status"] for i in scoped if radar_status.matches(st[i], filters))
-    facets = radar_status.facets([st[i] for i in shown], filters)
-    state_counts = Counter(st[i]["state"] for i in ids)
-    no_priority = Counter(st[i]["state"] for i in ids
-                          if st[i]["priorities"] and not any(p["priority"] for p in st[i]["priorities"]))
-    over_floor = _over_floor(ids, {i: {"state": st[i]["state"], "new_pages": st[i]["new_pages"]} for i in st})
-    start = max(0, skip)
-    page = filtered[start:start + max(1, min(limit, 500))]
+        ids = [r["_id"] for r in found.find(filtered, {"_id": 1}).sort(order)]
+        return {"ids": ids, "total": len(ids)}
+
+    in_filters = {**base, **_filter_match(filters)}
+    asks = {"views": (in_filters, "f.views", True), "status": ({**scoped, **_filter_match(filters)}, "f.status", False),
+            "state": (base, "f.state", False), "no_priority": ({**base, "f.no_priority": True}, "f.state", False)}
+    for facet, keys in radar_status.FACETS.items():
+        if facet == "subdomain" and not domain:
+            continue
+        rest = {**shown, **_filter_match(filters, leave_out=keys)}
+        asks[f"facet:{facet}"] = (rest, "f.trl" if facet == "trl" else FILTER_FIELDS[facet], facet == "fabric")
+    counted_all = _counts(asks)
+    views = counted_all["views"]
+    view_counts = {"all": found.count_documents(in_filters), **{v: views.get(v, 0) for v in radar_status.VIEWS}}
+    status_counts = counted_all["status"]
+    facets: dict = {}
+    for facet in radar_status.FACETS:
+        if f"facet:{facet}" in counted_all:
+            counted = counted_all[f"facet:{facet}"]
+            facets[facet] = {("none" if k is None else k): n for k, n in counted.items()} if facet == "trl" else counted
+    if "subdomain" in facets:
+        counted = facets["subdomain"]
+        if subdomain:
+            counted.setdefault(subdomain, 0)  # the chosen one stays listed, even when nothing is left in it
+        names = {r["f"]["subdomain"]: r["f"].get("subdomain_name")
+                 for r in found.find({**shown, "f.subdomain": {"$in": list(counted)}}, {"f.subdomain": 1, "f.subdomain_name": 1})}
+        facets["subdomain"] = sorted(({"id": i, "name": (names.get(i) or i) if i != "none" else "No sub-domain yet", "n": n}
+                                      for i, n in counted.items()),
+                                     key=lambda x: (x["id"] == "none", str(x["name"]).lower()))
+    state_counts = counted_all["state"]
+    no_priority = counted_all["no_priority"]
+
+    total = found.count_documents(filtered)
+    page = [r["_id"] for r in found.find(filtered, {"_id": 1}).sort(order).skip(max(0, skip)).limit(max(1, min(limit, 500)))]
+    coll = get_collection("technologies")
     rows = {t["_id"]: t for t in coll.find({"_id": {"$in": page}}, {"classification": 0, "assessed_classification": 0,
-                                                                    "pages_seen": 0})}
-    povs = {p["_id"]: {"scoring_run_id": p["scoring_run_id"], "composed_at": p["composed_at"],
-                       "composed_tz": p.get("composed_tz")}
-            for p in get_collection("povs").aggregate([
-                {"$match": {"tech_id": {"$in": page}}}, {"$sort": {"composed_at": -1}},
-                {"$group": {"_id": "$tech_id", "scoring_run_id": {"$first": "$scoring_run_id"},
-                            "composed_at": {"$first": "$composed_at"},
-                            "composed_tz": {"$first": "$composed_tz"}}}])}
-    techs = [{**rows[i], **st[i], "pov": povs.get(i)} for i in page if i in rows]
+                                                                    "pages_seen": 0, tech_status.DIRTY: 0})}
+    st = {r["_id"]: r["row"] for r in get_collection("tech_status_rows").find({"_id": {"$in": page}}, {"row": 1})}
+    povs = {i: {k: p.get(k) for k in ("scoring_run_id", "composed_at", "composed_tz")}
+            for i, p in latest_povs.latest(page, ("scoring_run_id", "composed_at", "composed_tz")).items()}
+    techs = [{**rows[i], **st[i], "pov": povs.get(i)} for i in page if i in rows and i in st]
     since = evidence.pages_since_off(techs)
     wake = radar_settings()["wake_after_pages"]
     for t in techs:
         if t["_id"] in since:
             t["pages_since_off"] = since[t["_id"]]
             t["wake"] = since[t["_id"]] >= wake
-    total = len(filtered)
-    docs = get_collection("documents")
-    tagged = docs.count_documents({"technologies_resolved": {"$exists": True, "$ne": []}})
-    kinds: dict[str, int] = {}
-    horizons: dict[str, int] = {}
-    for row in docs.aggregate([
-        {"$match": {"technologies_resolved": {"$exists": True, "$ne": []}}},
-        {"$group": {"_id": {"kind": "$kind", "category": "$category"}, "n": {"$sum": 1}}},
-    ]):
-        kinds[row["_id"].get("kind") or "article"] = kinds.get(row["_id"].get("kind") or "article", 0) + row["n"]
-        horizons[row["_id"].get("category") or "?"] = horizons.get(row["_id"].get("category") or "?", 0) + row["n"]
     last = get_collection("resolves").find_one(sort=[("started_at", -1)])
     flagged = {p for t in techs if (p := (t["classification"]["nascent"]["flag"] or {}).get("page"))}
     return {
         "technologies": techs,
         "total": total,
         "view_counts": view_counts,
-        "status_counts": dict(status_counts),
+        "status_counts": status_counts,
         "facets": facets,
         "cited_pages": _pages_of(flagged),  # the pages possible-nascent flags quote
-        "state_counts": dict(state_counts),
-        "no_priority_counts": dict(no_priority),
-        "over_floor": over_floor,
-        "summary": {"tech_count": coll.estimated_document_count(),
-                    "tagged_docs": tagged,
-                    "kinds": kinds, "horizons": horizons},
+        "state_counts": state_counts,
+        "no_priority_counts": no_priority,
+        # pages linked: the last merge's own count (last_resolve.docs_stamped), never a count over every page
+        "summary": {"tech_count": coll.estimated_document_count()},
         "catalog": _catalog(),
         "last_resolve": last,
+        "updating": tech_status.pending(),  # technologies whose answers are being worked out again
     }
 
 
@@ -176,20 +203,15 @@ def technology_summary(tech_id: str) -> dict:
         raise HTTPException(status_code=404, detail=f"unknown technology {tech_id!r}")
     s = evidence.state(tech_id)
     a = s["assessment"]
-    pov = get_collection("povs").find_one(
-        {"tech_id": tech_id}, {"sections.headline": 1, "scoring_run_id": 1, "composed_at": 1, "composed_tz": 1,
-                               "version": 1, "assessment_ids": 1}, sort=[("composed_at", -1)])
-    since_pov = None
-    if pov:
-        read = evidence.reading(list(get_collection("assessments").find(
-            {"_id": {"$in": pov.get("assessment_ids") or []}}, {"measures": 0, "watch_metrics": 0})))
-        since_pov = len(evidence.new_pages(t["name"], read)) if read else None
+    pov = latest_povs.latest([tech_id], ("sections.headline", "scoring_run_id", "composed_tz", "version",
+                                         "assessment_ids")).get(tech_id)
+    since_pov = s["new_since_pov"]
     cost = estimate([tech_id])
     from app.services import editions, gates
     shown = editions.latest(full=False)  # leaders see only the latest edition
     return {
-        "frontier": {"edition": editions.label(shown), "placed": get_collection("editions").count_documents(
-            {"_id": shown["_id"], "placed.tech_id": tech_id}) > 0} if shown else None,
+        "frontier": {"edition": editions.label(shown), "name": shown.get("name"), "published_at": shown["published_at"],
+                     "tz": shown.get("tz"), "placed": bool(editions.rows(shown, "placed", tech_id=tech_id))} if shown else None,
         "technology": {"id": t["_id"], "name": t["name"], "aliases": t.get("aliases", []),
                        "enabled": t.get("enabled", True), "page_count": t.get("page_count", 0),
                        "source_count": t.get("source_count", 0),
@@ -199,6 +221,10 @@ def technology_summary(tech_id: str) -> dict:
                                     "description": (imp.get("row") or {}).get("description")}
                        if (imp := t.get("imported")) else None,
                        "catalog": decisions.in_catalog(t, decisions.pick(decisions.active([tech_id], ["catalog"]), "catalog")),
+                       # the names it's looked for by on pages (agent/tagger), who set them, and what came of it
+                       "look_for": t.get("look_for") or [], "look_for_by": t.get("look_for_by"),
+                       "not_a_technology": t.get("not_a_technology"),
+                       "mentions": get_collection("documents").count_documents({"mentions": t["name"], "ignored_by": None}),
                        **({"pages_since_off": n, "wake": n >= radar_settings()["wake_after_pages"]}
                           if (n := evidence.pages_since_off([t]).get(t["_id"])) is not None else {})},
         "state": s["state"],
@@ -223,15 +249,18 @@ def technology_summary(tech_id: str) -> dict:
 
 def _catalog() -> dict:
     """Where Tata's catalog came from, for the list's note: each confirmed
-    import's file, when, and how many technologies it holds now (a reopened
-    row no longer counts); and how many a person added or took out."""
+    import's file that still holds technologies, when, and how many (a
+    reopened row no longer counts); how many earlier imports hold none now;
+    and how many a person added or took out."""
     techs = get_collection("technologies")
     files = [{"file": i.get("file"), "at": i["confirmed_at"], "tz": i.get("tz"),
               "technologies": techs.count_documents({"imported.import_id": i["_id"]})}
              for i in get_collection("imports").find({"confirmed_at": {"$exists": True}, "status": {"$ne": "discarded"}},
                                                      {"file": 1, "confirmed_at": 1, "tz": 1}).sort("confirmed_at", -1)]
     by_person = Counter(d["value"] for d in decisions.active(kinds=["catalog"]))
-    return {"files": files, "added": by_person["yes"], "taken_out": by_person["no"]}
+    # an import whose rows all moved to a later one (the same file imported again) holds none now
+    return {"files": [f for f in files if f["technologies"]], "emptied": sum(1 for f in files if not f["technologies"]),
+            "added": by_person["yes"], "taken_out": by_person["no"]}
 
 
 def _pages_of(ids: set[str]) -> dict:
@@ -282,7 +311,7 @@ def technology_assessment(tech_id: str, fabric: str | None = None) -> dict:
     decs = decision_store.active([tech_id])
     path = finance.steps()
     return {
-        "technology": {"id": tech_id, "name": t["name"], "label": t.get("label") or t["name"]},
+        "technology": {"id": tech_id, "name": t["name"], "label": display_name(t)},
         "fabric": chosen["fabric_id"],
         "finance": finance.figures(tech_id, chosen["fabric_id"], decs, None, path),
         "path": sorted(path.values(), key=lambda p: p["order"]),
@@ -294,7 +323,7 @@ def technology_assessment(tech_id: str, fabric: str | None = None) -> dict:
         "fabrics": [{"fabric_id": f["fabric_id"], "fabric": f["fabric"], "priority": f["effective"]["priority"],
                      "computed_priority": f["effective"]["computed_priority"],
                      "override": bool(f["effective"]["override"]), "states": eff.counts(f)} for f in fabrics],
-        "assessment": chosen,
+        "assessment": {**chosen, "watch_metrics": watch.apply(chosen.get("watch_metrics") or [], decs)},
         "measures": [{k: m.get(k) for k in ("_id", "code", "name", "axis", "scope", "definition", "required_evidence")}
                      for m in get_collection("measures").find()],
     }
@@ -306,22 +335,18 @@ def technology_documents(tech_id: str, limit: int = 50, skip: int = 0,
     t = get_collection("technologies").find_one({"_id": tech_id}, {"name": 1})
     if t is None:
         raise HTTPException(status_code=404, detail=f"unknown technology {tech_id!r}")
-    match = {"technologies_resolved": t["name"]}
-    docs_coll = get_collection("documents")
-    # one row per page, its newest copy: a page collected again (it changed)
-    # counts once, as page_count does, and says how many times it was collected
-    total = len(docs_coll.distinct("end_url", match))
+    # one row per page, its newest visit (services/pages), which says how many times the page was collected.
     # sort=published: newest published first; docs without a published date
     # sort below any dated ones (missing < value in Mongo), then by extraction
-    order = {"published_date": -1, "scraped_at": -1} if sort == "published" else {"scraped_at": -1}
-    docs = [{**g["doc"], "copies": g["copies"]} for g in docs_coll.aggregate([
-        {"$match": match}, {"$project": {"extracted_text": 0}}, {"$sort": {"scraped_at": -1}},
-        {"$group": {"_id": "$end_url", "doc": {"$first": "$$ROOT"}, "copies": {"$sum": 1}}},
-        {"$sort": {f"doc.{k}": v for k, v in order.items()}},
-        {"$skip": max(0, skip)}, {"$limit": max(1, min(limit, 500))}])]
-    new_versions = {evidence.version(d) for d in evidence.state(tech_id)["new"]}
+    order = [("published_date", -1), ("scraped_at", -1)] if sort == "published" else [("scraped_at", -1)]
+    linked = {"technologies_resolved": t["name"], **pages.NEWEST}
+    docs = [{**d, "copies": d.get("visits") or 1} for d in get_collection("documents").find(linked, {"content_hash": 0})
+            .sort(order).skip(max(0, skip)).limit(max(1, min(limit, 500)))]
+    total = get_collection("documents").count_documents(linked)  # counted in the index
+    # not read by the latest assessment: worked out for the rows shown only
+    new_versions = {evidence.version(d) for d in evidence.new_pages(t["name"], evidence.latest_reading(tech_id), docs)}
     for d in docs:
-        d["new"] = evidence.version(d) in new_versions  # not read by the latest assessment
+        d["new"] = evidence.version(d) in new_versions
         d["id"] = str(d.pop("_id"))
     return {"name": t["name"], "documents": docs, "total": total}
 
@@ -362,8 +387,27 @@ def update_technology(tech_id: str, edit: TechEdit, tz: str = Depends(request_tz
     elif name != current["name"]:     # renamed in lowercase: the next organize labels it
         update["$unset"] = {"label": ""}
     techs.update_one({"_id": tech_id}, update)
-    restamp_all()
+    jobs.later(restamp, techs.find_one({"_id": tech_id}, {"aliases": 1})["aliases"])  # only the pages that name it
+    tech_status.touch([tech_id], now=True)  # this one at once; the rest follow in the background
     return get_collection("technologies").find_one({"_id": tech_id})
+
+
+class LookFor(BaseModel):
+    names: list[str] = Field(max_length=12)
+
+
+@router.put("/technologies/{tech_id}/look-for")
+def set_look_for(tech_id: str, body: LookFor, tz: str = Depends(request_tz)) -> dict:
+    """The names a person wants it looked for by on pages: the next collection
+    (or a catch-up on Operations) looks for them."""
+    from agent.tagger.tagger import _clean
+    t = get_collection("technologies").find_one({"_id": tech_id}, {"name": 1, "label": 1})
+    if t is None:
+        raise HTTPException(status_code=404, detail=f"unknown technology {tech_id!r}")
+    names = _clean([display_name(t), *body.names])
+    get_collection("technologies").update_one({"_id": tech_id}, {"$set": {
+        "look_for": names, "look_for_by": "person", "look_for_at": now_utc(), "look_for_tz": tz}})
+    return {"look_for": names}
 
 
 class BulkEdit(BaseModel):
@@ -378,6 +422,7 @@ def bulk_edit(edit: BulkEdit, tz: str = Depends(request_tz)) -> dict:
     on = edit.action == "switch_on"
     done = get_collection("technologies").update_many(
         {"_id": {"$in": edit.ids}, "enabled": {"$ne": on}}, _switch(on, tz)).modified_count
+    tech_status.touch(edit.ids, now=True)  # a few at once; many in the background
     return {"changed": done, "action": edit.action}
 
 
@@ -410,7 +455,8 @@ def merge_technologies(tech_id: str, params: MergeParams) -> dict:
                      {"$addToSet": {"aliases": {"$each": aliases}},
                       "$set": {"updated_at": now_utc()}})
     techs.delete_many({"_id": {"$in": [o["_id"] for o in absorbed]}})
-    restamp_all()
+    jobs.later(restamp, techs.find_one({"_id": tech_id}, {"aliases": 1})["aliases"])  # the pages that name it or what it took in
+    tech_status.touch([tech_id, *(o["_id"] for o in absorbed)], now=True)  # the absorbed lose their rows
     return get_collection("technologies").find_one({"_id": tech_id})
 
 
@@ -430,5 +476,6 @@ def claim_alias(tech_id: str, move: AliasMove) -> dict:
     techs.update_one({"_id": tech_id},
                      {"$addToSet": {"aliases": move.alias},
                       "$set": {"updated_at": now_utc()}})
-    restamp_all()
+    jobs.later(restamp, [move.alias])  # the pages that use that name: they move here from wherever they were
+    tech_status.touch([tech_id], now=True)
     return get_collection("technologies").find_one({"_id": tech_id})

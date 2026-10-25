@@ -19,27 +19,31 @@ OUT = "/tmp/diagrams"
 DIAGRAMS = {
     "process": ("How the radar works now", [
         ("Tech Atlas collects", False, [
-            ("Collect", "pages from the sources that are switched on", False),
+            ("Collect", "pages from the sources that are switched on; a page is known by its link or title, so it counts once", True),
             ("Read each page", "the signals it shows, and the technologies it names", False),
-            ("Organise the names", "one technology, many wordings", False),
-            ("Classify", "availability, domain, TRL, how solid the evidence is, possibly nascent", True)]),
+            ("Organise the names", "one technology, many wordings; only the new pages are read", True),
+            ("Classify", "availability, domain, TRL, how solid the evidence is, possibly nascent", False)]),
         ("Gate 1: before scoring", True, [
-            ("Possibly nascent?", "a person says yes or no", True),
-            ("Imported list", "a person accepts or rejects each proposed match", True),
-            ("Switch off, move, add", "from the technology list, several at once", True),
-            ("Find evidence", "for thin technologies", True)]),
+            ("Possibly nascent?", "a person says yes or no", False),
+            ("Imported list", "a person accepts or rejects each proposed match", False),
+            ("Switch off, move, add", "from the technology list, several at once", False),
+            ("Find evidence", "for thin technologies", False)]),
         ("Assess", False, [
-            ("One technology call", "fabrics, technology-wide measures, metrics to watch", True),
-            ("One call per fabric", "that fabric's measures, use cases and value levers", True),
+            ("One technology call", "fabrics, technology-wide measures, metrics to watch", False),
+            ("One call per fabric", "that fabric's measures, use cases and value levers", False),
             ("Placement", "priority and horizon: arithmetic, no model call", False)]),
         ("Gate 2: before publishing", True, [
-            ("Override a priority", "with a reason; the computed one stays visible", True),
-            ("Unscored measures", "score by hand, accept the gap, or find evidence", True),
-            ("Path to scale and finance", "recorded by people", True),
-            ("Point of View", "with numbered sources, every one checked", True)]),
+            ("Override a priority", "with a reason; the computed one stays visible", False),
+            ("Unscored measures", "score by hand, accept the gap, or find evidence", False),
+            ("Path to scale and finance", "recorded by people", False),
+            ("Point of View", "with numbered sources, every one checked", False)]),
         ("Frontier, for leaders", False, [
-            ("The 2×2", "by fabric and stage, with a table beside it", True),
-            ("Point of View", "read-only, at its own address", True)]),
+            ("The 2×2", "by fabric and stage, with a table beside it", False),
+            ("Point of View", "read-only, at its own address", False)]),
+        ("In the background: the worker", False, [
+            ("Long jobs", "collect, organise, classify, assess, write: apart from the web pages", True),
+            ("Answers kept ready", "each technology's status and counts, each day's findings", True),
+            ("Only what changed", "a new page, an edit or an import re-works only what it touches", True)]),
     ]),
     "engine": ("An assessment: before and after", [
         ("Before: one call per measure", False, [

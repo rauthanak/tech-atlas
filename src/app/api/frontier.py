@@ -5,7 +5,10 @@ reason, the assumptions in force and the evidence behind it; and each
 technology's Point of View as it stood when the edition was published.
 Read-only: the executive address passes on only these reads (proxy.ts)."""
 
+from typing import Literal
+
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from app.services import editions
 
@@ -17,10 +20,19 @@ def frontier(fabric: str | None = None) -> dict:
     e = editions.latest()
     if e is None:
         return {"edition": None}
-    keep = (lambda r: r["fabric_id"] == fabric) if fabric else (lambda r: True)
-    return {"edition": editions.summary(e), "placed": [r for r in e["placed"] if keep(r)],
-            "held": [r for r in e["held"] if keep(r)],
+    return {"edition": editions.summary(e), "placed": editions.with_why(e, fabric), "held": editions.rows(e, "held", fabric),
             **{k: e.get(k) for k in ("fabrics", "stages", "cutpoints", "near_band", "assumptions", "evidence")}}
+
+
+class Seen(BaseModel):
+    kind: Literal["opened", "printed"]
+
+
+@router.post("/frontier/pov/{tech_id}/seen", status_code=204)
+def seen(tech_id: str, body: Seen) -> None:
+    """Counted when a leader opens or prints a Point of View (the one write
+    the leaders' address passes on)."""
+    editions.record_view(tech_id, body.kind)
 
 
 @router.get("/frontier/pov/{tech_id}")

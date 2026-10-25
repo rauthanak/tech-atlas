@@ -3,12 +3,13 @@ source adapters: the run, its snapshot (signal list, crawl settings), the
 model, the page budget — and the one path every item takes: stored,
 summarized with the run's signal list, counted."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from agent.scout.tools.summarize import summarize_page
 from app.services.llm.context import with_context
 from app.services.runs import store
 
+MAX_EXAMPLES = 5  # addresses kept per reason a page or link was skipped
 
 @dataclass
 class Outcome:
@@ -17,10 +18,25 @@ class Outcome:
     new_docs: int = 0
     error: str | None = None
     incomplete_note: str | None = None  # what was left for lack of budget
+    skipped: dict = field(default_factory=dict)  # (page|link, reason) -> {what, reason, count, examples}
+
+    def skip(self, url: str, reason: str, link: bool = False) -> None:
+        """A page or link left out because it couldn't be read: counted by
+        reason, with a few examples, so the source carries on and says why."""
+        what = "link" if link else "page"
+        entry = self.skipped.setdefault((what, reason), {"what": what, "reason": reason, "count": 0, "examples": []})
+        entry["count"] += 1
+        if len(entry["examples"]) < MAX_EXAMPLES:
+            entry["examples"].append(url[:300])
+
+    def skipped_list(self) -> list[dict]:
+        return sorted(self.skipped.values(), key=lambda e: -e["count"])
 
     def report(self, name: str) -> str:
+        skipped = "; ".join(f"{e['count']} {e['what']}s skipped: {e['reason']}" for e in self.skipped_list())
         return (f"{name}: {self.pages} items visited, {self.docs} documents ({self.new_docs} new)"
                 + (f", incomplete: {self.incomplete_note}" if self.incomplete_note else "")
+                + (f", {skipped}" if skipped else "")
                 + (f", error: {self.error}" if self.error else ""))
 
 

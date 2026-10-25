@@ -17,11 +17,12 @@ read off it, so no technology is ever in two of them:
 off · assessing · stopped_partway · not_assessed · new_evidence · no_pov · current
 """
 
+from app.services import latest_povs, pages
 from app.services.db.mongo import get_collection
 
 LIVE = ("running", "terminating")
 STOPPED = ("failed", "terminated")
-PAGE_FIELDS = {"end_url": 1, "title": 1, "source_id": 1, "scraped_at": 1,
+PAGE_FIELDS = {"end_url": 1, "page_key": 1, "title": 1, "source_id": 1, "scraped_at": 1,
                "is_stub": 1, "ref_doc_id": 1}
 
 
@@ -56,17 +57,39 @@ def reading(rows: list[dict]) -> dict | None:
             "assessed_at": min(a["created_at"] for a in rows)}
 
 
-def new_pages(name: str, read: dict | None) -> list[dict]:
+def page_key(d: dict) -> str:
+    """Which page a visit is of (services/pages). A page's newest visit is
+    the one counted (newest_visits, the dossier, Classify's pages)."""
+    return d.get("page_key") or d.get("end_url") or str(d["_id"])
+
+
+def newest_visits(names: list[str]) -> dict[str, list[dict]]:
+    """Each technology's linked pages as their newest visits, newest first, by
+    name: one query for all of them (not one per technology)."""
+    wanted = set(names)
+    out: dict[str, list[dict]] = {n: [] for n in names}
+    seen: dict[str, set] = {n: set() for n in names}
+    if not names:
+        return out
+    for d in (get_collection("documents")
+              .find({"technologies_resolved": {"$in": names}, **pages.NEWEST}, {**PAGE_FIELDS, "technologies_resolved": 1})
+              .sort("scraped_at", -1)):
+        key = page_key(d)
+        for name in wanted.intersection(d.pop("technologies_resolved", None) or []):
+            if key not in seen[name]:  # the newest visit, as the dossier builder picks it
+                seen[name].add(key)
+                out[name].append(d)
+    return out
+
+
+def new_pages(name: str, read: dict | None, latest: list[dict] | None = None) -> list[dict]:
     """The technology's pages whose current version `read` (see reading())
     didn't include, newest first, as their newest visits. Without a reading,
-    every linked page."""
+    every linked page. `latest`: its newest visits, when already read
+    (newest_visits)."""
     docs = get_collection("documents")
-    latest, seen = [], set()
-    for d in docs.find({"technologies_resolved": name}, PAGE_FIELDS).sort("scraped_at", -1):
-        key = d.get("end_url") or d["_id"]
-        if key not in seen:  # the newest visit, as the dossier builder picks it
-            seen.add(key)
-            latest.append(d)
+    if latest is None:
+        latest = newest_visits([name])[name]
     if read is None:
         return latest
     if read["dossier_pages"] is None:  # older assessment: new if collected after it
@@ -99,9 +122,11 @@ def not_assessed_in(run: dict, rows: list[dict]) -> list[str]:
 
 
 def _measures(rows: list[dict]) -> dict:
-    """How many measures had enough evidence to score, of all those asked."""
+    """How many measures were scored, of all those asked, and how many of the
+    rest wait for a figure Tata enters (not for evidence)."""
     return {"scored": sum(a.get("measures_scored", 0) for a in rows),
-            "of": sum(a.get("measures_of", 0) for a in rows)}
+            "of": sum(a.get("measures_of", 0) for a in rows),
+            "waiting": sum(a.get("measures_waiting", 0) for a in rows)}
 
 
 def _assessment(run: dict, rows: list[dict]) -> dict:
@@ -140,9 +165,18 @@ def _latest(tech_id: str, all_runs: list[dict], rows: dict[str, list[dict]]):
     return None, unfinished
 
 
-def _state(tech: dict, all_runs: list[dict], rows: dict[str, list[dict]], povs: set[str]) -> dict:
+def since_pov(name: str, pov: dict, rows: dict[str, list[dict]], latest: list[dict] | None = None) -> int | None:
+    """How many pages are new since a Point of View was written: pages the
+    assessment it was written from didn't read (None: that didn't record it)."""
+    ids = set(pov.get("assessment_ids") or [])
+    read = reading([a for a in rows.get(pov["scoring_run_id"], []) if a["_id"] in ids])
+    return len(new_pages(name, read, latest)) if read else None
+
+
+def _state(tech: dict, all_runs: list[dict], rows: dict[str, list[dict]], povs: set[str],
+           latest: list[dict] | None = None, pov: dict | None = None) -> dict:
     assessment, unfinished = _latest(tech["_id"], all_runs, rows)
-    new = new_pages(tech["name"], assessment)
+    new = new_pages(tech["name"], assessment, latest)
     if not tech.get("enabled", True):
         state = "off"
     elif unfinished and unfinished["status"] in LIVE:
@@ -158,7 +192,8 @@ def _state(tech: dict, all_runs: list[dict], rows: dict[str, list[dict]], povs: 
     else:
         state = "current"
     return {"tech_id": tech["_id"], "name": tech["name"], "state": state,
-            "assessment": assessment, "unfinished": unfinished, "new": new}
+            "assessment": assessment, "unfinished": unfinished, "new": new,
+            "new_since_pov": since_pov(tech["name"], pov, rows, latest) if pov else None}
 
 
 def states(tech_ids: list[str] | None = None) -> dict[str, dict]:
@@ -167,6 +202,23 @@ def states(tech_ids: list[str] | None = None) -> dict[str, dict]:
     all_runs = runs()
     if tech_ids is None:
         tech_ids = sorted(set().union(*(r["tech_ids"] for r in all_runs)))
+    rows = _assessment_rows(tech_ids)
+    povs = set(get_collection("povs").distinct("_id", {"tech_id": {"$in": tech_ids}}))
+    techs = list(get_collection("technologies").find({"_id": {"$in": tech_ids}}, {"name": 1, "enabled": 1}))
+    visits = newest_visits([t["name"] for t in techs])  # one page query for all, not one each
+    written = latest_povs.latest(tech_ids, ("scoring_run_id", "assessment_ids"))
+    return {t["_id"]: _state(t, all_runs, rows.get(t["_id"], {}), povs, visits[t["name"]], written.get(t["_id"]))
+            for t in techs}
+
+
+def latest_reading(tech_id: str) -> dict | None:
+    """What a technology's latest finished assessment read (reading()), without
+    listing its pages: what a page of its pages needs to mark the new ones."""
+    return _latest(tech_id, runs(), _assessment_rows([tech_id]).get(tech_id, {}))[0]
+
+
+def _assessment_rows(tech_ids: list[str]) -> dict[str, dict[str, list[dict]]]:
+    """Each technology's assessment rows by scoring run, without their measures."""
     rows: dict[str, dict[str, list[dict]]] = {}
     measures = {"$objectToArray": {"$ifNull": ["$measures", {}]}}
     for a in get_collection("assessments").aggregate([
@@ -174,14 +226,15 @@ def states(tech_ids: list[str] | None = None) -> dict[str, dict]:
         # the scored count without fetching the measures: unscored ones have no number
         {"$addFields": {"measures_of": {"$size": measures},
                         "measures_scored": {"$size": {"$filter": {
-                            "input": measures, "cond": {"$isNumber": "$$this.v.score"}}}}}},
+                            "input": measures, "cond": {"$isNumber": "$$this.v.score"}}}},
+                        # Tata's own figures (Disruption threat, Serviceable capture) until Tata enters them
+                        "measures_waiting": {"$size": {"$filter": {
+                            "input": measures, "cond": {"$and": [{"$eq": ["$$this.v.scope", "tata"]},
+                                                                 {"$not": [{"$isNumber": "$$this.v.score"}]}]}}}}}},
         {"$project": {"measures": 0, "watch_metrics": 0}},
     ]):
         rows.setdefault(a["tech_id"], {}).setdefault(a["scoring_run_id"], []).append(a)
-    povs = set(get_collection("povs").distinct("_id", {"tech_id": {"$in": tech_ids}}))
-    return {t["_id"]: _state(t, all_runs, rows.get(t["_id"], {}), povs)
-            for t in get_collection("technologies").find({"_id": {"$in": tech_ids}},
-                                                         {"name": 1, "enabled": 1})}
+    return rows
 
 
 def state(tech_id: str) -> dict | None:

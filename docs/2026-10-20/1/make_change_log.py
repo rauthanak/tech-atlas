@@ -20,7 +20,7 @@ OUT = ROOT / "Tech Radar - changes after the midpoint review.docx"
 NAVY = RGBColor(0x04, 0x1A, 0x4A)
 MUTED = RGBColor(0x49, 0x4A, 0x52)
 
-VERSION = "Version 15 · 21 October 2026"
+VERSION = "Version 29 · 25 October 2026"
 HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the midpoint review, with today's screens and design mock-ups."),
            ("2", "20 Oct 2026", "Change 0 built: technologies say how solid their assessment is, a technology's result in each fabric stays "
                                 "with the technology, plain names on every screen. Real screens replace its mock-up."),
@@ -68,7 +68,47 @@ HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the mi
                                  "folded; Publish to leaders says what it sends; each Point of View says which version "
                                  "leaders see."),
            ("15", "21 Oct 2026", "Changes 25–28: Operations and Setup by the same principles, kept simple; and Tata's "
-                                 "plan reaches the Point of View in full, shown on a worked example.")]
+                                 "plan reaches the Point of View in full, shown on a worked example."),
+           ("16", "21 Oct 2026", "Change 29, after your review of the Point of View: About this technology, for readers new "
+                                 "to it, above the recommendation."),
+           ("17", "22 Oct 2026", "Change 30, a fix after your review: Rewrite on a Point of View's page now shows the new "
+                                 "version when it's done."),
+           ("18", "22 Oct 2026", "Changes 31–36, from the 21 Oct sync (S9): the collection page by the same principles; "
+                                 "market size as a band; metrics to watch checked at the next assessment; leaders' opens "
+                                 "and prints counted; fabrics people worked on always assessed again; 86 sources, and "
+                                 "the radar compared with the catalog."),
+           ("19", "22 Oct 2026", "Change 37, from your question on seeing a run whole: one run from collecting to "
+                                 "publishing, in six steps, with where it stands now, on the run page, Operations and "
+                                 "the Briefing. Change 38: judging evidence has no token limit any more; it judges "
+                                 "catalog technologies first, and never skips a collection's technologies. Change 39: "
+                                 "a Status filter on Technologies, and Add evidence (links and files) on a "
+                                 "technology, through to its Point of View. Change 40: catalog technologies are found "
+                                 "on pages by name; Add evidence made clearer and tested on real pages; About this "
+                                 "technology fills a wide page."),
+           ("20", "23 Oct 2026", "Change 41, the first phase of the 23 Oct plan: a bad link or page no longer stops "
+                                 "a source; numbers that were wrong or misleading are corrected (the priority grid, "
+                                 "the leaders' Act corner, weights, the Setup badge, measures waiting for Tata's "
+                                 "figures); Classify finished in two parts says so; indexes live in the seeding data."),
+           ("21", "23 Oct 2026", "Change 42, the second phase: each technology's answers are kept ready, so the "
+                                 "lists, To do and the status line stay fast however much the radar holds; tested "
+                                 "on a copy with a million pages."),
+           ("22", "23 Oct 2026", "Change 43, the third phase: long lists come in pages of 50 and keep your place "
+                                 "when you come back; one kind of filter on Technologies; History is its own "
+                                 "Operations tab."),
+           ("23", "23 Oct 2026", "Change 44, the fourth phase: a shorter Briefing, copies of one story shown once, "
+                                 "signs to watch that people can own, and the technology Overview in two columns."),
+           ("24", "23 Oct 2026", "Change 45, the fifth phase: one set of words for the steps, pages that work on a "
+                                 "phone, and every action that costs or moves things says so first, with Undo."),
+           ("25", "23 Oct 2026", "Change 46, the sixth phase: the leaders' view says what the radar concludes and why "
+                                 "priorities moved, and its Point of View leads with the answer."),
+           ("26", "23 Oct 2026", "Change 47, the seventh phase: no record grows without limit, edits re-link only "
+                                 "their own pages, and the two remaining long lists come a page at a time."),
+           ("27", "23 Oct 2026", "Change 48: the Briefing keeps each day's findings ready, so a week, 30 days or all "
+                                 "time open at once at any size; three other screens made light at a million pages."),
+           ("28", "23 Oct 2026", "Change 49, the eighth phase: long jobs run in their own worker container, so a big job "
+                                 "never slows the web pages and an update of the web app never stops a job; stress-tested."),
+           ("29", "25 Oct 2026", "Change 50: the radar re-tested at ten million pages after the scale fixes, and the live radar "
+                                 "upgraded to them. Change 51: a person can now re-score a measure the model scored.")]
 
 # The numbers in the text, from the live radar on 21 Oct (6 Oct is the run before these changes).
 N = dict(
@@ -99,6 +139,9 @@ SOURCES = [
     ("S8", "Our review of every screen against Don Norman's design principles, from 21 Oct",
      "One screen at a time, most used first: can a reader see what it is, what to do and what happened (discoverability, "
      "signifiers, mapping, feedback, the conceptual model). Nothing in how the radar works changes."),
+    ("S9", "Hasan's email “Oct 21 - Sync Summary: Ankur's Three Tests, Demo & Deployment” (22 Oct), and the Zoom summary",
+     "What was agreed on 21 Oct: market size as bands, an introduction in each Point of View, metrics flagged when they "
+     "cross, view counts, wider sources and the comparison with the catalog, and the deployment."),
 ]
 
 # Built screens, in reading order, with their captions: item-N.png or item-N-<screen>.png
@@ -157,6 +200,37 @@ AFTER_CAPTIONS = {
     "item-25-operations.png": "After: Operations' tabs, and its six steps numbered in order, each saying who moves it on: you start it, it runs by itself, or it waits for you.",
     "item-26-signal-form.png": "After: Delete sits inside a signal's Edit form, behind a confirm; switching a signal off pauses it instead.",
     "item-27-open-questions.png": "After: Setup's menu in four groups, and Mark settled on each open question, where the question is read.",
+    "item-29-about-this-technology.png": "After: About this technology, between the four answers and the recommendation, saying it comes from general knowledge.",
+    "item-30-rewritten.png": "After: the page shows the new version once Rewrite is done, and says so under the button.",
+    "item-31-collection.png": "After: problems first in words, four steps that each say where they stand, times in Central time, and the done sources folded.",
+    "item-37-run-steps.png": "After: one run in six steps, from collecting to publishing. The Now line says it stopped at step 3 and what comes next; the step that waits for you has the main button, with its cost.",
+    "item-37-operations.png": "After: Operations opens on the latest run, in the same six steps and words as the run page, with every button the six cards had.",
+    "item-37-older-run.png": "After: an older run shows what happened until the next collection, with no buttons; the assessment runs that read its pages fold into one line.",
+    "item-37-briefing.png": "After: the Briefing says in one line where the latest run stands, with a link to every step.",
+    "item-39-held.png": "After: a Status filter beside the others, and the counts above the list read as links; 'Assessed, placed' and 'Assessed, not placed' add up to the Assessed group.",
+    "item-39-add-evidence.png": "After: Add evidence on a technology: links and files, what happens next, and the cost on Start; a bad link is refused, saying why.",
+    "item-39-real-flex-ethernet-flexe-form.png": "After: Add evidence on FlexE, run for real: two links and the OIF's FlexE PDF, a real Choose files button, what happens next, and the cost on Start.",
+    "item-39-real-k0s-done.png": "After: k0s with 'Only judge its evidence': the steps done, what came of it, and where to look next.",
+    "item-40-organize-step.png": "After: a run's Organize step merges names and links catalog technologies named on its pages, saying what it found; Link known names on all pages runs the catch-up.",
+    "item-40-technology.png": "After: a catalog technology says the names it's looked for by on pages, with Edit names.",
+    "item-41-classify.png": "After: a collection's Classify that stopped part-way and was finished later says so in one sentence, and why the first part stopped.",
+    "item-41-grid.png": "After: each cell of an assessment run's priority grid counts its own rows; two cells with the same priority no longer show the same number.",
+    "item-41-act-now.png": "After: the leaders' view lists the P1 technologies first; on the grid, the Act corner is exactly the P1 cell.",
+    "item-42-technologies.png": "After: the Technologies list reads each technology's answers kept ready; on today's data it answers in 0.08 s (0.68 s before).",
+    "item-43-filters.png": "After: groups are buttons, everything else is a labelled dropdown with counts, and what's on shows as chips you can remove one by one, or all at once; the list comes in pages of 50.",
+    "item-43-history.png": "After: History is its own Operations tab, 50 runs a page; the overview keeps the latest run and its problems.",
+    "item-44-briefing.png": "After: the signs that crossed are closed lines (one opened here, as labelled lines, threshold first), the kind of finding is a dropdown, and 15 findings a page; a story reported by several sites shows once.",
+    "item-44-overview.png": "After: on a wide screen the Point of View, priorities and what waits on you sit on the left, and what the technology is on the right.",
+    "item-45-signal.png": "After: switching a signal off asks first, saying how many stored pages it marks and what checking them again would cost.",
+    "item-45-domains.png": "After: tick several proposed sub-domains (or all the new ones in a domain), then Accept or Merge; the merge asks first, and Undo puts them back.",
+    "item-45-edges.png": "After: Save the edges first says what would move, worked out from the stored scores with no model calls.",
+    "item-45-trl.png": "After: each count on its own row, apart from its name, with the technologies whose level isn't judged yet.",
+    "item-46-act.png": "After: each technology on the leaders' shortlists carries its Point of View's headline, so a leader sees the verdict without opening it.",
+    "item-46-moved.png": "After: the 8 biggest moves first (into P1 or P2, then the biggest jumps), each with the score that moved; Show all for the rest.",
+    "item-46-committed.png": "After: what Tata has committed, after the five answers, as labelled lines; the fabrics with no owner share one line.",
+    "item-46-scores.png": "After: each fabric's priority said in the grid's words: P2 because it arrives mid-term (how soon 7) and the prize is big (how big 8).",
+    "item-47-run.png": "After: an assessment run's table comes from the server 50 rows at a time; the grid's counts and a chosen cell are worked out there too.",
+    "item-41-changes.png": "After: Changes lists setup edits by people; the 1,981 sub-domains the model proposed are one line, to review on Domains.",
     "item-27-settings.png": "After: Settings with the crawler internals behind Technical details, the time-zone line following the rule, and unsaved edits flagged.",
     "item-22-povs.png": "After: the Points of View list says what keeps them current, sorts by highest priority, and filters by fabric, priority and newer pages.",
     "item-22-pov.png": "After: a Point of View says when pages arrived after it was written and what to do, offers one way back, and labels the evidence reason as the latest look.",
@@ -164,6 +238,7 @@ AFTER_CAPTIONS = {
     "item-21-dropdowns.png": "After: every dropdown's arrow is set in from its rounded edge, with room kept for it after the text.",
     "item-20-plan.png": "After: Tata's plan: the commitment as a status in the title; where Tata is on its path to scale as one track; then a checklist of what's recorded, each with its action.",
     "item-19-finance.png": "After: Finance leads with Enter the figures, says when figures are asked for and what the next step needs now, and lists what the figures need once.",
+    "item-51-score-by-hand.png": "After: every measure the model scored has Score by hand; a person's score replaces it, the model's stays beside it, with Undo.",
     "item-18-history.png": "After: History says what the latest assessment read, of all its pages, and lists every choice people made, who, when and why, with Undo.",
 }
 
@@ -773,7 +848,550 @@ ITEMS = [
                    "Asks for outside confirmation of Tata's figures")],
          diagram=None,
          before=[]),
+    dict(n="29", title="About this technology, for readers new to it", status="Built",
+         source=[("S8", "your review of the Point of View: a section above the recommendation on what the technology is, "
+                        "its history and how it has evolved, for executives who have never heard of it")],
+         what=["Each Point of View now opens, after its four answers, with About this technology: what it is in plain "
+               "words, where it came from, the turns that shaped it and where it stands today, in four to six sentences.",
+               "It is the one section written from general knowledge, not the pages, and says so under its heading. Its "
+               "skill (version 11) keeps it to well-established facts: no market sizes, prices or forecasts, a year only "
+               "where it is widely known, and nothing about Tata or the scores, which the other sections cover. The "
+               "summary no longer repeats what the technology is.",
+               "Both addresses show it: the analysts' page now, and the leaders' view from the next publish. A Point of "
+               "View gets it when it is next written."],
+         why="A recommendation means little to a reader who doesn't know what the technology is; the page should "
+             "explain it before asking for a decision.",
+         metrics=[("What a new reader learns before the recommendation", "The verdict and four answers",
+                   "Also what it is, where it came from, how it has evolved"),
+                  ("Where the explanation comes from", "Not shown", "Said under the heading: general knowledge")],
+         diagram=None,
+         before=[("item-29-before-pov.png", "Before: the verdict, four answers and the recommendation, with nothing on "
+                                            "what the technology is.")]),
+    dict(n="30", title="Rewrite shows the new version when it's done", status="Built",
+         source=[("S8", "your review of change 29: after Rewrite, the page kept the old text and status until you left it "
+                        "and came back")],
+         what=["Writing a Point of View takes about a minute (47 seconds in the middle case, up to 2 minutes). The "
+               "portal used to give up waiting after 30 seconds; the radar still wrote and saved the new version, but "
+               "the page never heard back, so it kept showing the old one. It now waits up to 10 minutes.",
+               "While it writes, the button says 'Writing… about a minute'; when it's done, the page shows the new "
+               "text, its written time and which version leaders see, and says so under the button."],
+         why="A person who presses a button should see what it did, on the spot; a page that looks unchanged reads as "
+             "a failure, and invites pressing again (four rewrites of one technology on 22 Oct).",
+         metrics=[("Rewrites the page showed when done", "None that took over 30 seconds (most do)", "All"),
+                  ("What the button says while writing", "Starting…", "Writing… about a minute")],
+         diagram=None,
+         before=[]),
+    dict(n="31", title="The collection page says where it stands and what went wrong", status="Built",
+         source=[("S8", "your review of a running collection's page: it didn't follow the design principles")],
+         what=["Problems come first, in words, each with what to do: a source that couldn't finish (for example "
+               "'OpenAlex refused its searches: it now needs its free key'), pages that couldn't be analysed, "
+               "technologies that couldn't be judged. A failed model call says why.",
+               "Four steps in the order they run, each saying in progress, waiting, done or stopped: collect (with "
+               "'N of 86 sources done' while it reads), findings, merging names, and judging evidence, which was "
+               "hidden before though it can be the costliest step. A step's link appears once it's done.",
+               "'Running for…' while it runs, in the zone of whoever started it, and the page updates by itself. "
+               "Sources are grouped as couldn't finish, reading now and done (folded); the page budget is said once.",
+               "Stop the collection asks first and says what is kept. Operations words a failed source the same way."],
+         why="A person watching a run needs to see what is happening, what went wrong and what to do, without "
+             "reading 86 rows or a raw error.",
+         metrics=[("Page length, 86 sources", "7,701 px", "1,180 px"),
+                  ("Where a failure shows", "In its row, as a raw error", "First, in words, with what to do"),
+                  ("Times", "UTC", "The starter's zone (Central)"),
+                  ("Stopping", "One click", "Asks first")],
+         diagram=None,
+         before=[("item-31-before-collection.png", "Before: RUNNING, but no step says where it is; times in UTC; "
+                                                   "a failure in row 4 of 86.")]),
+    dict(n="32", title="Market size as a band, from a named page", status="Built",
+         source=[("S9", "decision 3: market size appears as bands, from named sources, never as a figure the model makes up")],
+         what=["The Addressable market measure now names the one figure its score rests on, with its year, what it "
+               "covers and the page that states it. A figure is kept only when that page is one the measure cites.",
+               "Each Point of View shows it as a fifth answer: under $1B, $1–5B, $5–20B, $20–100B or over $100B, with "
+               "the figure and its page, or 'No figure found'. The Point of View's text uses the band too.",
+               "It appears as each technology is assessed again; Statista or another source Tata trusts can be added "
+               "later."],
+         why="A band from a named page is honest about how precise a market figure is, and never invents one.",
+         metrics=[("Market size on a Point of View", "In the text only, when a page gave one", "A band with its page, or 'No figure found'")],
+         diagram=None, before=[]),
+    dict(n="33", title="Metrics to watch are checked at the next assessment", status="Built",
+         source=[("S9", "Ankur's second test: metrics to watch, flagged when they cross an inflection point")],
+         what=["Each assessment now gets the metrics the one before it set, and says for each: crossed, not yet, or "
+               "no newer value, with today's value and the page that shows it. A crossing counts only from a page "
+               "the assessment read.",
+               "A crossing shows on the Briefing (Signs that crossed their threshold), on the technology's metrics "
+               "and in the Point of View, whose writer is told."],
+         why="The meeting notes said metrics are re-checked and flagged; until now each assessment suggested new "
+             "ones and nothing compared them.",
+         metrics=[("Previous metrics at the next assessment", "Not compared", "Each checked, with its page")],
+         diagram=None, before=[]),
+    dict(n="34", title="Leaders' opens and prints are counted", status="Built",
+         source=[("S9", "backlog item 4: view and download counts per Point of View, to see where leaders' attention goes")],
+         what=["The leaders' address counts each time a Point of View is opened and each Print / Save as PDF; it "
+               "is the one thing that address can write.",
+               "The Points of View list and each Point of View say how often leaders opened it and when last. Who "
+               "isn't known until there is sign-in."],
+         why="It shows which conclusions leaders read, without asking them.",
+         metrics=[("Leaders' reading", "Not known", "Opens and prints per Point of View")],
+         diagram=None, before=[]),
+    dict(n="35", title="A fabric people worked on is always assessed again", status="Built",
+         source=[("S8", "your question: is anything people entered lost at the next run?")],
+         what=["Nothing people enter is lost: it is kept against the technology and fabric, not the run. But each "
+               "assessment chooses its fabrics again, and a fabric it judged not relevant dropped off the page with "
+               "Tata's plan, a priority set by hand or a hand score in it.",
+               "Now every fabric where people recorded something is assessed again, whatever the model judges."],
+         why="Agentic AI's fabrics varied between runs (IoT came and went); the demo plan in Interaction would have "
+             "dropped the same way.",
+         metrics=[("A fabric with people's entries", "Could drop off the page", "Always assessed again")],
+         diagram=None, before=[]),
+    dict(n="36", title="86 sources, and the radar compared with the catalog", status="Built",
+         source=[("S9", "Ankur's first test: expand the sources and compare the radar's results with Tata's list")],
+         what=["Sources switched on went from 13 to 86, each test-read first: research labs, standards bodies, "
+               "conferences, funders, journals, investors and trade press. arXiv also reads its quantum, robotics "
+               "and AI lists; the paper and grant searches cover 20 topics. Patents (EPO) and USAJOBS follow once "
+               "their free keys are in.",
+               "A spreadsheet for Tata compares the radar with the catalog before and after: what the radar finds "
+               "that the catalog doesn't track, and every catalog technology with its pages and why it has little "
+               "or nothing.",
+               "The collection used 7,750 model calls (660 with 13 sources); judging evidence stopped at its token "
+               "limit, and the rest are judged at the next collection."],
+         why="Most of the catalog had no evidence at all: the 13 sources simply never named it.",
+         metrics=[("Catalog technologies with 3+ pages", "40", "143"),
+                  ("Catalog technologies with no pages", "883", "715"),
+                  ("Found by the radar, not in the catalog, 3+ pages", "300", "1,181")],
+         diagram=None, before=[]),
 ]
+
+ITEMS.append(
+    dict(n="37", title="One run, from collecting to publishing, in six steps", status="Built",
+         source=[("S8", "your question: an easier way to see which step the last run is on, and everything that happened in it")],
+         what=["A run is now shown whole, in six steps: Collect (reading each page), Organize (merging names), "
+               "Classify (judging evidence), Assess, Write Points of View and Publish to leaders. Each step says where "
+               "it stands (in progress, waits for you, stopped and why, done), who moves it on, what it did, and "
+               "links to its results.",
+               "A Now line on top says which step the run is on and what comes next; that step is marked. Assess, "
+               "Write and Publish count what was done from the collection's start until the next collection's, so "
+               "an older run shows what happened until then, with no buttons.",
+               "The same steps, in the same words, appear on the run page and on Operations, where they replace the "
+               "six cards and keep every button: Check again, Organize now, Classify, Assess, Resume, Write and "
+               "Publish, each showing its model-call cost first. The Briefing has one line on where the latest run "
+               "stands, and the status panel in the top bar links to it.",
+               "The Classify button is never the main one: the next collection carries on for free."],
+         why="Until now a run was split across three places that didn't agree: the run page stopped at judging "
+             "evidence, Operations showed the latest of each job (possibly from different runs) under other names, "
+             "and the Briefing's To do. Nothing answered which step the last run was on.",
+         metrics=[("Where a run's progress shows", "Three places, different step names", "One six-step view, used everywhere"),
+                  ("Steps after the collection (assess, write, publish)", "Not linked to the run", "Counted until the next collection"),
+                  ("Which step the run is on", "Worked out by the reader", "Said in the Now line")],
+         diagram=None,
+         before=[("item-37-before-operations.png", "Before: six cards for the latest of each job, which can come from different runs, under names the run page doesn't use."),
+                 ("item-37-before-briefing.png", "Before: the Briefing says when the last collection ran, not where it stands.")]))
+ITEMS.append(
+    dict(n="38", title="Judging evidence has no limit, and the catalog goes first", status="Built",
+         source=[("S8", "your question on why 5,807 technologies were left unjudged: remove the limit for good")],
+         what=["Classify (judging each technology's evidence) used to stop at 8 million tokens a run, a setting in "
+               "Setup › Settings. The 22 Oct collection's run stopped after 2,908 of 8,715 technologies, leaving "
+               "5,807 without a domain, availability, maturity or evidence verdict. The limit is gone from the "
+               "radar, its settings and the seeding data: a run judges every technology it is given.",
+               "Catalog technologies are judged first, then those with the most pages, so what matters most is "
+               "ready first.",
+               "A collection no longer skips judging when a Classify someone started is still going: it waits for "
+               "that run, then judges what it left, and its step says so.",
+               "The 5,807 left by the 22 Oct collection were judged on 22 Oct in one run of 35 minutes, none "
+               "failing: 563 technologies are now ready to assess for the first time, 76 of them in the catalog."],
+         why="The limit, not the method, left most new technologies unjudged; and the button offering to judge them "
+             "all would have stopped halfway at the same limit.",
+         metrics=[("Technologies one Classify run judges", "Up to about 2,900 (8M tokens)", "All it is given"),
+                  ("Order", "As stored", "Catalog first, then most pages"),
+                  ("A collection's Classify while another runs", "Skipped, without saying why", "Waits, then judges what's left")],
+         diagram=None, before=[]))
+ITEMS.append(
+    dict(n="39", title="A Status filter, and Add evidence through to the Point of View", status="Built",
+         source=[("S8", "your questions: is there a view of held technologies, and can a person give links or "
+                        "documents for one technology and have it assessed end to end?")],
+         what=["Technologies has a Status filter beside the others (Assessed, placed; Assessed, not placed; Ready to "
+               "assess; Thin evidence; No evidence yet), and the counts above the list now look like the links they "
+               "are. 'Assessed' became 'Assessed, placed', so the two assessed statuses add up to the Assessed group.",
+               "Each technology's page has Add evidence: paste links (one per line) and add PDF, text, Markdown or "
+               "HTML files. They are read like collected pages and filed under it, then its evidence is judged "
+               "again. By default it carries on by itself: assessed, then its Point of View written, which waits for "
+               "you to publish. 'Only judge its evidence' stops there.",
+               "If its evidence is still judged thin it stops and says so, unless you ticked 'Assess even if…'. The "
+               "cost shows on Start (one call per page, one to judge, the assessment's calls, one for the Point of "
+               "View); each step shows while it runs; pages already collected aren't read again.",
+               "It replaces the technology's single Add a link; Add a link stays on measures and use cases."],
+         why="Held technologies were reachable only through grey text that didn't look clickable; and a person who "
+             "knows the right pages for a technology had to drive four separate steps to get it to a Point of View.",
+         metrics=[("Finding the held technologies", "Grey text above the list", "A Status filter, and links"),
+                  ("Evidence a person gives", "One link at a time", "Links and files together"),
+                  ("From a person's pages to a Point of View", "Four steps by hand", "One start, with its cost")],
+         diagram=None,
+         before=[("item-39-before-technologies.png", "Before: the statuses are grey text after the group's meaning; nothing says they can be clicked.")]))
+ITEMS.append(
+    dict(n="40", title="Catalog technologies found on pages by name", status="Built",
+         source=[("S8", "your question on why so many catalog technologies had no evidence, and our sample of 14: "
+                        "most were named on pages we held, but not in the catalog's wording")],
+         what=["Each catalog technology now has the names it's written as on pages: its usual name, other spellings "
+               "and short forms (FlexE, Flex Ethernet; C-V2X, Cellular Vehicle-to-Everything; DALI, IEC 62386). A "
+               "model gives them once, 40 at a time; a person can edit them on the technology's page.",
+               "Every stored page is searched for those names at no model cost (a one-word name only as written, so "
+               "\"did\" or \"matter\" in a sentence isn't a match). For each technology named on pages it isn't filed "
+               "under, a model reads the passages and says whether each page is about it, names it in passing, or "
+               "uses the word for something else. Pages about it are filed as its evidence; pages naming it in "
+               "passing are counted apart and never count as evidence. Each page is checked once.",
+               "It runs in every collection, on its new pages, inside the Organize step (now 'Organize: merge and "
+               "link names'), and once over every stored page as a catch-up (Operations, Link known names on all "
+               "pages). Catalog only, as you chose: broad assessed technologies already have plenty of pages. The "
+               "catch-up on 22 Oct checked 600 catalog technologies named on 7,650 pages in about 1,200 model calls: "
+               "856 pages were about one and are now its evidence, 5,588 named one in passing, 1,206 used the words "
+               "for something else. Their evidence was then judged again: 37 more catalog technologies are ready to "
+               "assess.",
+               "108 catalog entries read as an industry application rather than a technology (\"Edge Computing for "
+               "Cold Chain\", \"AI in education\"); each says so on its page, worth asking Tata which technology it "
+               "stands for.",
+               "Also: Add evidence's file picker is a real button with the chosen files listed; it says a link is "
+               "read as one page (links on it aren't followed), refuses a link carrying a login and says why; "
+               "\"Only judge\" says where to see the result; tested on real pages (FlexE, from no pages to a Point "
+               "of View in 2 minutes 20 seconds; k0s judged thin). About this technology on a Point of "
+               "View reads as one column across the full width of the page, on any screen."],
+         why="Most catalog technologies had no evidence because pages name them in other words, not because the "
+             "pages weren't there; the page reader only noted what each page was mainly about.",
+         metrics=[("Catalog technologies with no pages", "726", "610"),
+                  ("Catalog technologies with 3+ pages", "150", "205"),
+                  ("Pages filed under catalog technologies by name (catch-up, 22 Oct)", "—", "856, for 226 technologies"),
+                  ("How a page is linked to a catalog technology", "Only if the reader named it as the page's subject",
+                   "Also by its names, checked by a model"),
+                  ("A page naming it in passing", "Not counted", "Counted apart, never evidence")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="41", title="Fixes to wrong numbers, and a crawl that carries on past a bad link", status="Built",
+         source=[("S8", "your review of 23 Oct: the token-limit message, the Cisco blog stopping on one bad link, and "
+                        "the Don Norman review of 22 Oct (its 'wrong or misleading numbers' items)")],
+         what=["One bad link or page no longer stops a source. On 22 Oct the Cisco blogs stopped after 6 pages because "
+               "one link had a malformed address, and arXiv after 42 because one page had a character that couldn't be "
+               "stored. Now that link or page is skipped and counted with its reason (\"2 pages skipped: the site "
+               "answered 404\"), shown on the collection's page, and the rest of the source is read. Saved searches and "
+               "Find evidence carry on the same way.",
+               "Classify finished in two parts says so: \"All 8,715 judged: 2,908 during this collection, the rest by a "
+               "later Classify\", and that the first part stopped at the spending limit removed on 22 Oct. Nothing can "
+               "stop it for spending any more. A Classify or Find evidence interrupted by a restart no longer blocks "
+               "the next one.",
+               "Numbers corrected: each cell of an assessment run's priority grid counts its own rows (two cells with "
+               "the same priority used to show the same total); on the leaders' grid the Act corner is exactly the P1 "
+               "cell, as the help says, with an Act now card first; each weight shows its real share of its score; "
+               "\"50 of 60 measures scored; 10 wait for your figures\" instead of \"had enough evidence\"; websites not "
+               "read to the end are counted one way everywhere; thousands separators; evidence from Find evidence is "
+               "named; the catalog note lists each file once; regulators have their own group of sources.",
+               "The Setup badge counts setup edits by people. The 1,981 sub-domains the model proposed were counted as "
+               "edits and filled Changes with 432,000 px of cards; they now show as one line, to review on Domains.",
+               "Under the hood: every index lives in the seeding data, and start-up creates any that are missing; "
+               "Operations' problems no longer read every page each time; the list of assessment runs no longer "
+               "carries every call's record (3.4 MB to 76 KB); the server reaps the browsers the crawler starts, and "
+               "restarts by itself after a crash."],
+         why="Numbers that are wrong, or right but misleading, cost trust faster than anything else on a screen; and a "
+             "source that stops on one bad link silently loses everything after it.",
+         metrics=[("A bad link or page in a source", "The whole source stopped", "Skipped with its reason; the source carries on"),
+                  ("Setup badge", "1,981 (the model's proposals)", "Setup edits by people only"),
+                  ("Changes page", "432,000 px tall", "One screen; proposals in one line"),
+                  ("List of assessment runs (download)", "3.4 MB", "76 KB"),
+                  ("Operations problems (polled)", "Read every page each time", "An index lookup, 52 ms")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="42", title="Screens that stay fast at any size", status="Built",
+         source=[("S8", "your review of 23 Oct: the Technologies page slowing down, and Tata running the radar "
+                        "for months, collecting millions of pages")],
+         what=["Each technology's answers are now kept ready: its status, waiting state, classification, priorities "
+               "and what waits on it before publishing. Before, the Technologies list, the Briefing's To do and the "
+               "status line (which every open page asks for every few seconds) worked out every technology from "
+               "scratch on each load. Now they read the ready answers, 50 rows at a time.",
+               "The answers follow every change: a person's own action (a move, Undo, switching one off) updates "
+               "that technology at once; collections, Classify, assessments and Points of View are picked up within "
+               "seconds; a setup edit recounts everything in the background; and everything is recounted every 30 "
+               "minutes as a safety net. While a large recount runs, the Technologies page says so.",
+               "Checked to give the same answers as before: on a copy of the live data, every one of the 10,514 "
+               "technologies and 24 views and filters of the list matched exactly.",
+               "Also: a page in a background tab no longer asks the server for anything, and catches up when "
+               "shown; typing in the search box no longer redraws the table; choosing thousands of technologies "
+               "no longer sends a burst of cost requests; the leaders' grid no longer re-places its names on "
+               "every hover; a web page that hangs the reading browser stops that browser instead of holding up "
+               "the rest of its source; one connection to the model is shared."],
+         why="The radar will hold millions of pages. A screen that works everything out on each load gets slower "
+             "with every collection, and on a copy with a million pages it ran the server out of memory.",
+         metrics=[("Technologies list, today's data", "0.68 s (3.5 s with five people at once)", "0.08 s (0.10 s)"),
+                  ("Briefing To do, today's data", "1.0 s (4.1 s with five at once)", "0.06 s (0.08 s)"),
+                  ("Status line, a million pages", "Ran out of memory", "0.27 s"),
+                  ("Technologies list, a million pages", "Gave up after 2 minutes", "0.9 s"),
+                  ("A background tab", "Asked every 5 to 30 s", "Asks nothing until shown")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="43", title="Pages of 50 that keep your place, one kind of filter, and History on its own", status="Built",
+         source=[("S8", "your review of 23 Oct: 'Show more' keeps adding rows and slows the page; come back to the same "
+                        "rows (101–150) after visiting another page; buttons and links as filters confuse; move History "
+                        "to its own tab")],
+         what=["Every long list now comes in pages: \"51–100 of 10,514\", with Next, Prev, first and last. The page "
+               "holds only the rows you see, so it stays light. This covers Technologies, the Briefing's findings "
+               "(15 a page, to keep it short), a technology's pages, a collection's source pages, Points of View, "
+               "History, an assessment run's table, the Signal list's set-aside pages and suggestions, and an "
+               "import's names. No \"Show more\" is left.",
+               "Coming back puts you on the same rows: leave Technologies at 101–150 for another page, come back "
+               "by the top menu, and it shows 101–150 with the same filters and search. If the list got shorter "
+               "meanwhile, it shows its last page and says so; the row you opened comes back into view. \"Start "
+               "over\" goes back to the first rows.",
+               "Technologies has one kind of filter. The groups are buttons. Everything that narrows the list is a "
+               "labelled dropdown with counts, Status and Commercial availability included (they were a line of "
+               "links and a strip of buttons). What's on shows as chips, each removable, with Clear all (it used "
+               "to leave the status and search on). The search is in the address, so Back keeps it. How the groups "
+               "work starts closed.",
+               "History is its own tab on Operations, 50 runs a page, with everything it had; the overview keeps "
+               "the latest run, problems and coverage.",
+               "Also: To do carries the first 50 names of each item and links to the full list; working out the "
+               "cost of thousands of chosen technologies is one request; a row of the Technologies list is drawn "
+               "again only when it changes."],
+         why="A list that keeps growing in the page gets slower with every click, and filters that look like "
+             "links, buttons and dropdowns at once make the reader work out which is which.",
+         metrics=[("Rows in the Technologies page", "100, then more with each Show more (up to 500 reloaded)", "50"),
+                  ("Back on a list after another page", "The first rows again", "The same rows, filters and search"),
+                  ("Kinds of filter control on Technologies", "Four (chips, links, a strip, dropdowns)", "Buttons for groups, dropdowns for the rest"),
+                  ("To do's answer", "451 KB", "65 KB"),
+                  ("Operations overview", "2,731 px tall, History the biggest part", "History on its own tab")],
+         diagram=None,
+         before=[("item-43-before-technologies.png", "Before: group chips, status links, an availability strip and dropdowns, four kinds of filter, with How the groups work open.")]))
+
+ITEMS.append(
+    dict(n="44", title="A shorter Briefing, signs to watch you can own, and a technology page that uses the width", status="Built",
+         source=[("S8", "your review of 23 Oct: what thresholds are and where they're set; the Briefing makes you scroll a "
+                        "lot; the technology Overview wastes space; and the Don Norman review (the same story three times)")],
+         what=["What a sign to watch is, said where signs show: each assessed technology has 2 to 4; at its first "
+               "assessment the radar proposes each sign and its threshold (the point at which the answer changes); every "
+               "assessment checks them again. Each sign reads as labelled lines, threshold first: Threshold, Was, Now "
+               "(with its source), Means.",
+               "A person can own a sign, on the technology's Fabrics tab: Edit threshold (in their own words) or Not "
+               "crossed (it takes the sign off the Briefing). Both are kept like every other choice, with Undo; the next "
+               "assessment receives a person's threshold as fixed and judges the sign against it (its skill, version 4, "
+               "says so); the Point of View uses it.",
+               "The Briefing is shorter: the signs that crossed are one closed line each, the newest three first, each "
+               "opening in place; the kind of finding is a dropdown with counts instead of a column down the left; 15 "
+               "findings a page; on a phone, To do's columns are one line each with their count. A story reported on "
+               "several pages shows once, with \"also reported by\" and links: the same kind of finding about the same "
+               "company on the same day (about 1 finding in 10 this week was a copy).",
+               "The technology's Overview uses the width: on a wide screen, the Point of View, its priorities and what "
+               "waits on you on the left; what the technology is (availability, readiness, domain, evidence, the "
+               "catalog, the names it's looked for by) on the right, each card as tall as what it says.",
+               "Faster: the Briefing's findings no longer carry each page's full text while they're sorted (0.4 s to "
+               "0.05 s today; about 0.5 s with a million pages spread over a year)."],
+         why="A threshold no one can see or change can't be trusted; a page that repeats a story or makes the reader "
+             "scroll past everything else hides what matters.",
+         metrics=[("Briefing height (wide screen)", "3,450 px", "about 2,500 px"),
+                  ("Briefing height (phone)", "6,723 px", "about 4,400 px"),
+                  ("A story on three sites", "Three findings", "One, also reported by the others"),
+                  ("A sign's threshold", "The model's, unseen", "Shown, and a person can set it"),
+                  ("Briefing summary, today's data", "0.39 s", "0.05 s")],
+         diagram=None,
+         before=[("item-44-before-briefing.png", "Before: crossed signs as run-on paragraphs, and a rail of signal types down the left of the findings."),
+                 ("item-44-before-overview.png", "Before: one stacked column, with empty space on the right of each block.")]))
+
+ITEMS.append(
+    dict(n="45", title="One set of words, pages that work on a phone, and actions that say what they'll do", status="Built",
+         source=[("S8", "your review of 23 Oct, point 8: include the Don Norman recommendations (sections B, C, D and F "
+                        "of the implementation plan)")],
+         what=["Words. The steps have one name each, everywhere: Collect, Organize, Classify, Assess, Write Points of "
+               "View; History names its rows by step. One status chip in plain sentence case replaces six styles; a "
+               "collection says what finished (\"Collected · 4 sources couldn't finish\"). A technology's Fabrics tab "
+               "is now Assessment, with a line on how priority (how soon × how big) relates to the three scores. "
+               "Domains and Fabrics each say how they differ. Assessment runs are named by date and size, as on "
+               "their own page; their grid now has sooner on the right, like the leaders' grid. Dates read one way. "
+               "Every page under another has its back link. A collection's source page says \"The radar's read\", "
+               "and the page summaries now speak to the reader (the skill, version 7, is saved as the default). "
+               "Setup's menu and Skills follow the order of the steps. Every row you can change has an Edit link.",
+               "Phones. Tables keep their first column: Collections and a collection's sources show each row's name "
+               "with the rest under it; an assessment run keeps the technology names in view. The leaders' site opens "
+               "as the Table on a phone, the Grid one tap away. The phone menu has the Leaders' view, and the status "
+               "line keeps its problem count. \"Why it matters\" on the Briefing shows up to three lines. Fabric chips "
+               "wrap instead of running off the screen; folds keep their arrow beside the title; the step line on a "
+               "technology no longer starts a line with a loose dash.",
+               "Say first, then do, with Undo. Switching a signal on or off asks first: \"It marks 5,403 stored pages "
+               "as not yet checked: about 5,403 model calls when you run Check again.\" Domains: tick several "
+               "proposed sub-domains, or all the new ones in a domain, then Accept or Merge into another; each asks "
+               "first, and Undo puts them back with their technologies. Each Changes card has \"Put back the "
+               "default\". Save the edges says what would move before it saves (\"129 move P3 → P2, 19 move P2 → "
+               "P1…\", from stored scores, no model calls). A Point of View with newer pages offers Assess again with "
+               "its cost, and Rewrite says it won't take them in. The Points of View written after the edition carry "
+               "\"Not in the Oct 22 edition\", and that count is a filter. The two Settings switches show what they "
+               "cost. Problems link to the source and say who acts (\"ask whoever runs the server to add "
+               "OPENALEX_API_KEY\"), or that there is nothing to do. History counts model calls, as the buttons do "
+               "before a run; tokens sit under Cost by skill and Technical details.",
+               "Density. Classification counts each sit on their own row (\"TRL 3 1,212\" no longer reads as "
+               "\"TRL 31,212\"), with the 6,263 technologies whose level isn't judged yet. Import's steps are a "
+               "progress strip, not buttons; To do lines that open a list look like links."],
+         why="A reader trusts a screen that names things one way, works where they are, and says what an action "
+             "will do before it does it, and lets them take it back.",
+         metrics=[("Switching a signal", "One click; thousands of pages marked, no count", "Asks first: pages marked and calls to check them"),
+                  ("Merging sub-domains", "As soon as one is picked, one at a time, no Undo", "Several at once, asks first, Undo"),
+                  ("Saving the grid edges", "Saved with no idea what moves", "Says what moves first, no model calls"),
+                  ("Status chip styles", "Six", "One"),
+                  ("Technologies with no TRL yet", "Not shown", "6,263, on their own row"),
+                  ("Briefing height (phone)", "about 4,400 px", "about 4,970 px: Why it matters now shows up to 3 lines")],
+         diagram=None,
+         before=[("item-45-before-trl.png", "Before: the counts ran together (\"TRL 3 116\" next to \"TRL 4 43\"), and technologies with no level weren't counted.")]))
+
+ITEMS.append(
+    dict(n="46", title="The leaders' view: the verdict at a glance, why things moved, and the answer first", status="Built",
+         source=[("S8", "your review of 23 Oct, point 8: the Don Norman recommendations for the leaders' site (E2 to E5 "
+                        "of the implementation plan)")],
+         what=["On the leaders' overview, each technology under Act now and Best bets carries its Point of View's "
+               "headline (once per technology), so a leader reads the verdict without opening it. From the next "
+               "edition each also shows how solid its evidence is (\"Evidence: Strong\"); the edition published on "
+               "Oct 22 doesn't hold that yet.",
+               "Moved since the last edition shows the 8 moves that matter most first: into P1 or P2, then the biggest "
+               "jumps, with Show all for the rest. Each says which score moved and by how much, \"how soon 5 → 7.5 and "
+               "how big 7 → 8\", instead of \"new scores\"; from the next edition, also how many new pages the "
+               "assessment read. The Oct 22 edition's 103 moves are explained from the two editions' own scores.",
+               "A leaders' Point of View opens with its headline, then the five answers (priority, maturity, "
+               "availability, market size, evidence), then what Tata has committed, as labelled lines: Owner, Next, "
+               "By, People, Budget, Proof of concept. The fabrics with no owner share one line (\"No owner yet in "
+               "Cloud, IoT, Network, Security\") instead of saying it twice per fabric; the run-on \"next, Sign …. by\" "
+               "is gone, on the grid's pop-up too.",
+               "The words match the grid: under the scores, each fabric's priority as a sentence (\"P2 because it "
+               "arrives mid-term (how soon 7) and the prize is big (how big 8)\"); the horizon in words, not \"H2\"; "
+               "\"3 of 3 measures\"; the three scores in plain case on both sides (Market potential, Strategic fit, "
+               "Adoption readiness), with a line on how they relate to the priority; and the catalog as \"Tata's "
+               "technology list\", not a file name.",
+               "On a phone, the leaders' table comes in pages of 50, like every other list (it held all 640 at once)."],
+         why="A leader should see what to do and how far to trust it at a glance, why something moved, and who has "
+             "committed what, in the same words the grid uses.",
+         metrics=[("A pick's verdict on the overview", "Only on hover", "Its headline under it"),
+                  ("Moved since, first view", "All 57 (2.5 screens), each \"new scores\"", "The 8 biggest, each with the score that moved"),
+                  ("\"No owner yet\" on Agentic AI's Point of View", "8 times", "Once"),
+                  ("Leaders' overview on a phone", "33,922 px tall", "8,249 px")],
+         diagram=None,
+         before=[("item-46-before-pov.png", "Before: the commitments open the page as run-on text, with \"No owner yet\" twice for each fabric, above the headline; the catalog is named by its file.")]))
+
+ITEMS.append(
+    dict(n="47", title="Ready for millions of pages: small records, edits that touch only their pages, lists a page at a time",
+         status="Built",
+         source=[("S8", "your review of 23 Oct, point 9: performance, memory and scale (the clean-up phase of the plan, "
+                        "and the third of its three scale rules: no record grows without limit)")],
+         what=["No record grows without limit. MongoDB refuses any single record over 16 MB, in every edition, paid or "
+               "free. Three kinds grew with every technology or row: an assessment run kept every technology's call "
+               "answers in its own record (1.8 MB for 262 technologies: the limit at about 2,300), an edition kept "
+               "every placement (the limit at about 16,000), and an import kept every row (the limit at about 20,000). "
+               "Each now keeps one small record per technology, placement or row. Editions and imports made before "
+               "today read exactly as they did; an import moves its rows out the next time it's saved.",
+               "A person's edit touches only its own pages. Renaming a technology, merging two or moving a name used "
+               "to re-link every stored page and recount every technology while the person waited. It now re-links "
+               "only the pages that use those names and recounts only the technologies they touch, so an edit costs "
+               "what that technology's pages cost, not what all pages cost. When a collection re-links everything, "
+               "only pages whose links changed are written.",
+               "Counting moved into the database. Each technology's page, source and kind counts, and the list of "
+               "technologies waiting for Classify, were added up in the app's memory; the database does it now, so "
+               "memory stays flat as pages grow. Checked against the old count on today's data: the same for all "
+               "9,904 technologies.",
+               "The two lists that still sent everything now come a page at a time from the server, with their "
+               "filters, sort and counts worked out there, and keep their place: Points of View (48 cards a page) and "
+               "an assessment run's table (50 rows, with the grid's counts by cell).",
+               "Tidier code, nothing on screen changes: one way to name a technology on screen (20 copies), one way "
+               "to find each technology's latest Point of View (4 copies), the three scores named in one place; the "
+               "import page and the Point of View split into readable parts. Answers checked before and after on "
+               "five main screens: identical.",
+               "Checked again on the copy with a million pages and 105,000 technologies: nothing got slower. Still "
+               "over half a second there: the Briefing over 30 days (6.6 s) and over all time (78 s), a technology "
+               "with thousands of pages (1 to 3.5 s), the Points of View list (2 s), and the status line, To do and "
+               "Technologies (0.5 to 0.9 s). Today's data answers every screen in under 0.25 s."],
+         why="Tata will collect millions of pages; a record that grows with them eventually can't be saved, and work "
+             "that reads every page on a click gets slower with every collection.",
+         metrics=[("An assessment run's record (262 technologies)", "1.8 MB, growing about 7 KB a technology", "Small, one record per technology"),
+                  ("Points of View list sent", "270 KB, all 363", "37 KB, 48 a page"),
+                  ("An assessment run's page sent", "1.6 MB", "7.5 KB, then 38 KB a page of rows"),
+                  ("Renaming a technology", "Re-links every stored page", "Re-links only its own pages")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="48", title="Every screen quick at a million pages: the Briefing keeps each day's findings ready", status="Built",
+         source=[("S8", "your answer of 23 Oct: fix the slow screens the million-page check found, keep it simple, and "
+                        "keep the numbers current while new data arrives")],
+         what=["The Briefing keeps each day's findings ready. For every day, the findings of the pages collected that "
+               "day (copies of one story counted once) are kept with the day's totals. A week, 30 days or all time "
+               "adds up those daily totals, and the list reads only the 15 findings it shows. When a collection stores "
+               "a page, or Check again rewrites one, that page's day is marked, and it is worked out again the next "
+               "time anyone looks: today's numbers stay current while a collection runs, and an old day costs "
+               "nothing until something changes it. Reordering or switching a signal reorders the list at once.",
+               "One rule changed so the totals and the list always agree: copies of a story count once within the "
+               "day they were collected. On today's data that adds 42 findings to 7,083 (0.6%): copies collected on "
+               "different days now count once each day. Checked on today's data: the kept totals and the first 30 "
+               "findings match working them out from the pages, for a week, 30 days and all time.",
+               "A technology's pages: the count and the list come from one pass over small fields, and only the 50 "
+               "pages shown are read in full and checked against the latest assessment (identical rows on four "
+               "technologies checked). Technologies counts all its filters in one pass instead of ten. The Points of "
+               "View list counts what Rewrite all covers from an index. Two indexes added to the seeding data."],
+         why="Tata will hold millions of pages; a screen that adds up every page each time it opens gets slower with "
+             "every collection. Keeping each day's answer ready keeps it quick at any size, and current as pages arrive.",
+         metrics=[("Briefing, all time, at a million pages", "78 s", "0.01 s"),
+                  ("Briefing, 30 days, at a million pages", "6.6 s", "0.02 s"),
+                  ("A technology with 7,700 pages, at a million pages", "1 to 3.5 s", "0.1 to 0.5 s (about 1 s when its pages aren't in memory)"),
+                  ("Points of View list, at a million pages", "2 s", "0.3 to 0.7 s (about 1 s cold)"),
+                  ("Technologies, at a million pages", "0.9 s", "0.4 to 0.6 s"),
+                  ("Briefing on today's data", "0.08 s", "0.01 to 0.03 s")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="49", title="Long jobs run apart from the web pages, and survive an update of the web app", status="Built",
+         source=[("S8", "your review of 23 Oct, point 9, scale rule 2: heavy work runs apart from the web app")],
+         what=["A new part, the worker, runs every long job: a collection, an assessment run, Classify, writing Points "
+               "of View, Check again, Find evidence and Organize. The web app only records \"start this\" and answers at "
+               "once; the worker picks the job up within a second and runs the same steps as before. Nothing changes on "
+               "screen: the same buttons, the same progress, the same Stop. If collections grow, a second worker can be "
+               "started; nothing else changes.",
+               "Updating the web app no longer stops a job: checked live by restarting it in the middle of a job, which "
+               "finished normally. Updating the worker itself still ends the jobs it runs, and each says so; it's "
+               "updated only when nothing is running. The worker also does the recovery after a restart and the "
+               "background upkeep (each technology's answers, the Briefing's days).",
+               "Stress test on the copy with a million pages, with the worker re-working all 105,140 technologies and "
+               "every Briefing day while the screens were timed: the Briefing answered in 0.02 to 0.03 s in every "
+               "window. The first try found that days changed in bulk (as after a Check again over every page) were "
+               "worked out while the reader waited (30 days: 11.5 s; all time: over 2 minutes); now today's and "
+               "yesterday's changes are worked out at once, older ones in the background, and the Briefing says how "
+               "many earlier days are being brought up to date until they are. Other screens slowed to 0.5 to 2.5 s "
+               "under that load: the test copy's one small database (2 GB, on a laptop) served the heavy work too, "
+               "while the web app itself stayed idle. On Tata's server the database needs room for that work.",
+               "Shipped with the code: the worker in docker-compose.yml, its setting in .env.example, the README's list "
+               "of running parts, and its collection and index in the seeding data. A fresh install from them was "
+               "checked on an empty database."],
+         why="A collection of thousands of pages, or an assessment of hundreds of technologies, takes hours; it must "
+             "neither slow the screens people are using nor be cut off when the web app is updated.",
+         metrics=[("A job when the web app is updated", "Stopped", "Goes on"),
+                  ("Briefing, all time, while every day is reworked (million pages)", "Over 2 minutes", "0.02 s"),
+                  ("Web app's own load during heavy work", "Shared with the job", "Near 0% CPU")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="50", title="The radar holds up at ten million pages, and the live radar runs the same code", status="Live",
+         source=[("S8", "your review of 23 Oct: the radar must work at Tata's size, tested end to end")],
+         what=["A page is now known by its tidied link, or by the same site, title and text under another link, so a page "
+               "collected again counts once; its full text is kept apart, so lists never load it. Organize reads only the "
+               "pages that are new since it last ran, and an edit, import or filing re-links only the names it changed.",
+               "Tested on a copy of the radar with ten million pages: every step runs end to end, the Briefing opens in "
+               "hundredths of a second and the busiest lists in one to three seconds. The full figures, the changes made "
+               "and the server sizes Tata needs are in the load-test report (final_deliverable/load-test).",
+               "The live radar was backed up, then upgraded: its 5,719 page visits became 5,022 pages in 6 seconds, every "
+               "screen loads, every index in the seeding data is present, and every screen's calls answer in under 0.1 s."],
+         why="Tata's radar will grow far beyond today's size; it has to stay quick and complete at that size.",
+         metrics=[("Organize at ten million pages", "Over 5 hours, unfinished", "About 4 minutes"),
+                  ("Live pages counted once", "5,719 visits", "5,022 pages"),
+                  ("Slowest live screen call", "Under 0.5 s", "Under 0.1 s")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="51", title="A person can re-score any measure, not only the ones the pages couldn't score", status="Live",
+         source=[("S8", "your question of 25 Oct: how a person overrides scores after an assessment, for each technology and fabric")],
+         what=["Every measure the model scored now has Score by hand, in each fabric's tab, under Settled. The person's "
+               "score (0 to 10, with a reason) replaces the model's, which stays beside it; Undo brings the model's back. "
+               "A measure judged for the technology as a whole takes the same score in every fabric.",
+               "The person's score flows into the three scores, the priority and the Point of View like any other choice, "
+               "and a later run never overwrites it."],
+         why="People must have the final say on every score, not only on the gaps.",
+         metrics=[("Scored measures a person can change", "None", "All")],
+         diagram=None, before=[]))
 
 DECISIONS = [
     "Finance (contribution, payback, break-even) is set aside on every screen until Tata has discussed it; figures and "
@@ -797,7 +1415,6 @@ DECISIONS = [
 ]
 
 WAITING = [
-    "Review the 27 proposed matches of the catalog's file again, on the new review screen, and confirm.",
     "Confirm or replace the assumptions in force: the first edition (21 Oct) shows the deck's two examples, from Setup › "
     "Assumptions. Publish the next edition when they're right.",
     "Answer yes or no on the {nascent} possibly nascent technologies.",

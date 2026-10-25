@@ -4,7 +4,6 @@ run_scoring then assesses anything it skipped, so completion never depends on
 LLM behavior (the same guarantee the scouts have)."""
 
 import logging
-import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from deepagents import create_deep_agent
@@ -18,6 +17,7 @@ from app.services.llm.llm import LLM
 from app.services.prompts.store import PromptStore
 from app.services.timezone import now_utc
 from app.settings import get_settings
+from app.services import jobs
 
 log = logging.getLogger(__name__)
 
@@ -32,8 +32,7 @@ def start_scoring_run(params: dict) -> str | None:
         if reason:
             raise busy.Busy(reason)
         run_id = engine.create_scoring_run(params)
-    threading.Thread(target=run_scoring, args=(run_id,),
-                     name=f"scoring-{run_id}", daemon=True).start()
+    jobs.start(run_scoring, run_id)
     return run_id
 
 
@@ -55,8 +54,7 @@ def resume_scoring_run(run_id: str) -> bool:
              "$push": {"stage_history": {"stage": "resumed", "at": now_utc()}}})
     if doc is None:
         return False
-    threading.Thread(target=run_scoring, args=(run_id,),
-                     name=f"scoring-{run_id}", daemon=True).start()
+    jobs.start(run_scoring, run_id)
     return True
 
 

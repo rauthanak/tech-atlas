@@ -62,7 +62,7 @@ def test_a_person_adds_one_to_the_catalog_or_takes_one_out_and_undo_puts_it_back
     assert ids(view="mature_not_on_tata") == ["mature-matched"]
     body = client.get("/api/technologies").json()
     assert body["catalog"] == {"files": [{"file": "tata.xlsx", "at": "2026-10-21T04:32:06+00:00", "tz": "America/Chicago",
-                                          "technologies": 2}], "added": 1, "taken_out": 1}
+                                          "technologies": 2}], "emptied": 0, "added": 1, "taken_out": 1}
     row = next(t for t in body["technologies"] if t["_id"] == "mature-new")
     assert row["catalog"]["in"] and row["catalog"]["decision_id"]
     assert post("mature-new", "yes").json()["detail"] == "it's already in the catalog"
@@ -124,3 +124,34 @@ def test_a_nascent_flag_brings_its_page(db):
     body = client.get("/api/technologies", params={"view": "nascent"}).json()
     assert [t["_id"] for t in body["technologies"]] == ["research"]
     assert body["cited_pages"]["d1"]["url"] == "https://x/1"
+
+
+def test_merging_proposed_subdomains_moves_them_and_undo_puts_them_back(db):
+    """Domains › bulk Merge: technologies move and the counts follow; Undo
+    brings the sub-domains, their technologies and the people's choices back.
+    Bulk Accept and its Undo set the status."""
+    _world(db)
+    for sid in ("ai--bots", "ai--helpers"):
+        db["subdomains"].insert_one({"_id": sid, "subdomain_id": sid, "name": sid[4:], "domain_id": "ai", "status": "new"})
+    _classified(db, "bot-one", "pilot", subdomain="ai--bots")
+    db["technologies"].update_one({"_id": "bot-one"}, {"$set": {"classification.domain.subdomain_new": True}})
+    _classified(db, "helper-one", "pilot", subdomain="ai--helpers")
+    db["decisions"].insert_one({"_id": "d1", "kind": "move", "field": "subdomain", "value": "ai--helpers",
+                                "active": True, "tech_id": "helper-one"})
+    count = lambda sid: {i["_id"]: i["technologies"] for i in client.get("/api/lists/subdomains").json()["items"]}.get(sid)  # noqa: E731
+
+    out = client.post("/api/lists/subdomains/merge", json={"ids": ["ai--bots", "ai--helpers"], "into": "ai--ai_agents"}).json()
+    assert (out["merged"], out["technologies_moved"]) == (2, 2)
+    assert db["subdomains"].count_documents({"_id": {"$in": ["ai--bots", "ai--helpers"]}}) == 0
+    assert count("ai--ai_agents") == 4
+    assert db["decisions"].find_one({"_id": "d1"})["value"] == "ai--ai_agents"
+
+    back = client.post("/api/lists/subdomains/unmerge", json=out["undo"]).json()
+    assert back == {"put_back": 2, "technologies_moved_back": 2}
+    assert count("ai--ai_agents") == 2 and count("ai--bots") == 1
+    assert db["technologies"].find_one({"_id": "bot-one"})["classification"]["domain"]["subdomain_new"] is True
+    assert db["decisions"].find_one({"_id": "d1"})["value"] == "ai--helpers"
+
+    assert client.post("/api/lists/subdomains/status", json={"ids": ["ai--bots", "ai--helpers"], "status": "seeded"}).json() == {"changed": 2}
+    assert client.post("/api/lists/subdomains/status", json={"ids": ["ai--bots"], "status": "new"}).json() == {"changed": 1}
+    assert db["subdomains"].find_one({"_id": "ai--bots"})["status"] == "new"

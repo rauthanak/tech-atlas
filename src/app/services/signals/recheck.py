@@ -11,12 +11,11 @@ why (analysis_error) and stays stale, so the next re-check retries it; a
 later success clears the reason."""
 
 import logging
-import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from app.services.llm.context import with_context
-from app.services import busy
+from app.services import briefing_days, busy, jobs as background, page_texts
 from app.services.db.mongo import get_collection
 from app.services.llm import LLM
 from app.services.signals import snapshot
@@ -26,17 +25,26 @@ from app.settings import get_settings
 log = logging.getLogger(__name__)
 
 
+CHECKABLE = {"is_stub": False, "has_text": True}
+
+
 def stale_query(current_hash: str) -> dict:
     """Pages to re-check: not stubs, text still stored, checked against
     another list or never. (The newest version of a page always keeps its
     text; only superseded older versions are pruned.)"""
-    return {"is_stub": False, "extracted_text": {"$ne": None},
-            "signals_hash": {"$ne": current_hash}}
+    return {**CHECKABLE, "signals_hash": {"$ne": current_hash}}
+
+
+def checkable_count() -> int:
+    """Pages any change to the signal list marks as not yet checked."""
+    return get_collection("documents").count_documents(CHECKABLE)
 
 
 def stale_count(current_hash: str | None = None) -> int:
-    return get_collection("documents").count_documents(
-        stale_query(current_hash or snapshot.current_hash()))
+    """Checkable pages not checked against this list: all of them less those that were (two counts in an index)."""
+    docs = get_collection("documents")
+    return docs.count_documents(CHECKABLE) - docs.count_documents(
+        {**CHECKABLE, "signals_hash": current_hash or snapshot.current_hash()})
 
 
 def latest_job() -> dict | None:
@@ -52,40 +60,45 @@ def start() -> dict:
         if reason:
             raise busy.Busy(reason)
         snap = snapshot.build()
-        ids = [d["_id"] for d in get_collection("documents")
-               .find(stale_query(snap["signals_hash"]), {"_id": 1}).sort("scraped_at", 1)]
-        if not ids:
+        total = get_collection("documents").count_documents(stale_query(snap["signals_hash"]))
+        if not total:
             raise busy.Busy("Nothing to check again: every stored page was checked against the current list.")
         job_id = uuid.uuid4().hex[:12]
         get_collection("recheck_jobs").insert_one({
             "_id": job_id, "status": "running", "stage": "checking",
-            "total": len(ids), "done": 0, "failed": 0,
+            "total": total, "done": 0, "failed": 0,
             "found": 0, "other": 0, "set_aside": 0, "failed_reasons": {},
             "signals_hash": snap["signals_hash"],
             "started_at": now_utc(), "heartbeat_at": now_utc(), "finished_at": None})
-    threading.Thread(target=_run, args=(job_id, ids, snap),
-                     name=f"recheck-{job_id}", daemon=True).start()
-    return {"job_id": job_id, "total": len(ids)}
+    background.start(_run, job_id)  # it lists its pages itself: a list of a million ids is no job argument
+    return {"job_id": job_id, "total": total}
 
 
-def _run(job_id: str, ids: list[str], snap: dict) -> None:
+def _run(job_id: str, ids: list[str] | None = None, snap: dict | None = None) -> None:
+    """Check these pages again against `snap` (the signal list); by default the
+    current list and every page not checked against it (how the job starts it)."""
     from agent.resolver import run_resolve_sync
     from agent.scout.tools.summarize import summarize_page
 
     jobs, docs = get_collection("recheck_jobs"), get_collection("documents")
     llm = LLM.initialize()
+    snap = snap or snapshot.build()
+    if ids is None:
+        ids = [d["_id"] for d in docs.find(stale_query(snap["signals_hash"]), {"_id": 1}).sort("scraped_at", 1)]
 
     def record(doc_id: str, fields: dict) -> None:
-        docs.update_one({"_id": doc_id}, {"$set": fields})
-        docs.update_many({"ref_doc_id": doc_id}, {"$set": fields})  # its stubs
+        page = docs.find_one_and_update({"_id": doc_id}, {"$set": fields}, projection={"scraped_at": 1})
+        docs.update_many({"ref_doc_id": doc_id}, {"$set": fields})  # its stubs (the Briefing doesn't count them)
+        briefing_days.touch((page or {}).get("scraped_at"))  # its findings changed: the Briefing works its day out again
 
     def one(doc_id: str) -> None:
         update = {"$inc": {"done": 1}, "$set": {"heartbeat_at": now_utc()}}
         try:
-            doc = docs.find_one({"_id": doc_id}, {"end_url": 1, "extracted_text": 1})
-            if doc and doc.get("extracted_text"):
+            doc = docs.find_one({"_id": doc_id}, {"end_url": 1})
+            text = page_texts.text(doc_id) if doc else None
+            if text:
                 with with_context(run_kind="recheck", run_id=job_id):
-                    analysis = summarize_page(llm, doc["end_url"], doc["extracted_text"], snap)
+                    analysis = summarize_page(llm, doc["end_url"], text, snap)
                 error = analysis.get("analysis_error")
                 if error:  # failed or partly analysed: counted by reason
                     update["$inc"][f"failed_reasons.{error['reason']}"] = 1
@@ -96,7 +109,8 @@ def _run(job_id: str, ids: list[str], snap: dict) -> None:
                     other = sum(1 for h in analysis["signals"] if h.get("signal_id") == "other")
                     update["$inc"].update(found=len(analysis["signals"]) - other, other=other,
                                           set_aside=int(bool(analysis["ignored_by"])))
-                    record(doc_id, {"summary_text": analysis["summary"],
+                    record(doc_id, {"to_organize": True,  # its names may have changed: the Organize after it links them
+                                    "summary_text": analysis["summary"],
                                     "technologies": analysis["technologies"],
                                     "scout_take": analysis["scout_take"],
                                     "signals": analysis["signals"],

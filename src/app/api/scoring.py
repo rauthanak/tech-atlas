@@ -161,3 +161,40 @@ def update_config(name: str, body: dict) -> dict:
     if not changes:
         raise HTTPException(status_code=422, detail="no editable fields in body")
     return _apply_edit("scoring_config", name, changes)
+
+
+class Edges(BaseModel):
+    timeline_cutpoints: list[float] = Field(min_length=2, max_length=2)
+    potential_cutpoints: list[float] = Field(min_length=2, max_length=2)
+
+
+@router.post("/scoring/edges/preview")
+def edges_preview(e: Edges) -> dict:
+    """What new band edges would do, before they're saved: each technology's
+    latest assessment in each fabric placed with today's edges and with these,
+    from its stored how-soon and how-big scores. Arithmetic only, no model call."""
+    from agent.analyzer.placement import POTENTIAL_BANDS, TIMELINE_BANDS, _band
+    grid_doc = get_collection("scoring_config").find_one({"_id": "priority_grid"}) or {}
+    grid = grid_doc.get("grid", {})
+
+    def place(t, p, t_cuts, p_cuts):
+        tb, pb = _band(t, t_cuts, TIMELINE_BANDS), _band(p, p_cuts, POTENTIAL_BANDS)
+        return grid.get(f"{tb}_{pb}") if tb and pb else None
+
+    moves: dict[tuple, int] = {}
+    total = 0
+    for a in get_collection("assessments").aggregate([
+            {"$sort": {"tech_id": 1, "fabric_id": 1, "created_at": -1}},
+            {"$group": {"_id": {"t": "$tech_id", "f": "$fabric_id"},
+                        "soon": {"$first": "$placement.timeline.score"}, "big": {"$first": "$placement.potential.score"}}}],
+            allowDiskUse=True):
+        if a["soon"] is None or a["big"] is None:
+            continue
+        total += 1
+        now = place(a["soon"], a["big"], grid_doc.get("timeline_cutpoints", [4, 7]), grid_doc.get("potential_cutpoints", [4, 7]))
+        new = place(a["soon"], a["big"], e.timeline_cutpoints, e.potential_cutpoints)
+        if now != new:
+            moves[(now, new)] = moves.get((now, new), 0) + 1
+    return {"placed": total,
+            "moves": [{"from": f, "to": t, "count": n}
+                      for (f, t), n in sorted(moves.items(), key=lambda m: (-m[1], str(m[0])))]}

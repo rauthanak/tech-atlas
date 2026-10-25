@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from pymongo import ReturnDocument
 
-from app.services import busy
+from app.services import briefing_days, busy, evidence, jobs
 from app.services.db.mongo import get_collection
 from app.services.runs.store import COLLECTIONS
 from app.services.signals import recheck, snapshot
@@ -55,12 +55,10 @@ def _names() -> dict[str, str]:
     return {r["_id"]: r["name"] for r in get_collection("signals").find({}, {"name": 1})}
 
 
-def _counts(run_id: str | None = None) -> dict[str, int]:
-    """Hits per never-miss row and set-aside pages per Can ignore rule (stubs
-    excluded, so each page counts once)."""
-    match: dict = {"is_stub": False}
-    if run_id:
-        match["run_id"] = run_id
+def hit_counts(match: dict) -> dict[str, int]:
+    """Hits per never-miss row and set-aside pages per Can ignore rule, on the
+    pages matching `match` (stubs excluded, so each page counts once): a
+    collection's, or a day's (services/briefing_days keeps them per day)."""
     docs = get_collection("documents")
     counts: dict[str, int] = {}
     for row in docs.aggregate([{"$match": {**match, "signals.0": {"$exists": True}}},
@@ -77,12 +75,17 @@ def _counts(run_id: str | None = None) -> dict[str, int]:
 def list_signals() -> dict:
     rows = list(get_collection("signals").find().sort([("mode", -1), ("order", 1), ("name", 1)]))
     latest = get_collection("runs").find_one(COLLECTIONS, sort=[("run_start_date_time", -1)], projection={"_id": 1})
-    total, last = _counts(), (_counts(latest["_id"]) if latest else {})
+    total: dict[str, int] = {}
+    for day in briefing_days.ready(None, now_utc())[0]:  # kept a day at a time, as the Briefing reads them
+        for k, n in (day.get("hits") or {}).items():
+            total[k] = total.get(k, 0) + n
+    last = hit_counts({"is_stub": False, "run_id": latest["_id"]}) if latest else {}
     current = snapshot.current_hash()
     return {"signals": [{**r, "hits_total": total.get(r["_id"], 0),
                          "hits_last_run": last.get(r["_id"], 0)} for r in rows],
             "current_hash": current,
             "stale_pages": recheck.stale_count(current),
+            "checkable_pages": recheck.checkable_count(),  # what a change marks: said before a switch
             "recheck": recheck.latest_job()}
 
 
@@ -98,6 +101,7 @@ def add_signal(edit: SignalEdit) -> dict:
            "look_for": edit.look_for.strip(), "mode": edit.mode, "enabled": edit.enabled,
            "order": ((last or {}).get("order") or 0) + 1, "updated_at": now_utc()}
     get_collection("signals").insert_one(doc)
+    jobs.later(briefing_days.rerank)  # a kind's place in the Briefing's order
     return doc
 
 
@@ -114,6 +118,7 @@ def reorder_signals(params: SignalOrder) -> dict:
     for position, signal_id in enumerate(params.ids, start=1):
         if current[signal_id] != position:
             coll.update_one({"_id": signal_id}, {"$set": {"order": position, "updated_at": now}})
+    jobs.later(briefing_days.rerank)
     return list_signals()
 
 
@@ -127,6 +132,7 @@ def update_signal(signal_id: str, edit: SignalEdit) -> dict:
         return_document=ReturnDocument.AFTER)
     if updated is None:
         raise HTTPException(status_code=404, detail=f"unknown signal {signal_id!r}")
+    jobs.later(briefing_days.rerank)  # switched on or off, or moved between the lists
     return updated
 
 
@@ -136,6 +142,7 @@ def delete_signal(signal_id: str) -> dict:
     is updated. Past hits keep their stored name."""
     if get_collection("signals").delete_one({"_id": signal_id}).deleted_count == 0:
         raise HTTPException(status_code=404, detail=f"unknown signal {signal_id!r}")
+    jobs.later(briefing_days.rerank)
     return {"deleted": signal_id}
 
 
@@ -165,35 +172,89 @@ def order() -> list[str]:
         {"mode": "never_miss", "enabled": True}, {"_id": 1}).sort([("order", 1), ("name", 1)])]
 
 
-def _keys(listed: list[str]) -> dict:
+OFF, GONE = 1000, 2000  # a switched-off signal's findings come after every listed one's; a deleted one's, then Other's
+
+
+def places() -> dict[str, int]:
+    """Each never-miss signal's place in the Briefing's order: its own place in
+    the whole list, switched on or off, so switching one on or off moves only
+    its own findings (services/briefing_days.rerank); a switched-off one's
+    findings come after every listed one's."""
+    return {r["_id"]: i if r.get("enabled") else OFF + i for i, r in enumerate(get_collection("signals").find(
+        {"mode": "never_miss"}, {"enabled": 1}).sort([("order", 1), ("name", 1)]))}
+
+
+def _keys(listed: dict[str, int]) -> dict:
     """Per hit: older (its page was published more than OLDER_AFTER_DAYS
     before it was collected; no publication date counts as recent), rank (its
-    place in the signal list; a deleted or switched-off row after the listed
-    ones, Other last) and date (published, else collected)."""
+    place in the signal list, places(); a deleted row after the listed and
+    switched-off ones, Other last) and date (published, else collected)."""
     collected_day = {"$substrBytes": ["$scraped_at", 0, 10]}
     published = {"$dateFromString": {"dateString": "$published_date", "onError": None, "onNull": None}}
     collected = {"$dateFromString": {"dateString": collected_day, "onError": None, "onNull": None}}
-    place = {"$indexOfArray": [listed, "$signals.signal_id"]}
+    place = {"$indexOfArray": [list(listed), "$signals.signal_id"]}
     return {
         "older": {"$gt": [{"$dateDiff": {"startDate": published, "endDate": collected, "unit": "day"}},
                           OLDER_AFTER_DAYS]},
-        "rank": {"$cond": [{"$gte": [place, 0]}, place,
-                           {"$cond": [{"$eq": ["$signals.signal_id", "other"]}, len(listed) + 1, len(listed)]}]},
+        "rank": {"$cond": [{"$gte": [place, 0]}, {"$arrayElemAt": [list(listed.values()), place]},
+                           {"$cond": [{"$eq": ["$signals.signal_id", "other"]}, GONE + 1, GONE]}]},
         "date": {"$ifNull": ["$published_date", collected_day]},
     }
+
+
+STORY_MIN_CHARS = 20  # a finding's headline shorter than this doesn't identify a story
+
+
+def _stories(by: dict | None = None) -> list[dict]:
+    """Copies of one story become one finding: the same kind of finding about
+    the same company (the first one its `who` names), published (else
+    collected) the same day, as from two sites, or one site twice, among the
+    pages collected on one day. A finding
+    that names no one falls back to its headline (`what`), or its page title,
+    with its place among its kind on its page, so two findings on one page stay
+    two. The finding kept is the first in `by`'s order; `also` lists every
+    copy, for "also reported by". A page with none of these is its own story."""
+    def norm(value) -> dict:
+        return {"$trim": {"input": {"$toLower": {"$ifNull": [value, ""]}}}}
+    kind = {"$ifNull": ["$signals.signal_id", ""]}
+    who = norm({"$arrayElemAt": [{"$split": [{"$ifNull": ["$signals.who", ""]}, ";"]}, 0]})
+    day = {"$ifNull": ["$published_date", {"$substrBytes": ["$scraped_at", 0, 10]}]}
+    what, title = norm("$signals.what"), norm("$title")
+    k = {"$toString": {"$ifNull": ["$signals.k", "$n"]}}  # two findings of one kind on one page stay two
+    story = {"$cond": [{"$gt": [{"$strLenCP": who}, 0]}, {"$concat": ["c|", kind, "|", who, "|", {"$toString": day}]},
+             {"$cond": [{"$gte": [{"$strLenCP": what}, STORY_MIN_CHARS]}, {"$concat": ["w|", kind, "|", what, "|", k]},
+              {"$cond": [{"$gt": [{"$strLenCP": title}, 0]}, {"$concat": ["t|", kind, "|", title, "|", k]},
+                         {"$concat": [{"$toString": "$_id"}, "|", {"$toString": "$n"}]}]}]}]}
+    # copies count once within the day they were collected: the Briefing keeps each day's findings ready (briefing_days)
+    story = {"$concat": [story, "|", {"$substrBytes": ["$scraped_at", 0, 10]}]}
+    return [{"$addFields": {"story": story}},
+            *([{"$sort": by}] if by else []),
+            {"$group": {"_id": "$story", "first": {"$first": "$$ROOT"},
+                        "also": {"$push": {"source_id": "$source_id", "url": "$end_url"}}}},
+            {"$replaceRoot": {"newRoot": {"$mergeObjects": ["$first", {"also": "$also"}]}}}]
 
 
 def _unwound(match: dict, tech: str | None) -> list[dict]:
     pipeline: list[dict] = [{"$match": {"is_stub": False, "signals.0": {"$exists": True}, **match,
                                         **({"technologies_resolved": tech} if tech else {})}},
-                            {"$unwind": {"path": "$signals", "includeArrayIndex": "n"}}]
+                            # each finding's `k`: how many of its kind come before it on its page (stories match on it)
+                            {"$addFields": {"signals": {"$map": {
+                                "input": {"$range": [0, {"$size": "$signals"}]}, "as": "i",
+                                "in": {"$mergeObjects": [{"$arrayElemAt": ["$signals", "$$i"]}, {"k": {"$size": {"$filter": {
+                                    "input": {"$slice": ["$signals", "$$i"]}, "as": "o",
+                                    "cond": {"$eq": ["$$o.signal_id", {"$arrayElemAt": ["$signals.signal_id", "$$i"]}]}}}}}]}}}}},
+                            {"$unwind": {"path": "$signals", "includeArrayIndex": "n"}},
+                            # only what a finding shows: never a page's full text through the sorting and grouping
+                            {"$project": {"end_url": 1, "title": 1, "source_id": 1, "run_id": 1, "scraped_at": 1,
+                                          "published_date": 1, "technologies_resolved": 1, "signals": 1, "n": 1}}]
     if tech:
         pipeline.append({"$match": about(tech)})
     return pipeline
 
 
 def hits(match: dict, signal_match: dict | None = None, limit: int = 50, skip: int = 0,
-         sort: str = "collected", tech: str | None = None, older: bool | None = None) -> tuple[list[dict], int]:
+         sort: str = "collected", tech: str | None = None, older: bool | None = None,
+         group: bool = False) -> tuple[list[dict], int]:
     """Findings, one per hit, and their total: the one shape the Briefing,
     the technology page and the side panel share. `n` is the hit's place on
     its page; `tech` keeps the hits about that technology; `older` keeps
@@ -201,16 +262,19 @@ def hits(match: dict, signal_match: dict | None = None, limit: int = 50, skip: i
 
     sort="collected": newest collected first.
     sort="briefing": recent before older, then the signal list's order, then
-    newest published. Sorted before paging, so pages walk one order."""
+    newest published. Sorted before paging, so pages walk one order.
+    `group`: copies of one story are one finding (_stories), counted once."""
     pipeline = _unwound(match, tech)
     if signal_match:
         pipeline.append({"$match": signal_match})
-    pipeline.append({"$addFields": _keys(order())})
+    pipeline.append({"$addFields": _keys(places())})
     if older is not None:
         pipeline.append({"$match": {"older": older}})
     by = {"scraped_at": -1, "_id": 1, "n": 1}
     if sort == "briefing":
         by = {"older": 1, "rank": 1, "date": -1, **by}
+    if group:
+        pipeline += _stories(by)
     pipeline.append({"$facet": {
         "total": [{"$count": "n"}],
         "page": [{"$sort": by}, {"$skip": skip}, {"$limit": limit},
@@ -219,17 +283,25 @@ def hits(match: dict, signal_match: dict | None = None, limit: int = 50, skip: i
                                "older": 1,
                                "technologies": {"$ifNull": ["$signals.technologies_resolved",
                                                             {"$ifNull": ["$technologies_resolved", []]}]},
-                               "hit": "$signals"}}],
+                               "hit": "$signals", "also": 1}}],
     }})
-    result = next(get_collection("documents").aggregate(pipeline))
+    result = next(get_collection("documents").aggregate(pipeline, allowDiskUse=True))
+    return _shown(result["page"], tech, group), result["total"][0]["n"] if result["total"] else 0
+
+
+def _shown(page: list[dict], tech: str | None, group: bool) -> list[dict]:
+    """Findings as the lists show them: the kind's name, the technologies
+    (the filtered one first, then the ones with most pages), and where else
+    a story was reported."""
+    sources = evidence.source_names() if group else {}
     names = _names()
     # technologies are linked by id: a renamed technology keeps the id it was
     # created with, so its id can't be derived from its name
-    tech_names = {t for row in result["page"] for t in row["technologies"]}
+    tech_names = {t for row in page for t in row["technologies"]}
     known = {t["name"]: t for t in get_collection("technologies").find(
         {"name": {"$in": sorted(tech_names)}}, {"name": 1, "doc_count": 1})} if tech_names else {}
     items = []
-    for row in result["page"]:
+    for row in page:
         hit = row.pop("hit")
         hit.pop("technologies", None)           # the raw names; row["technologies"] is resolved
         hit.pop("technologies_resolved", None)
@@ -239,20 +311,34 @@ def hits(match: dict, signal_match: dict | None = None, limit: int = 50, skip: i
         row["technologies"] = sorted(row["technologies"], key=lambda t: (
             t != tech, -((known.get(t) or {}).get("doc_count") or 0), t))
         row["technology_ids"] = [(known.get(t) or {}).get("_id") for t in row["technologies"]]
+        # the other copies of this story: where else it was reported
+        others = [c for c in row.pop("also", None) or [] if c.get("url") != row.get("url")]
+        if others:
+            seen = {}
+            for c in others:
+                seen.setdefault(c["url"], {"source": sources.get(c.get("source_id"), c.get("source_id")), "url": c["url"]})
+            row["also"] = list(seen.values())
         items.append({**row, **hit})
-    return items, result["total"][0]["n"] if result["total"] else 0
+    return items
 
 
-def tally(match: dict, tech: str | None = None) -> dict:
+def tally(match: dict, tech: str | None = None, group: bool = False) -> dict:
     """The findings in a scope, how many are older, and the count per signal
     type in the Briefing's order: the signal list's rows, then deleted or
     switched-off rows, then Other."""
-    listed = order()
     groups = list(get_collection("documents").aggregate([
         *_unwound(match, tech),
-        {"$addFields": {"older": _keys(listed)["older"]}},
+        {"$addFields": {"older": _keys({})["older"]}},
+        *(_stories() if group else []),
         {"$group": {"_id": "$signals.signal_id", "name": {"$first": "$signals.name"},
                     "count": {"$sum": 1}, "older": {"$sum": {"$cond": ["$older", 1, 0]}}}}]))
+    return ordered(groups)
+
+
+def ordered(groups: list[dict]) -> dict:
+    """Counts by kind ({_id, name, count, older}) in the Briefing's order: the
+    signal list's rows, then deleted or switched-off rows, then Other."""
+    listed = order()
     names = _names()
     rank = {signal_id: i for i, signal_id in enumerate(listed)}
 
@@ -265,6 +351,30 @@ def tally(match: dict, tech: str | None = None) -> dict:
                       for g in groups]}
 
 
+def ready_counts(since: str | None, until: str) -> dict:
+    """A window's counts from the findings kept ready a day at a time (services/briefing_days)."""
+    got = briefing_days.summary(since, until)
+    names = {}
+    for signal_id in got["types"]:  # a kind no longer on the list keeps the name its findings were stored with
+        if signal_id not in _names() and signal_id != "other":
+            row = get_collection(briefing_days.ROWS).find_one({"signal_id": signal_id}, {"hit.name": 1})
+            names[signal_id] = ((row or {}).get("hit") or {}).get("name")
+    counted = ordered([{"_id": k, "name": names.get(k), "count": c, "older": o} for k, (c, o) in got["types"].items()])
+    return {**counted, "pages": got["pages"], "updating_days": got["updating_days"]}
+
+
+def _with_technologies(rows: list[dict]) -> list[dict]:
+    """Ready rows take their technologies from their pages now: a finding's own, else its page's."""
+    docs = {d["_id"]: d for d in get_collection("documents").find(
+        {"_id": {"$in": [r["doc_id"] for r in rows]}}, {"technologies_resolved": 1, "signals.technologies_resolved": 1})}
+    for r in rows:
+        d = docs.get(r["doc_id"]) or {}
+        found_on = d.get("signals") or []
+        own = found_on[r["n"]] if r["n"] < len(found_on) else {}
+        r["technologies"] = own.get("technologies_resolved") or d.get("technologies_resolved") or []
+    return rows
+
+
 @router.get("/signals/found")
 def found(signal_id: str | None = None, tech: str | None = None, source_id: str | None = None,
           run_id: str | None = None, since: str | None = None, until: str | None = None,
@@ -275,10 +385,19 @@ def found(signal_id: str | None = None, tech: str | None = None, source_id: str 
     `sort=briefing` gives the Briefing's order; `older` picks the Briefing's
     tab (older articles, or recent findings)."""
     match = scope(since, until, run_id, source_id)
+    if sort == "briefing" and not (tech or source_id or run_id or doc_id):  # the Briefing: its findings kept ready
+        until = until or now_utc()
+        rows = briefing_days.page(since, until, signal_id, older, skip, limit)
+        counts = ready_counts(since, until)
+        kinds = [t for t in counts["types"] if not signal_id or t["signal_id"] == signal_id]
+        shown = {True: lambda t: t["older"], False: lambda t: t["count"] - t["older"], None: lambda t: t["count"]}[older]
+        total = sum(shown(t) for t in kinds)  # the tab's: older articles, recent findings, or both
+        return {"hits": _shown(_with_technologies(rows), None, True), "total": total}
     if doc_id:
         match["_id"] = doc_id
     items, total = hits(match, {"signals.signal_id": signal_id} if signal_id else None, limit, skip,
-                        sort=sort, tech=tech.strip().lower() if tech else None, older=older)
+                        sort=sort, tech=tech.strip().lower() if tech else None, older=older,
+                        group=sort == "briefing")  # the Briefing's order: one finding per story
     return {"hits": items, "total": total}
 
 
