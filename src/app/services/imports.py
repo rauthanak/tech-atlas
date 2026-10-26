@@ -35,7 +35,7 @@ from collections import defaultdict
 import openpyxl
 from pymongo import ReplaceOne
 
-from app.services import classify_effective, decisions, jobs
+from app.services import auth, classify_effective, decisions, jobs
 from app.services.classify_effective import IMPORTED
 from app.services.db.mongo import get_collection
 from app.services.timezone import now_utc
@@ -373,7 +373,7 @@ def create(content: bytes, filename: str, tz: str) -> dict:
                       "target_name": (hit or {}).get("label") or (hit or {}).get("name"), "why": why,
                       "decision": None})
     doc = {"_id": uuid.uuid4().hex[:12], "file": filename, "sheet": data["sheet"], "columns": data["columns"], "at": now_utc(),
-           "tz": tz, "status": "reviewing", "rows": len(data["rows"]), "items": items,
+           "tz": tz, "by": auth.by(), "status": "reviewing", "rows": len(data["rows"]), "items": items,
            "unknown_values": map_values(items), "calls": 0}
     doc["counts"] = counts(doc)
     save(doc)
@@ -512,7 +512,8 @@ def confirm(import_id: str, tz: str) -> dict:
                    extra={"import_id": import_id, "row": it["row"]}, imported=True)
     result = {"joined": joined, "added": made, "shared": shared}
     get_collection("imports").update_one({"_id": import_id}, {"$set": {"status": "confirmed", "confirmed_at": at,
-                                                                     "confirmed_tz": tz, "result": result}})
+                                                                     "confirmed_tz": tz, "confirmed_by": auth.by(),
+                                                                     "result": result}})
     jobs.later(restamp, [it["name"].lower() for it in imp["items"]])  # the pages that use the rows' names
     return result
 

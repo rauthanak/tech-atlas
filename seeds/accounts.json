@@ -1,0 +1,59 @@
+{
+  "_about": "The first accounts, created once at start-up when there are none (services/accounts.seed_if_empty). Each must choose a new password at first sign-in. Not part of Setup › Changes: after the first start, people are managed on Setup › People. A hash comes from: python -m app.services.accounts hash",
+  "accounts": [
+    {
+      "email": "rauthan1@wharton.upenn.edu",
+      "name": "Akshay Pratap Singh Rauthan",
+      "role": "admin",
+      "password_hash": "pbkdf2_sha256$600000$c9527e268d0e6a144199c1db73beabed$095e1a2a3dd588e8fade7d1dc6abbaa9c54bcc18187347d740a1ed72e6205b39"
+    },
+    {
+      "email": "hpasha@wharton.upenn.edu",
+      "name": "Hasan Pasha",
+      "role": "admin",
+      "password_hash": "pbkdf2_sha256$600000$c9527e268d0e6a144199c1db73beabed$095e1a2a3dd588e8fade7d1dc6abbaa9c54bcc18187347d740a1ed72e6205b39"
+    },
+    {
+      "email": "nickmuch@wharton.upenn.edu",
+      "name": "Nicholas Muchinguri",
+      "role": "admin",
+      "password_hash": "pbkdf2_sha256$600000$c9527e268d0e6a144199c1db73beabed$095e1a2a3dd588e8fade7d1dc6abbaa9c54bcc18187347d740a1ed72e6205b39"
+    },
+    {
+      "email": "jneb@wharton.upenn.edu",
+      "name": "Joseph Nebistinsky",
+      "role": "admin",
+      "password_hash": "pbkdf2_sha256$600000$c9527e268d0e6a144199c1db73beabed$095e1a2a3dd588e8fade7d1dc6abbaa9c54bcc18187347d740a1ed72e6205b39"
+    },
+    {
+      "email": "ssnyder6g@gmail.com",
+      "name": "Scott Snyder",
+      "role": "admin",
+      "password_hash": "pbkdf2_sha256$600000$c9527e268d0e6a144199c1db73beabed$095e1a2a3dd588e8fade7d1dc6abbaa9c54bcc18187347d740a1ed72e6205b39"
+    },
+    {
+      "email": "abhishek.nimbhorkar@tatacommunications.com",
+      "name": "Abhishek Nimbhorkar",
+      "role": "admin",
+      "password_hash": "pbkdf2_sha256$600000$c9527e268d0e6a144199c1db73beabed$095e1a2a3dd588e8fade7d1dc6abbaa9c54bcc18187347d740a1ed72e6205b39"
+    },
+    {
+      "email": "shashank.manerikar@tatacommunications.com",
+      "name": "Shashank Manerikar",
+      "role": "admin",
+      "password_hash": "pbkdf2_sha256$600000$c9527e268d0e6a144199c1db73beabed$095e1a2a3dd588e8fade7d1dc6abbaa9c54bcc18187347d740a1ed72e6205b39"
+    },
+    {
+      "email": "ankur.jindal@tatacommunications.com",
+      "name": "Ankur Jindal",
+      "role": "leader",
+      "password_hash": "pbkdf2_sha256$600000$c9527e268d0e6a144199c1db73beabed$095e1a2a3dd588e8fade7d1dc6abbaa9c54bcc18187347d740a1ed72e6205b39"
+    },
+    {
+      "email": "rauthanak@gmail.com",
+      "name": "Akshay Rauthan (leaders' test)",
+      "role": "leader",
+      "password_hash": "pbkdf2_sha256$600000$c9527e268d0e6a144199c1db73beabed$095e1a2a3dd588e8fade7d1dc6abbaa9c54bcc18187347d740a1ed72e6205b39"
+    }
+  ]
+}

@@ -10,4 +10,4 @@ from app.services.db.mongo import get_collection
 def radar_settings() -> dict:
     seed = next(s for s in seeding.read_list("settings") if s["name"] == "radar")
     stored = get_collection("settings").find_one({"_id": "radar"}) or {}
-    return {**seed, **{k: v for k, v in stored.items() if k not in ("_id", "updated_at")}}
+    return {**seed, **{k: v for k, v in stored.items() if k not in ("_id", "updated_at", "updated_by")}}

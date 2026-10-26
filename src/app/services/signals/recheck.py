@@ -15,7 +15,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from app.services.llm.context import with_context
-from app.services import briefing_days, busy, jobs as background, page_texts
+from app.services import auth, briefing_days, busy, jobs as background, page_texts
 from app.services.db.mongo import get_collection
 from app.services.llm import LLM
 from app.services.signals import snapshot
@@ -65,7 +65,7 @@ def start() -> dict:
             raise busy.Busy("Nothing to check again: every stored page was checked against the current list.")
         job_id = uuid.uuid4().hex[:12]
         get_collection("recheck_jobs").insert_one({
-            "_id": job_id, "status": "running", "stage": "checking",
+            "_id": job_id, "status": "running", "stage": "checking", "by": auth.by(),
             "total": total, "done": 0, "failed": 0,
             "found": 0, "other": 0, "set_aside": 0, "failed_reasons": {},
             "signals_hash": snap["signals_hash"],

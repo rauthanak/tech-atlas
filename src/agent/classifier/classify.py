@@ -18,7 +18,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from agent.classifier.evidence import pack
-from app.services import decisions, tech_status
+from app.services import auth, decisions, tech_status
 from app.services.db.mongo import get_collection
 from app.services.llm.context import carry, with_context
 from app.services.llm.llm import LLM
@@ -303,7 +303,7 @@ def start(tech_ids: list[str], trigger: str = "on demand", tz: str | None = None
         settings = radar_settings()
         run_id = uuid.uuid4().hex[:12]
         get_collection("classify_runs").insert_one({
-            "_id": run_id, "status": "running", "trigger": trigger, "started_at": now_utc(), "tz": tz,
+            "_id": run_id, "status": "running", "trigger": trigger, "started_at": now_utc(), "tz": tz, "by": auth.by(),
             "tech_ids": tech_ids, "total": len(tech_ids), "done": 0, "unchanged": 0, "failed": [], "retries": 0,
             "cap": int(settings["classify_pages_cap"])})
     if wait:

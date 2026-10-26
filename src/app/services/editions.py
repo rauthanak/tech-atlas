@@ -23,7 +23,7 @@ import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from app.services import busy, classify_effective, decisions, finance, gates, latest_povs, tech_status
+from app.services import auth, busy, classify_effective, decisions, finance, gates, latest_povs, tech_status
 from app.services.db.mongo import get_collection
 from app.services.settings_store import radar_settings
 from app.services.timezone import now_utc
@@ -151,7 +151,7 @@ def label(e: dict) -> str:
 def summary(e: dict) -> dict:
     """An edition without its placements: what the lists and headers show."""
     prev = e.get("previous")  # its label as every screen writes a day now, not as stored when this one was published
-    return {k: e.get(k) for k in ("_id", "name", "published_at", "tz", "counts")} | {
+    return {k: e.get(k) for k in ("_id", "name", "published_at", "tz", "by", "counts")} | {
         "label": label(e), "previous": prev | {"label": label(prev)} if prev else None}
 
 
@@ -290,7 +290,7 @@ def publish(name: str | None, tz: str) -> dict:
         frozen.append({"_id": f"{edition_id}:{tech_id}", "edition_id": edition_id, "tech_id": tech_id, "pov": pv})
     if frozen:  # the Points of View first: Frontier never finds an edition without them
         get_collection("edition_povs").insert_many(frozen)
-    doc = {"_id": edition_id, "name": (name or "").strip() or None, "published_at": now_utc(), "tz": tz,
+    doc = {"_id": edition_id, "name": (name or "").strip() or None, "published_at": now_utc(), "tz": tz, "by": auth.by(),
            "previous": {k: before.get(k) for k in ("_id", "name", "published_at", "tz")} | {"label": label(before)}
            if before else None,
            **{k: v for k, v in now.items() if k not in ("placed", "held")}, "rows": SEPARATE,
@@ -322,26 +322,39 @@ def pov_in_latest(tech_id: str) -> dict:
 VIEW_KINDS = ("opened", "printed")
 
 
-def record_view(tech_id: str, kind: str) -> None:
-    """A leader opened a Point of View on the leaders' address, or printed it
-    (Print / Save as PDF). No sign-in yet, so it says how often, not who."""
+def record_view(tech_id: str, kind: str, by: dict) -> None:
+    """A leader opened a Point of View on the leaders' view, or printed it
+    (Print / Save as PDF): who, which, and when."""
     e = latest(full=False)
-    get_collection("pov_views").insert_one({"_id": uuid.uuid4().hex, "tech_id": tech_id, "kind": kind,
+    get_collection("pov_views").insert_one({"_id": uuid.uuid4().hex, "tech_id": tech_id, "kind": kind, "by": by,
                                             "edition_id": e["_id"] if e else None, "at": now_utc()})
 
 
 def views(tech_ids: list[str] | None = None) -> dict[str, dict]:
     """Per technology: how many times leaders opened and printed its Point
-    of View, and when they last opened it."""
-    match = {"tech_id": {"$in": tech_ids}} if tech_ids is not None else {}
+    of View, when they last opened it, and `leaders`: each leader's own
+    counts, the most recent first. Only visits that say who count: those
+    from before sign-in (anonymous, perhaps the team's own) are kept but not
+    counted."""
+    match: dict = {"by": {"$ne": None}}
+    if tech_ids is not None:
+        match["tech_id"] = {"$in": tech_ids}
     out: dict[str, dict] = {}
     for r in get_collection("pov_views").aggregate([
             {"$match": match},
-            {"$group": {"_id": {"t": "$tech_id", "k": "$kind"}, "n": {"$sum": 1}, "last": {"$max": "$at"}}}]):
-        v = out.setdefault(r["_id"]["t"], {"opened": 0, "printed": 0, "last_opened": None})
-        v[r["_id"]["k"]] = r["n"]
-        if r["_id"]["k"] == "opened":
-            v["last_opened"] = r["last"]
+            {"$group": {"_id": {"t": "$tech_id", "k": "$kind", "who": "$by.email"}, "n": {"$sum": 1},
+                        "last": {"$max": "$at"}, "name": {"$last": "$by.name"}}}]):
+        v = out.setdefault(r["_id"]["t"], {"opened": 0, "printed": 0, "last_opened": None, "leaders": {}})
+        kind = r["_id"]["k"]
+        v[kind] += r["n"]
+        who = v["leaders"].setdefault(r["_id"]["who"], {"name": r["name"], "opened": 0, "printed": 0,
+                                                        "last_opened": None})
+        who[kind] += r["n"]
+        if kind == "opened":
+            v["last_opened"] = max(filter(None, (v["last_opened"], r["last"])))
+            who["last_opened"] = r["last"]
+    for v in out.values():
+        v["leaders"] = sorted(v["leaders"].values(), key=lambda w: w["last_opened"] or "", reverse=True)
     return out
 
 

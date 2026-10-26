@@ -12,6 +12,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.services import auth
 from app.services.db.mongo import get_collection
 from app.services.prompts import preview as skill_preview
 from app.services.timezone import now_utc
@@ -100,6 +101,7 @@ def update_prompt(name: str, edit: PromptEdit) -> dict:
     changes["variables"] = _extract_variables(changes["prompt"])
     _check_variables(name, changes["variables"])
     changes["updated_at"] = now_utc()
+    changes["updated_by"] = auth.by()
     updated = get_collection("prompts").find_one_and_update(
         {"_id": name},
         {"$set": changes, "$inc": {"version": 1}},

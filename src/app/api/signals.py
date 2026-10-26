@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from pymongo import ReturnDocument
 
-from app.services import briefing_days, busy, evidence, jobs
+from app.services import auth, briefing_days, busy, evidence, jobs
 from app.services.db.mongo import get_collection
 from app.services.runs.store import COLLECTIONS
 from app.services.signals import recheck, snapshot
@@ -99,7 +99,7 @@ def add_signal(edit: SignalEdit) -> dict:
     last = get_collection("signals").find_one(sort=[("order", -1)], projection={"order": 1})
     doc = {"_id": signal_id, "signal_id": signal_id, "name": name,
            "look_for": edit.look_for.strip(), "mode": edit.mode, "enabled": edit.enabled,
-           "order": ((last or {}).get("order") or 0) + 1, "updated_at": now_utc()}
+           "order": ((last or {}).get("order") or 0) + 1, "updated_at": now_utc(), "updated_by": auth.by()}
     get_collection("signals").insert_one(doc)
     jobs.later(briefing_days.rerank)  # a kind's place in the Briefing's order
     return doc
@@ -117,7 +117,7 @@ def reorder_signals(params: SignalOrder) -> dict:
     now = now_utc()
     for position, signal_id in enumerate(params.ids, start=1):
         if current[signal_id] != position:
-            coll.update_one({"_id": signal_id}, {"$set": {"order": position, "updated_at": now}})
+            coll.update_one({"_id": signal_id}, {"$set": {"order": position, "updated_at": now, "updated_by": auth.by()}})
     jobs.later(briefing_days.rerank)
     return list_signals()
 
@@ -128,7 +128,7 @@ def update_signal(signal_id: str, edit: SignalEdit) -> dict:
     updated = get_collection("signals").find_one_and_update(
         {"_id": signal_id},
         {"$set": {"name": name, "look_for": edit.look_for.strip(), "mode": edit.mode,
-                  "enabled": edit.enabled, "updated_at": now_utc()}},
+                  "enabled": edit.enabled, "updated_at": now_utc(), "updated_by": auth.by()}},
         return_document=ReturnDocument.AFTER)
     if updated is None:
         raise HTTPException(status_code=404, detail=f"unknown signal {signal_id!r}")

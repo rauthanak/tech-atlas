@@ -47,6 +47,7 @@ and the bottlenecks recorded too), Integrated (resources recorded too).
 import uuid
 from datetime import date
 
+from app.services import auth
 from app.services.db.mongo import get_collection
 from app.services.timezone import now_utc
 
@@ -204,7 +205,7 @@ def create(kind: str, tech_id: str, *, value=None, fabric_id: str | None = None,
     d = _check(kind, {"kind": kind, "tech_id": tech_id, "fabric_id": fabric_id, "measure_id": measure_id,
                       "field": field, "key": key, "value": value, "reason": (reason or "").strip() or None})
     coll = get_collection("decisions")
-    doc = {"_id": uuid.uuid4().hex[:12], **d, "computed": computed, "at": now_utc(), "tz": tz, "by": None, "active": True,
+    doc = {"_id": uuid.uuid4().hex[:12], **d, "computed": computed, "at": now_utc(), "tz": tz, "by": auth.by(), "active": True,
            **({"extra": extra} if extra else {})}
     coll.insert_one(doc)  # first: a save that fails leaves the choice in force as it was
     # then the one it replaces; the newest stays in force even when two people save at once
@@ -220,7 +221,7 @@ def create(kind: str, tech_id: str, *, value=None, fabric_id: str | None = None,
 def deactivate(decision_id: str, tz: str) -> dict | None:
     return get_collection("decisions").find_one_and_update(
         {"_id": decision_id, "active": True},
-        {"$set": {"active": False, "undone_at": now_utc(), "undone_tz": tz}}, return_document=True)
+        {"$set": {"active": False, "undone_at": now_utc(), "undone_tz": tz, "undone_by": auth.by()}}, return_document=True)
 
 
 def active(tech_ids: list[str] | None = None, kinds: list[str] | None = None) -> list[dict]:

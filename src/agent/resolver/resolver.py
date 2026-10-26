@@ -37,6 +37,7 @@ from collections import Counter, defaultdict
 from pymongo import UpdateOne
 
 from app.services.llm.context import with_context
+from app.services import auth
 from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM, parse_json
 from app.services.prompts.store import PromptStore
@@ -91,6 +92,7 @@ def _create_resolve_doc(replace: bool) -> str:
     get_collection("resolves").insert_one({
         "_id": resolve_id,
         "status": "running",
+        "by": auth.by(),  # who started it (None: the radar's own work)
         "replace": replace,
         "phase": "starting",
         "phase_history": [{"phase": "starting", "at": now_utc()}],

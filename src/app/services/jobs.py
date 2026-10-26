@@ -15,6 +15,7 @@ the background upkeep (stored answers, the Briefing's days) belong to the
 process that runs the jobs: the API without a worker, else the worker. So a
 restart or a deploy of the API never touches a running job."""
 
+import contextvars
 import importlib
 import logging
 import threading
@@ -22,6 +23,7 @@ import uuid
 
 from pymongo import ReturnDocument
 
+from app.services import auth
 from app.services.db.mongo import get_collection
 from app.services.timezone import now_utc
 from app.settings import get_settings
@@ -38,10 +40,10 @@ def start(target, *args) -> None:
     name = f"{target.__module__}:{target.__qualname__}"
     if in_worker():
         get_collection("jobs").insert_one({"_id": uuid.uuid4().hex[:12], "target": name, "args": list(args),
-                                           "status": "queued", "queued_at": now_utc()})
-    else:
-        threading.Thread(target=target, args=args, name=f"{target.__qualname__}-{args[0] if args else ''}",
-                         daemon=True).start()
+                                           "by": auth.by(), "status": "queued", "queued_at": now_utc()})
+    else:  # the thread sees the same person (auth.by), as the worker does from the job's line
+        threading.Thread(target=contextvars.copy_context().run, args=(target, *args),
+                         name=f"{target.__qualname__}-{args[0] if args else ''}", daemon=True).start()
 
 
 def later(target, *args) -> None:
@@ -52,7 +54,8 @@ def later(target, *args) -> None:
         target(*args)
         return
     get_collection("jobs").insert_one({"_id": uuid.uuid4().hex[:12], "target": f"{target.__module__}:{target.__qualname__}",
-                                       "args": list(args), "again": True, "status": "queued", "queued_at": now_utc()})
+                                       "args": list(args), "by": auth.by(), "again": True, "status": "queued",
+                                       "queued_at": now_utc()})
 
 
 def take(worker: str) -> dict | None:
@@ -67,7 +70,8 @@ def run(job: dict) -> None:
     module, name = job["target"].split(":")
     status, error = "done", None
     try:
-        getattr(importlib.import_module(module), name)(*job["args"])
+        with auth.acting_as(job.get("by")):  # what it records says who started it
+            getattr(importlib.import_module(module), name)(*job["args"])
     except Exception as exc:  # the job records its own failure; this keeps the worker going
         log.exception("job %s (%s) failed", job["_id"], job["target"])
         status, error = "failed", str(exc)

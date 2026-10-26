@@ -10,6 +10,8 @@ model's own time is then added from the live radar's average per call.
 
 Writes e2e-scale-results.json beside it (each step's timings, merged with earlier runs).
 Never touches the live radar: it talks to the copy's API on 127.0.0.1:8199 only.
+It signs in first (since 25 Oct), as RADAR_CHECK_EMAIL / RADAR_CHECK_PASSWORD from
+the environment: an admin account on the copy, never stored here.
 """
 
 from __future__ import annotations
@@ -31,9 +33,24 @@ LIVE_MS = {"article_summary": 4847, "link_selection": 2239, "classify": 2116, "t
            "pov": 57619, "technology_names": 9967, "name_check": 857, "technology_resolve": 15000}
 
 
+_session: list[str] = []
+
+
+def cookie() -> str:
+    """The copy's sign-in cookie, made once."""
+    if not _session:
+        body = json.dumps({"email": os.environ["RADAR_CHECK_EMAIL"], "password": os.environ["RADAR_CHECK_PASSWORD"]})
+        req = urllib.request.Request(API + "/auth/sign-in", data=body.encode(), method="POST",
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            _session.append(r.headers["Set-Cookie"].split(";", 1)[0])
+    return _session[0]
+
+
 def call(method: str, path: str, body=None, timeout: int = 600):
     data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(API + path, data=data, method=method, headers={"Content-Type": "application/json"})
+    req = urllib.request.Request(API + path, data=data, method=method,
+                                 headers={"Content-Type": "application/json", "Cookie": cookie()})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         raw = r.read()
         return json.loads(raw) if raw else None
@@ -157,7 +174,7 @@ def step_import() -> dict:
     body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"catalog.xlsx\"\r\n"
             f"Content-Type: application/octet-stream\r\n\r\n").encode() + content + f"\r\n--{boundary}--\r\n".encode()
     req = urllib.request.Request(API + "/imports", data=body, method="POST",
-                                 headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
+                                 headers={"Content-Type": f"multipart/form-data; boundary={boundary}", "Cookie": cookie()})
     t = time.time()
     with urllib.request.urlopen(req, timeout=600) as r:
         imp = json.loads(r.read())

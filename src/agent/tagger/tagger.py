@@ -32,7 +32,7 @@ from datetime import datetime, timedelta
 
 from pymongo import UpdateOne
 
-from app.services import decisions, page_texts
+from app.services import auth, decisions, page_texts
 from app.services.db.mongo import get_collection
 from app.services.llm.context import carry, with_context
 from app.services.llm.llm import LLM, parse_json
@@ -277,7 +277,7 @@ def start(trigger: str = "on demand", query: dict | None = None, wait: bool = Fa
                 "status": "failed", "finished_at": now_utc(),
                 "error": "it stopped when the server restarted; pages already checked keep their result"}})
         run_id = uuid.uuid4().hex[:12]
-        runs.insert_one({"_id": run_id, "status": "running", "trigger": trigger, "started_at": now_utc(),
+        runs.insert_one({"_id": run_id, "status": "running", "trigger": trigger, "started_at": now_utc(), "by": auth.by(),
                          "heartbeat_at": now_utc(), "stage": "naming", "query": query or {}, "calls": 0, "failed": []})
     if wait:
         _execute(run_id)

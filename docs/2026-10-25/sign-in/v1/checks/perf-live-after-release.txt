@@ -1,0 +1,20 @@
+screen                                                  8100
+                                   one · five at once · size
+Status pill (every page)          0.01s    0.01s       1 KB     
+Setup badge (every page)          0.01s    0.04s       0 KB     
+Briefing (a week)                 0.01s    0.03s       3 KB     
+Briefing, 30 days                 0.01s    0.03s       3 KB     
+Briefing, all time                0.01s    0.01s       3 KB     
+Briefing: To do                   0.02s    0.04s      55 KB     
+Briefing: findings (a week)       0.01s    0.03s      16 KB     
+Technologies                      0.04s    0.12s     197 KB     
+Technologies, a filter            0.02s    0.06s       2 KB     
+Technology                        0.01s    0.02s      18 KB     
+Technology: pages                 0.01s    0.03s     271 KB     
+Points of View                    0.04s    0.05s      36 KB     
+Assessment runs                   0.00s    0.01s      80 KB     
+Operations: problems              0.00s    0.01s      13 KB     
+Collections                       0.00s    0.01s       4 KB     
+Leaders' view                     0.01s    0.14s     726 KB     
+
+http://localhost:8100: 10,514 technologies; 0 of 16 calls over 0.5 s

@@ -20,7 +20,7 @@ import uuid
 from app.services.db.mongo import get_collection
 from app.services.timezone import now_utc
 from app.settings import get_settings
-from app.services import briefing_days, page_texts, pages
+from app.services import auth, briefing_days, page_texts, pages
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +40,7 @@ def create_run(params: dict, snapshot: dict) -> str:
     get_collection("runs").insert_one({
         "_id": run_id,
         "status": "running",
+        "by": auth.by(),  # who started it (None: the radar's own work)
         "stage": "starting",
         "stage_history": [],
         "substage_history": [],

@@ -20,7 +20,7 @@ OUT = ROOT / "Tech Radar - changes after the midpoint review.docx"
 NAVY = RGBColor(0x04, 0x1A, 0x4A)
 MUTED = RGBColor(0x49, 0x4A, 0x52)
 
-VERSION = "Version 30 · 25 October 2026"
+VERSION = "Version 31 · 26 October 2026"
 HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the midpoint review, with today's screens and design mock-ups."),
            ("2", "20 Oct 2026", "Change 0 built: technologies say how solid their assessment is, a technology's result in each fabric stays "
                                 "with the technology, plain names on every screen. Real screens replace its mock-up."),
@@ -110,7 +110,9 @@ HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the mi
            ("29", "25 Oct 2026", "Change 50: the radar re-tested at ten million pages after the scale fixes, and the live radar "
                                  "upgraded to them. Change 51: a person can now re-score a measure the model scored."),
            ("30", "25 Oct 2026", "Change 52: the fixes from the code review, so results, choices and settings stay "
-                                 "truthful and the radar is ready to run on Tata's own servers.")]
+                                 "truthful and the radar is ready to run on Tata's own servers."),
+           ("31", "26 Oct 2026", "Change 53: sign-in, with administrators and leaders at one address; who did what on "
+                                 "every choice, setting, run, import and edition; Point of View reads counted for leaders, by name.")]
 
 # The numbers in the text, from the live radar on 21 Oct (6 Oct is the run before these changes).
 N = dict(
@@ -146,6 +148,9 @@ SOURCES = [
      "cross, view counts, wider sources and the comparison with the catalog, and the deployment."),
     ("S10", "The code review of 25 Oct (review_v1)",
      "An independent review of the code: 21 findings, each checked against the code; the 18 that matter now were fixed."),
+    ("S11", "Hasan's note of 25 Oct, and our decisions on sign-in that day",
+     "Hasan asked that each Point of View count its readers; we agreed sign-in with two roles, accounts kept by "
+     "administrators, reset by an administrator until Tata provides an email account, and reads counted for leaders only."),
 ]
 
 # Built screens, in reading order, with their captions: item-N.png or item-N-<screen>.png
@@ -1429,6 +1434,32 @@ ITEMS.append(
          metrics=[("Tests", "318", "440 (all pass)")],
          diagram=None, before=[]))
 
+ITEMS.append(
+    dict(n="53", title="Sign-in: administrators and leaders at one address, and who did what", status="Built",
+         source=[("S11", "view counts by leader, and sign-in")],
+         what=["Only the people listed on Setup › People can open the radar, each with their own email and password. An "
+               "administrator sees the whole portal; a leader sees the leaders' view only. Everyone opens the same address "
+               "and lands on their side; the server checks every request against the person's role.",
+               "The first accounts come with the radar's starting setup and one starting password, given in person; each "
+               "person chooses their own at the first sign-in. On Setup › People, grouped into administrators and leaders "
+               "with what each sees, administrators add people and, under Manage, set a temporary password for someone who "
+               "forgot theirs, change a role or switch an account off; a change that signs someone out asks first. Reset by "
+               "email waits for an email account from Tata.",
+               "Passwords are never stored, only a slow, salted fingerprint. A sign-in lasts 12 hours; five wrong passwords "
+               "in a row pause the account for 15 minutes.",
+               "Who did what: a technology's History, Setup › Changes, Operations › History, the import page and the Briefing's "
+               "edition line now name the person behind each choice, edit, run, import and edition.",
+               "A Point of View's page says how many times leaders opened it, which leaders, and how often it was printed or "
+               "saved as a PDF. Only leaders' reads count; administrators can look at the leaders' view without being "
+               "counted. The count starts from zero with sign-in.",
+               "The separate leaders' address is gone: the radar now runs as four containers instead of five."],
+         why="Tata asked to know who reads each Point of View, and the radar is moving to Tata's own servers, where only named "
+             "people should open it.",
+         metrics=[("Who can open the radar", "Anyone who reaches it", "Named accounts only"),
+                  ("Point of View reads", "Counted, no names", "Counted for leaders, by name"),
+                  ("Tests", "441", "484 (all pass)")],
+         diagram=None, before=[]))
+
 DECISIONS = [
     "Finance (contribution, payback, break-even) is set aside on every screen until Tata has discussed it; figures and "
     "code are kept (21 Oct).",
@@ -1439,7 +1470,8 @@ DECISIONS = [
     "The AI never writes a financial figure; contribution, payback and break-even come only from figures Tata enters.",
     "Disruption threat and Serviceable capture are entered by Tata.",
     "Cloud and Security stay separate fabrics for now.",
-    "Leaders get their own web address: the leaders' view (called Frontier at the review).",
+    "Leaders get their own view: the leaders' view (called Frontier at the review), at the same address as the portal "
+    "since sign-in (26 Oct).",
     "Assessments use stacked calls (change 5), after trying both ways; commercial adoption and use-case breadth are judged per "
     "fabric (signed off 21 Oct).",
     "The leaders' view shows a published edition, never live data; the innovation team publishes.",

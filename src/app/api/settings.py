@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field, field_validator
 from pymongo import ReturnDocument
 
+from app.services import auth
 from app.services.db.mongo import get_collection
 from app.services.signals import snapshot
 from app.services.timezone import now_utc
@@ -40,7 +41,7 @@ def get_crawl_settings() -> dict:
 def update_crawl_settings(edit: CrawlSettingsEdit) -> dict:
     return get_collection("settings").find_one_and_update(
         {"_id": "crawl"},
-        {"$set": {**edit.model_dump(), "updated_at": now_utc()},
+        {"$set": {**edit.model_dump(), "updated_at": now_utc(), "updated_by": auth.by()},
          "$setOnInsert": {"name": "crawl"}},
         upsert=True, return_document=ReturnDocument.AFTER)
 
@@ -79,6 +80,6 @@ RETIRED = {"classify_token_budget": ""}  # settings the radar no longer has: a s
 def update_radar_settings(edit: RadarSettingsEdit) -> dict:
     return get_collection("settings").find_one_and_update(
         {"_id": "radar"},
-        {"$set": {**edit.model_dump(), "updated_at": now_utc()}, "$unset": RETIRED,
+        {"$set": {**edit.model_dump(), "updated_at": now_utc(), "updated_by": auth.by()}, "$unset": RETIRED,
          "$setOnInsert": {"name": "radar"}},
         upsert=True, return_document=ReturnDocument.AFTER)

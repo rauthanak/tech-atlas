@@ -6,11 +6,10 @@
 #
 #   1. copy .env.example to .env and fill in your API key
 #   2. docker compose up
-#   3. open http://localhost:3100
-#      (the executive view, Frontier: http://localhost:3200)
+#   3. open http://localhost:3100 and sign in: admins land on the portal,
+#      leaders on the leaders' view (Frontier), at the same address
 #
-# The API (8100) and both portal addresses (3100, 3200) answer on this
-# computer only; MongoDB isn't published at all: only the containers reach
+# The API (8100) and the portal (3100) answer on this computer only; MongoDB isn't published at all: only the containers reach
 # it (mongosh: docker compose exec mongo mongosh). Its data survives restarts
 # in the mongo-data volume.
 
@@ -81,23 +80,6 @@ services:
         TECH_ATLAS_API_URL: http://atlas:8100
     ports:
       - "127.0.0.1:3100:3100"   # this computer only
-    depends_on:
-      - atlas
-
-  # Frontier, the read-only executive view: the same portal, served on its
-  # own address. APP_SIDE is read by the portal's proxy.ts on every request,
-  # so it's set here at run time; it isn't a build arg.
-  frontier:
-    restart: unless-stopped
-    build:
-      context: ../tech-lens
-      args:
-        # Baked into the Next.js build — see the Dockerfile in tech-lens.
-        TECH_ATLAS_API_URL: http://atlas:8100
-    environment:
-      APP_SIDE: frontier
-    ports:
-      - "127.0.0.1:3200:3100"   # this computer only
     depends_on:
       - atlas
 

@@ -21,6 +21,7 @@ COLLECTIONS = frozenset({
     "assumptions", "editions", "edition_povs", "pov_views", "tag_runs", "tech_status", "tech_status_rows",
     "scoring_tech_calls", "edition_rows", "import_items", "briefing_rows", "briefing_days",
     "jobs",  # background jobs queued for the worker (services/jobs)  # the per-technology / per-row records of runs, editions, imports
+    "accounts", "sessions",  # who may sign in, and who is signed in (services/accounts, services/auth)
 })
 
 

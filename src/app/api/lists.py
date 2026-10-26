@@ -18,7 +18,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from agent.classifier.classify import slug, subdomain_id
-from app.services import tech_status
+from app.services import auth, tech_status
 from app.services.db.mongo import get_collection
 from app.services.timezone import now_utc
 
@@ -95,7 +95,7 @@ def add(name: str, item: Item) -> dict:
     item_id = subdomain_id(item.domain_id, item.name) if name == "subdomains" else slug(item.name)
     if coll.find_one({"_id": item_id}):
         raise HTTPException(status_code=409, detail=f"{item.name!r} is already in this list")
-    doc = {"_id": item_id, LISTS[name]: item_id, **item.model_dump(exclude_none=True), "updated_at": now_utc(), "version": 1}
+    doc = {"_id": item_id, LISTS[name]: item_id, **item.model_dump(exclude_none=True), "updated_at": now_utc(), "updated_by": auth.by(), "version": 1}
     if name == "subdomains":
         doc.setdefault("status", "seeded")
     coll.insert_one(doc)
@@ -111,7 +111,7 @@ def edit(name: str, item_id: str, item: Item) -> dict:
     changes = {k: v for k, v in item.model_dump(exclude_none=True).items() if k in EDITABLE}
     if name == "assumptions" and not changes.get("date", old.get("date")):
         raise HTTPException(status_code=422, detail="an assumption needs the date it was stated")
-    coll.update_one({"_id": item_id}, {"$set": {**changes, "updated_at": now_utc()}, "$inc": {"version": 1}})
+    coll.update_one({"_id": item_id}, {"$set": {**changes, "updated_at": now_utc(), "updated_by": auth.by()}, "$inc": {"version": 1}})
     marked = 0
     if name in CLASSIFIED_AS and changes.get("definition") not in (None, old.get("definition")):
         marked = get_collection("technologies").update_many(
@@ -242,7 +242,7 @@ def unmerge(u: Unmerge) -> dict:
 def set_status(b: BulkStatus) -> dict:
     """Accept many proposed sub-domains at once (status seeded), or undo that (new)."""
     n = get_collection("subdomains").update_many(
-        {"_id": {"$in": b.ids}}, {"$set": {"status": b.status, "updated_at": now_utc()}, "$inc": {"version": 1}}).modified_count
+        {"_id": {"$in": b.ids}}, {"$set": {"status": b.status, "updated_at": now_utc(), "updated_by": auth.by()}, "$inc": {"version": 1}}).modified_count
     return {"changed": n}
 
 

@@ -15,6 +15,7 @@ from pymongo import ReturnDocument
 
 from agent.scout.tools import adapters
 from app.horizons import HORIZONS
+from app.services import auth
 from app.services.db.mongo import get_collection
 from app.services.timezone import now_utc
 
@@ -97,6 +98,7 @@ def update_source(source_id: str, edit: SourceEdit) -> dict:
         changes["progress"] = [p for p in current.get("progress") or []
                                if p.get("search") in edit.searches]
     changes["updated_at"] = now_utc()
+    changes["updated_by"] = auth.by()
     update: dict = {"$set": changes}
     if cleared:
         update["$unset"] = cleared

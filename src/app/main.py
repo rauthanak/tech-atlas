@@ -2,10 +2,13 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.concurrency import run_in_threadpool
 
+from app.services import auth
 from app.services.db import bootstrap
+from app.api.accounts import router as accounts_router
+from app.api.auth import router as auth_router
 from app.api.briefing import router as briefing_router
 from app.api.changes import router as changes_router
 from app.api.classify import router as classify_router
@@ -57,7 +60,9 @@ CONFIG_PATHS = ("/api/settings", "/api/lists", "/api/scoring/measures", "/api/sc
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Tech Atlas", version="0.1.0", lifespan=lifespan)
+    # every call is checked (services/auth.guard): signed in, and allowed for the person's role. App-wide, so no
+    # endpoint can be left out; the only open calls are health, sign-in and sign-out
+    app = FastAPI(title="Tech Atlas", version="0.1.0", lifespan=lifespan, dependencies=[Depends(auth.guard)])
 
     @app.middleware("http")
     async def config_changed(request: Request, call_next):
@@ -73,6 +78,8 @@ def create_app() -> FastAPI:
         return response
 
     app.include_router(health_router, prefix="/api")
+    app.include_router(auth_router, prefix="/api")
+    app.include_router(accounts_router, prefix="/api")
     app.include_router(sources_router, prefix="/api")
     app.include_router(runs_router, prefix="/api")
     app.include_router(scoring_router, prefix="/api")

@@ -7,12 +7,17 @@ API started on the 1-million-page copy (scale_copy.py) to compare.
     (from this Mac: the first is live, the second the 1-million-page copy; plain
     Python, nothing to install, and outside the containers it measures)
 
+It signs in to each API first (since 25 Oct), as RADAR_CHECK_EMAIL /
+RADAR_CHECK_PASSWORD from the environment (an account on each, never stored
+here); each address keeps its own session.
+
 Target (plan v1, §11): every screen's calls under 0.5 s, at any size.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 import urllib.request
@@ -41,17 +46,35 @@ CALLS = [  # (screen, call); {week}: the Briefing's own window, as its page send
 ONE_ONLY = {"Briefing, all time"}  # five at once would only queue five of the slowest call behind each other
 
 
+SESSIONS: dict[str, str] = {}  # each API address its own sign-in cookie
+
+
+def sign_in(base: str) -> None:
+    body = json.dumps({"email": os.environ["RADAR_CHECK_EMAIL"], "password": os.environ["RADAR_CHECK_PASSWORD"]})
+    req = urllib.request.Request(base + "/api/auth/sign-in", data=body.encode(), method="POST",
+                                 headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        SESSIONS[base] = r.headers["Set-Cookie"].split(";", 1)[0]
+
+
+def opened(url: str, timeout: float = GIVE_UP_S):
+    """urlopen with the sign-in cookie of the address it calls."""
+    base = next((b for b in SESSIONS if url.startswith(b + "/")), None)
+    return urllib.request.urlopen(urllib.request.Request(url, headers={"Cookie": SESSIONS[base]} if base else {}),
+                                  timeout=timeout)
+
+
 def week(base: str) -> str:
     """The Briefing's window, as its page passes it to the findings list."""
     from urllib.parse import urlencode
-    scope = json.load(urllib.request.urlopen(base + "/api/briefing", timeout=GIVE_UP_S))["scope"]
+    scope = json.load(opened(base + "/api/briefing"))["scope"]
     return urlencode({"since": scope["from"], "until": scope["to"]})
 
 
 def get(url: str) -> tuple[float, int, int | str]:
     t = time.time()
     try:
-        with urllib.request.urlopen(url, timeout=GIVE_UP_S) as r:
+        with opened(url) as r:
             body = r.read()
             return time.time() - t, len(body), r.status
     except urllib.error.HTTPError as e:
@@ -94,13 +117,15 @@ def measure(base: str) -> dict:
 
 def counts(base: str) -> str:
     try:
-        p = json.load(urllib.request.urlopen(base + "/api/technologies?limit=1"))
+        p = json.load(opened(base + "/api/technologies?limit=1"))
         return f"{p.get('total', 0):,} technologies"
     except Exception as exc:  # noqa: BLE001
         return f"(counts unavailable: {exc})"
 
 
 bases = sys.argv[1:] or ["http://localhost:8100"]
+for b in bases:
+    sign_in(b)
 results = {b: measure(b) for b in bases}
 print(f"{'screen':30}" + "".join(f"{b.split(':')[-1]:>30}" for b in bases))
 print(f"{'':30}" + "".join(f"{'one · five at once · size':>30}" for _ in bases))

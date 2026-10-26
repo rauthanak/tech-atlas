@@ -29,6 +29,8 @@ class Settings:
         self.keep_full_text_runs = int(os.getenv("KEEP_FULL_TEXT_RUNS", "10"))
         # background jobs run in the worker container (services/jobs), not inside the API: on in Docker
         self.jobs_in_worker = os.getenv("JOBS_IN_WORKER", "false").strip().lower() in ("1", "true", "yes")
+        # the session cookie goes over HTTPS only: on once the radar is behind HTTPS (the Deployment Guide)
+        self.secure_cookies = os.getenv("SECURE_COOKIES", "false").strip().lower() in ("1", "true", "yes")
         self.use_playwright = os.getenv("USE_PLAYWRIGHT", "true").strip().lower() in ("1", "true", "yes")
         self.show_more_clicks = int(os.getenv("SHOW_MORE_CLICKS", "3"))
 

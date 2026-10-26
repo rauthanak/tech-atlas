@@ -852,6 +852,19 @@
         ]
       ],
       "why": "the worker takes the oldest queued job"
+    },
+    {
+      "collection": "sessions",
+      "keys": [
+        [
+          "expires_at",
+          1
+        ]
+      ],
+      "options": {
+        "expireAfterSeconds": 0
+      },
+      "why": "MongoDB removes a session once it has expired (services/auth)"
     }
   ]
 }

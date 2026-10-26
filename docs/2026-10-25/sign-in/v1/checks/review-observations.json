@@ -1,0 +1,38 @@
+[
+  {
+    "case": "app dependency boundary",
+    "method": "GET",
+    "path": "/api/example",
+    "status": 401,
+    "guard_ran": true
+  },
+  {
+    "case": "app dependency boundary",
+    "method": "GET",
+    "path": "/docs",
+    "status": 200,
+    "guard_ran": false
+  },
+  {
+    "case": "app dependency boundary",
+    "method": "GET",
+    "path": "/openapi.json",
+    "status": 200,
+    "guard_ran": false
+  },
+  {
+    "case": "app dependency boundary",
+    "method": "POST",
+    "path": "/api/example",
+    "status": 422,
+    "guard_ran": false
+  },
+  {
+    "case": "actor propagation",
+    "actual": {
+      "sync_endpoint_actor": "synthetic-admin",
+      "plain_nested_pool_actor": null,
+      "copied_nested_pool_actor": "synthetic-admin"
+    }
+  }
+]

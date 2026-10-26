@@ -19,6 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from agent.analyzer.placement import compute_placement
 from app.services.llm.context import carry, with_context
+from app.services import auth
 from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM, call_with_backoff, parse_json
 from app.services.prompts.store import PromptStore
@@ -54,6 +55,7 @@ def create_scoring_run(params: dict) -> str:
     get_collection("scoring_runs").insert_one({
         "_id": run_id,
         "status": "running",
+        "by": auth.by(),  # who started it (None: the radar's own work)
         "stage": "preparing",
         "stage_history": [{"stage": "preparing", "at": now_utc()}],
         "params": params,

@@ -33,6 +33,7 @@ from datetime import date
 
 from agent.scout.tools.crawl import fetch_page, why_failed
 from agent.scout.tools.summarize import summarize_page
+from app.services import auth
 from app.services.db.mongo import get_collection
 from app.services.llm.context import with_context
 from app.services.llm.llm import LLM
@@ -112,7 +113,7 @@ def start(gap: dict, tz: str, files: list[dict] | None = None) -> str:
     """`files`: uploaded files already turned into text, [{name, text}]."""
     job_id = uuid.uuid4().hex[:12]
     get_collection("find_evidence_jobs").insert_one({
-        "_id": job_id, "gap": gap, "status": "running", "at": now_utc(), "tz": tz, "results": [],
+        "_id": job_id, "gap": gap, "status": "running", "at": now_utc(), "tz": tz, "by": auth.by(), "results": [],
         "files": [{"name": f["name"], "url": file_url(f["name"], f["text"]), "text": f["text"]} for f in files or []],
         "query": None if gap.get("kind") in PASTED else query_for(gap), "searched": gap.get("kind") not in PASTED})
     background.start(run, job_id)

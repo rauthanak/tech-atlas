@@ -38,7 +38,7 @@ def build() -> dict:
     rows = enabled_signals()
     return {"signal_list": rows, "signals_hash": signals_hash(rows),
             "crawl_settings": {k: v for k, v in crawl_settings().items()
-                               if k not in ("_id", "updated_at")}}
+                               if k not in ("_id", "updated_at", "updated_by")}}
 
 
 def prompt_lines(rows: list[dict]) -> dict:

@@ -104,6 +104,9 @@ def run() -> None:
     upgrade_pages.run()  # once, for page records stored before 24 Oct 2026
     if seeding.load_if_new():
         log.info("seeding data loaded into %r", settings.mongo_db)
+    from app.services import accounts
+    if made := accounts.seed_if_empty():  # the first accounts, once (seeds/accounts.json)
+        log.info("%d accounts created from seeds/accounts.json: each chooses a new password at first sign-in", made)
     backfill()
     counts = {c: get_db()[c].estimated_document_count() for c in sorted(COLLECTIONS)}
     log.info("database %r ready (%s)", settings.mongo_db, counts)

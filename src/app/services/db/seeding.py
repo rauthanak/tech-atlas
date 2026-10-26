@@ -253,6 +253,7 @@ def changes() -> dict:
     def row(name, item_id, item, kind, fields):
         rows.append({"collection": name, "id": item_id, "label": _label(name, item),
                      "kind": kind, "updated_at": item.get("updated_at") if kind != "deleted" else None,
+                     "updated_by": item.get("updated_by") if kind != "deleted" else None,
                      "fields": fields})
 
     for name, id_field in ID_FIELDS.items():

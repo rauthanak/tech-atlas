@@ -122,8 +122,9 @@ open a **new** Terminal window, `cd ~/TechRadar/tech-atlas`, and try again.
 
 ### 5. Check that it works
 
-- Open <http://localhost:3100> in your browser — the **Tech Lens portal**
-  should appear. This is the app you use.
+- Open <http://localhost:3100> in your browser — the **sign-in page** should
+  appear. Sign in (see [Signing in](#signing-in)): admins land on the **Tech
+  Lens portal**, leaders on the leaders' view.
 - <http://localhost:8100/api/health> should show a short technical reply —
   that's the API confirming it is up.
 
@@ -133,7 +134,7 @@ open a **new** Terminal window, `cd ~/TechRadar/tech-atlas`, and try again.
 - **Start again later:** open Terminal, `cd ~/TechRadar/tech-atlas`,
   `docker compose up`. Your data is kept between runs.
 - You can also open the **Docker Desktop** app to see the running parts
-  (`mongo`, `atlas`, `worker`, `lens`, `frontier`) with start/stop buttons and logs.
+  (`mongo`, `atlas`, `worker`, `lens`) with start/stop buttons and logs.
   `worker` runs the long jobs (collections, assessments, Points of View);
   `atlas` answers the web pages.
 
@@ -228,8 +229,9 @@ open a **new** PowerShell window, `cd C:\TechRadar\tech-atlas`, and try again.
 
 ### 5. Check that it works
 
-- Open <http://localhost:3100> in your browser — the **Tech Lens portal**
-  should appear. This is the app you use.
+- Open <http://localhost:3100> in your browser — the **sign-in page** should
+  appear. Sign in (see [Signing in](#signing-in)): admins land on the **Tech
+  Lens portal**, leaders on the leaders' view.
 - <http://localhost:8100/api/health> should show a short technical reply —
   that's the API confirming it is up.
 
@@ -239,9 +241,29 @@ open a **new** PowerShell window, `cd C:\TechRadar\tech-atlas`, and try again.
 - **Start again later:** open PowerShell, `cd C:\TechRadar\tech-atlas`,
   `docker compose up`. Your data is kept between runs.
 - You can also open the **Docker Desktop** app to see the running parts
-  (`mongo`, `atlas`, `worker`, `lens`, `frontier`) with start/stop buttons and logs.
+  (`mongo`, `atlas`, `worker`, `lens`) with start/stop buttons and logs.
   `worker` runs the long jobs (collections, assessments, Points of View);
   `atlas` answers the web pages.
+
+---
+
+## Signing in
+
+Only the people listed on **Setup › People** can sign in. The first ones come
+from `seeds/accounts.json`, created the first time the radar starts, each with
+the same starting password: whoever set it up tells each person, who chooses
+their own at the first sign-in. An **admin** sees the whole portal (and can open
+the leaders' view, without being counted); a **leader** sees only the leaders'
+view.
+
+- **Forgot a password?** An admin opens Setup › People and sets a temporary one.
+- **No admin can sign in?** On the computer the radar runs on:
+  `docker compose exec atlas python -m app.services.accounts set-password you@example.com`
+  sets a temporary password for that account.
+- **A new starting hash** for `seeds/accounts.json`:
+  `docker compose exec atlas python -m app.services.accounts hash`.
+- Behind HTTPS, set `SECURE_COOKIES=true` (in `.env`) so the sign-in cookie
+  travels over HTTPS only.
 
 ---
 
@@ -312,7 +334,7 @@ them too.
 | --- | --- |
 | `command not found: docker` / `'docker' is not recognized` | Docker Desktop isn't running, or your terminal window is older than the install. Start Docker Desktop, wait for "running", open a **new** terminal window. |
 | `Cannot connect to the Docker daemon` | Docker Desktop is installed but not running. Launch it and wait for the whale. |
-| `port is already allocated` (mentions 8100, 3100 or 3200) | Another program on your computer uses that port: stop it and try again. (The database's port isn't published, so a locally installed MongoDB no longer clashes.) |
+| `port is already allocated` (mentions 8100 or 3100) | Another program on your computer uses that port: stop it and try again. (The database's port isn't published, so a locally installed MongoDB no longer clashes.) |
 | Build error mentioning `../tech-lens` | The folders aren't side by side, or the `-main` rename in step 1 was skipped. |
 | `MongoDB cannot start: Linux kernel versions 6.19 and newer…` | A workaround for this is already built in (`GLIBC_TUNABLES` on the `mongo` service in `docker-compose.yml`). If you still see it, you may have an old copy of the code — re-download it. If it persists, change `image: mongo:8` to `image: mongo:7` in `docker-compose.yml` and start again. |
 | First start seems stuck for minutes | Normal — it is downloading and building. Watch Docker Desktop's whale menu or the scrolling log. |

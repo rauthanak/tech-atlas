@@ -59,11 +59,13 @@ def test_the_briefing_lists_crossings_from_each_latest_assessment(db):
     assert [(r["tech_id"], r["metric"], r["previous_value"]) for r in rows] == [("edge-ai", "Agentforce ARR", "$1.5B")]
 
 
-def test_leaders_opens_and_prints_are_counted(db):
+def test_leaders_opens_and_prints_are_counted(db, call_as):
     tech(db, "edge-ai", "edge ai")
+    call_as("leader")  # only leaders' visits count (sign-in, 25 Oct)
     for kind in ("opened", "opened", "printed"):
         assert client.post("/api/frontier/pov/edge-ai/seen", json={"kind": kind}).status_code == 204
     assert client.post("/api/frontier/pov/edge-ai/seen", json={"kind": "liked"}).status_code == 422
+    call_as("admin")
     v = client.get("/api/editions/pov/edge-ai").json()["views"]
     assert v["opened"] == 2 and v["printed"] == 1 and v["last_opened"]
     assert client.get("/api/editions/pov/quic").json()["views"] is None

@@ -3,14 +3,14 @@ never live data. Its placements (people's overrides applied, each one that
 moved since the edition before saying why), what isn't placed yet with the
 reason, the assumptions in force and the evidence behind it; and each
 technology's Point of View as it stood when the edition was published.
-Read-only: the executive address passes on only these reads (proxy.ts)."""
+Read-only: a leader may make only these calls (services/auth.LEADER_CALLS)."""
 
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from app.services import editions
+from app.services import auth, editions
 
 router = APIRouter()
 
@@ -30,9 +30,10 @@ class Seen(BaseModel):
 
 @router.post("/frontier/pov/{tech_id}/seen", status_code=204)
 def seen(tech_id: str, body: Seen) -> None:
-    """Counted when a leader opens or prints a Point of View (the one write
-    the leaders' address passes on)."""
-    editions.record_view(tech_id, body.kind)
+    """Counted when a leader opens or prints a Point of View (the one write a
+    leader may make); an admin looking at the leaders' view isn't counted."""
+    if auth.role() == "leader":
+        editions.record_view(tech_id, body.kind, auth.by())
 
 
 @router.get("/frontier/pov/{tech_id}")

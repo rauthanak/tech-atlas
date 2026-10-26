@@ -8,6 +8,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.services import auth
 from app.services.db.mongo import get_collection
 from app.services.timezone import now_utc
 
@@ -23,7 +24,7 @@ def _list(collection: str) -> list[dict]:
 def _apply_edit(collection: str, doc_id: str, changes: dict) -> dict:
     updated = get_collection(collection).find_one_and_update(
         {"_id": doc_id},
-        {"$set": {**changes, "updated_at": now_utc()}, "$inc": {"version": 1}},
+        {"$set": {**changes, "updated_at": now_utc(), "updated_by": auth.by()}, "$inc": {"version": 1}},
         return_document=True,
     )
     if updated is None:
@@ -148,7 +149,7 @@ def update_measure(measure_id: str, edit: MeasureEdit) -> dict:
 
 # ── scoring config ───────────────────────────────────────────────────
 
-PROTECTED_KEYS = {"_id", "name", "version", "updated_at", "status"}
+PROTECTED_KEYS = {"_id", "name", "version", "updated_at", "updated_by", "status"}
 
 
 @router.get("/scoring/config")

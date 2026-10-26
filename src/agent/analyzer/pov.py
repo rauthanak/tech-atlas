@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
-from app.services import decisions, evidence, watch
+from app.services import auth, decisions, evidence, watch
 from app.services.llm.context import with_context
 from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM, parse_json
@@ -516,7 +516,7 @@ def start_compose_all(targets: list[dict], recompose: bool = False, tz: str | No
             return None
     job_id = uuid.uuid4().hex[:12]
     get_collection("pov_compose_jobs").insert_one(
-        {"_id": job_id, "status": "running", "recompose": recompose,
+        {"_id": job_id, "status": "running", "recompose": recompose, "by": auth.by(),
          "total": len(targets), "done": 0,
          "current": [], "failed": [], "started_at": now_utc(),
          "heartbeat_at": now_utc()})

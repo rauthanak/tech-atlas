@@ -17,14 +17,14 @@ SUMS = {"calls": {"$sum": 1}, "failed": {"$sum": {"$cond": ["$ok", 0, 1]}},
 FIELDS = list(SUMS)
 
 # where each kind of run keeps its own record, and what of it the history shows
-JOBS = {"collection": ("runs", ("status",)),
-        "scoring": ("scoring_runs", ("status",)),
-        "resolve": ("resolves", ("status",)),
-        "classify": ("classify_runs", ("status", "tz", "total", "unchanged", "trigger", "stopped_reason", "error")),
-        "find_evidence": ("find_evidence_jobs", ("status", "tz", "gap", "summary")),
-        "import": ("imports", ("status", "tz", "file")),
-        "recheck": ("recheck_jobs", ("status", "total")),
-        "pov": ("pov_compose_jobs", ("status", "tz", "total"))}
+JOBS = {"collection": ("runs", ("status", "by")),
+        "scoring": ("scoring_runs", ("status", "by")),
+        "resolve": ("resolves", ("status", "by")),
+        "classify": ("classify_runs", ("status", "tz", "total", "unchanged", "trigger", "stopped_reason", "error", "by")),
+        "find_evidence": ("find_evidence_jobs", ("status", "tz", "gap", "summary", "by")),
+        "import": ("imports", ("status", "tz", "file", "by")),
+        "recheck": ("recheck_jobs", ("status", "total", "by")),
+        "pov": ("pov_compose_jobs", ("status", "tz", "total", "by"))}  # by: who started it (sign-in, 25 Oct)
 NOT_SKILLS = {"web_search": "Web search"}  # calls made with no skill of their own
 
 
