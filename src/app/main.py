@@ -3,6 +3,7 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.concurrency import run_in_threadpool
 
 from app.services.db import bootstrap
 from app.api.briefing import router as briefing_router
@@ -50,6 +51,7 @@ async def lifespan(app: FastAPI):
 
 # edits to these can move any technology's answers (a list's names, the evidence floor, the
 # priority grid, weights, an import): every stored answer is worked out again, in the background
+# (putting one back in Setup › Changes does the same: api/changes.ANSWERS_FROM)
 CONFIG_PATHS = ("/api/settings", "/api/lists", "/api/scoring/measures", "/api/scoring/config",
                 "/api/scoring/fabrics", "/api/imports")
 
@@ -67,7 +69,7 @@ def create_app() -> FastAPI:
             editions.forget_since()
         if request.method != "GET" and response.status_code < 400 and request.url.path.startswith(CONFIG_PATHS):
             from app.services import tech_status
-            tech_status.touch_all()
+            await run_in_threadpool(tech_status.touch_all)  # off the event loop: other requests go on meanwhile
         return response
 
     app.include_router(health_router, prefix="/api")

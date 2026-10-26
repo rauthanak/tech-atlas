@@ -9,9 +9,10 @@
 #   3. open http://localhost:3100
 #      (the executive view, Frontier: http://localhost:3200)
 #
-# MongoDB is exposed on localhost:27017 (stop any locally installed
-# MongoDB first, or the port clashes); its data survives restarts in
-# the mongo-data volume.
+# The API (8100) and both portal addresses (3100, 3200) answer on this
+# computer only; MongoDB isn't published at all: only the containers reach
+# it (mongosh: docker compose exec mongo mongosh). Its data survives restarts
+# in the mongo-data volume.
 
 name: tech-radar
 
@@ -23,8 +24,6 @@ services:
       # MongoDB 8 crashes on Linux kernel 6.19+ (TCMalloc/rseq, SERVER-121912);
       # letting glibc claim rseq makes tcmalloc fall back to a safe path.
       GLIBC_TUNABLES: glibc.pthread.rseq=1
-    ports:
-      - "27017:27017"
     volumes:
       - mongo-data:/data/db
     healthcheck:
@@ -45,7 +44,7 @@ services:
       HOST: 0.0.0.0
       JOBS_IN_WORKER: "true"   # collections, assessments and the other jobs run in `worker`, not here
     ports:
-      - "8100:8100"
+      - "127.0.0.1:8100:8100"   # this computer only
     volumes:
       # "Update seeding data" in the portal writes these files; the mount
       # lands them in the project folder, ready for git
@@ -81,7 +80,7 @@ services:
         # Baked into the Next.js build — see the Dockerfile in tech-lens.
         TECH_ATLAS_API_URL: http://atlas:8100
     ports:
-      - "3100:3100"
+      - "127.0.0.1:3100:3100"   # this computer only
     depends_on:
       - atlas
 
@@ -98,7 +97,7 @@ services:
     environment:
       APP_SIDE: frontier
     ports:
-      - "3200:3100"
+      - "127.0.0.1:3200:3100"   # this computer only
     depends_on:
       - atlas
 

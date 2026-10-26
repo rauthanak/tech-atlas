@@ -70,6 +70,22 @@ def backfill() -> None:
                                         {"$set": {"composed_tz": zone}}).modified_count
     if done:
         log.info("backfill: %d Points of View marked as written in %s", done, zone)
+    dedupe_decisions()
+
+
+def dedupe_decisions() -> None:
+    """One choice in force per thing chosen: where two are (saved at the same
+    moment before 25 Oct 2026), the newest stays and the others are replaced."""
+    from app.services.timezone import now_utc
+    coll = get_db()["decisions"]
+    key = {f: {"$ifNull": [f"${f}", None]} for f in ("kind", "tech_id", "fabric_id", "measure_id", "field", "key")}
+    groups = coll.aggregate([{"$match": {"active": True}}, {"$sort": {"at": -1, "_id": -1}},
+                             {"$group": {"_id": key, "ids": {"$push": "$_id"}, "n": {"$sum": 1}}},
+                             {"$match": {"n": {"$gt": 1}}}])
+    extra = [i for g in groups for i in g["ids"][1:]]
+    if extra:
+        coll.update_many({"_id": {"$in": extra}}, {"$set": {"active": False, "replaced_at": now_utc()}})
+        log.info("backfill: %d choices replaced by a newer one on the same thing", len(extra))
 
 
 def run() -> None:

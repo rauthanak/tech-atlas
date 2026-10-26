@@ -241,3 +241,79 @@ def test_a_job_running_at_start_up_says_it_was_interrupted(db):
     job.reconcile_stale()
     j = db["find_evidence_jobs"].find_one({"_id": "j1"})
     assert j["status"] == "failed" and "restarted" in j["error"]
+
+
+def test_a_tata_measure_is_refused_with_the_reason(db, monkeypatch):
+    """Code review CR06: a figure Tata enters is never scored from pages."""
+    _world(db, monkeypatch)
+    load_seeded(db, "measures")
+    started = []
+    monkeypatch.setattr(finder, "start", lambda gap, tz: started.append(gap) or "j")
+    x1 = db["measures"].find_one({"scope": "tata"})
+    for body in ({"kind": "measure", "tech_id": "edge-ai", "fabric_id": "cloud", "measure_id": x1["_id"]},
+                 {"kind": "link", "tech_id": "edge-ai", "fabric_id": "cloud", "measure_id": x1["_id"],
+                  "url": "https://a.example/x"}):
+        r = client.post("/api/find-evidence", json={"gap": body})
+        assert r.status_code == 422 and "a figure Tata enters" in r.json()["detail"]
+    assert started == []
+
+
+def test_a_queued_rerun_for_a_tata_measure_scores_nothing(db, monkeypatch):
+    from agent.analyzer import engine
+    _world(db, monkeypatch)
+    load_seeded(db, "measures")
+    x1 = db["measures"].find_one({"scope": "tata"})
+    db["assessments"].insert_one({"_id": "r:edge-ai:cloud", "scoring_run_id": "r", "tech_id": "edge-ai",
+                                  "fabric_id": "cloud", "created_at": "2026-10-21T00:00:00+00:00",
+                                  "measures": {x1["_id"]: {"score": None, "waiting_for_tata": True}}})
+    before = db["assessments"].find_one({"_id": "r:edge-ai:cloud"})
+    monkeypatch.setattr(engine, "_score_measure", lambda *a: (_ for _ in ()).throw(AssertionError("no call")))
+    said = finder.rerun_measure({"tech_id": "edge-ai", "fabric_id": "cloud", "measure_id": x1["_id"]},
+                                db["technologies"].find_one({"_id": "edge-ai"}), "j1")
+    assert "a figure Tata enters" in said
+    assert db["assessments"].find_one({"_id": "r:edge-ai:cloud"}) == before
+
+
+# ── upload limits a job can hold (code review CR14) ──────────────────
+
+def _post_files(files, monkeypatch, started):
+    monkeypatch.setattr(finder, "start", lambda gap, tz, given=None: started.append(given) or "job")
+    return client.post("/api/find-evidence/add", data={"tech_id": "edge-ai"},
+                       files=[("files", (n, body, "text/plain")) for n, body in files])
+
+
+def test_a_file_over_the_limit_is_refused_before_queuing(db, monkeypatch):
+    from app.api import find_evidence as api
+    _world(db, monkeypatch)
+    started = []
+    r = _post_files([("big.txt", b"a" * (api.MAX_FILE_MB * api.MB + 1))], monkeypatch, started)
+    assert r.status_code == 413 and r.json()["detail"].startswith("big.txt is larger than 8 MB") and started == []
+
+
+def test_files_together_over_the_limit_are_refused(db, monkeypatch):
+    from app.api import find_evidence as api
+    _world(db, monkeypatch)
+    started = []
+    six = b"a" * (6 * api.MB)
+    r = _post_files([("a.txt", six), ("b.txt", six), ("c.txt", six)], monkeypatch, started)
+    assert r.status_code == 413 and "together are larger than 16 MB" in r.json()["detail"] and started == []
+
+
+def test_text_over_the_limit_is_refused_with_the_reason(db, monkeypatch):
+    from app.api import find_evidence as api
+    _world(db, monkeypatch)
+    monkeypatch.setattr(api, "MAX_TEXT_MB", 1)
+    started = []
+    r = _post_files([("a.txt", b"a" * (api.MB // 2 + 10)), ("b.txt", b"b" * (api.MB // 2 + 10))], monkeypatch, started)
+    assert r.status_code == 422 and "more than 1 MB together" in r.json()["detail"] and started == []
+
+
+def test_a_near_limit_upload_is_stored(db, monkeypatch):
+    """Two files just under the limits make one job record MongoDB can store."""
+    from app.api import find_evidence as api
+    _world(db, monkeypatch)
+    monkeypatch.setattr(finder.background, "start", lambda *a, **k: None)
+    near = (b"edge AI trial " * (6 * api.MB // 14))[:int(5.9 * api.MB)]
+    r = client.post("/api/find-evidence/add", data={"tech_id": "edge-ai"},
+                    files=[("files", ("a.txt", near, "text/plain")), ("files", ("b.txt", near, "text/plain"))])
+    assert r.status_code == 202 and db["find_evidence_jobs"].count_documents({}) == 1

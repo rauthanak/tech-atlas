@@ -40,8 +40,8 @@ def template() -> Response:
 
 
 @router.post("/imports", status_code=201)
-async def upload(file: UploadFile = File(...), tz: str = Depends(request_tz)) -> dict:
-    content = await file.read()
+def upload(file: UploadFile = File(...), tz: str = Depends(request_tz)) -> dict:
+    content = file.file.read(MAX_BYTES + 1)  # parsed off the event loop: a big workbook holds up no other request
     if len(content) > MAX_BYTES:
         raise HTTPException(status_code=413, detail="the file is over 10 MB")
     try:

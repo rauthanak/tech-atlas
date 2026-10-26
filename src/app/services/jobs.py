@@ -75,17 +75,24 @@ def run(job: dict) -> None:
                                                                      "finished_at": now_utc()}})
 
 
+def waiting() -> list:
+    """What each queued job is for (its first argument, a run's id): work that hasn't started yet."""
+    return [j["args"][0] for j in get_collection("jobs").find({"status": "queued"}, {"args": 1}) if j.get("args")]
+
+
 def recover() -> None:
     """At the start of the process that runs jobs: anything recorded as running
-    died with the process before it, so each says so (and why)."""
+    died with the process before it, so each says so (and why). A run still
+    waiting in the queue hasn't started: it's left to start."""
     from agent.analyzer import engine as scoring_engine
     from agent.classifier import classify
     from agent.find_evidence import job as find_evidence
     from agent.resolver import resolver
     from app.services.runs import store
     from app.services.signals import recheck
-    store.reconcile_stale_runs()
-    scoring_engine.reconcile_stale_scoring_runs()
+    keep = waiting()
+    store.reconcile_stale_runs(keep)
+    scoring_engine.reconcile_stale_scoring_runs(keep)
     recheck.reconcile_stale()
     classify.reconcile_stale()
     find_evidence.reconcile_stale()
@@ -120,5 +127,6 @@ def shutdown() -> None:
     from app.services.runs import runner
     tech_status.stop()
     briefing_days.stop()
-    runner.shutdown()
-    scoring_engine.shutdown()
+    keep = waiting()  # runs still in the queue start when the worker is back
+    runner.shutdown(keep)
+    scoring_engine.shutdown(keep)

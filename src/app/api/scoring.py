@@ -2,6 +2,7 @@
 the editable method behind the assessment stage. Reads feed the portal's
 Scoring tab; PUTs are admin edits (version bumped, timestamped)."""
 
+import math
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
@@ -155,11 +156,60 @@ def list_config() -> dict:
     return {"config": _list("scoring_config")}
 
 
+def _number(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def _reasons(name: str, current: dict, changes: dict) -> list[str]:
+    """Why a scoring setting can't be saved as sent, in plain words (none: it can)."""
+    from agent.analyzer.placement import POTENTIAL_BANDS, TIMELINE_BANDS
+    from app.services.decisions import PRIORITIES
+    why = [f"{k!r} isn't a setting of {name}" for k in changes if k not in current and k not in ("open_question", "note")]
+    q = changes.get("open_question")
+    if "open_question" in changes and not (q is None or (isinstance(q, str) and len(q) <= 1000)):
+        why.append("the open question is text of at most 1,000 characters, or empty")
+    for key, label in (("timeline_cutpoints", "How soon"), ("potential_cutpoints", "How big")):
+        if key in changes:
+            v = changes[key]
+            if not (isinstance(v, list) and len(v) == 2 and all(_number(x) for x in v) and 0 <= v[0] < v[1] <= 10):
+                why.append(f"the {label} band edges are two numbers from 0 to 10, the lower first")
+    for key, label in (("timeline_from", "How soon"), ("potential_from", "How big")):
+        if key in changes:
+            v = changes[key]
+            known = set(get_collection("measures").distinct("_id"))
+            if not (isinstance(v, list) and v):
+                why.append(f"{label} is worked out from at least one measure")
+            else:
+                why += [f"unknown measure {m!r} in {label}" for m in v if m not in known]
+    if "grid" in changes:
+        cells = {f"{t}_{p}" for t in TIMELINE_BANDS for p in POTENTIAL_BANDS}
+        g = changes["grid"]
+        if not (isinstance(g, dict) and set(g) == cells and all(v in PRIORITIES for v in g.values())):
+            why.append("the grid has one cell for each How soon and How big band, each a priority from P1 to P6")
+    if "max_dossier_tokens" in changes:
+        v = changes["max_dossier_tokens"]
+        if not (isinstance(v, int) and not isinstance(v, bool) and v > 0):
+            why.append("the evidence limit is a whole number of tokens above 0, such as 500,000")
+    if "mode" in changes and changes["mode"] not in ("stacked", "per_measure"):
+        why.append("an assessment calls the model one of two ways: stacked or per_measure")
+    if "map" in changes:
+        m = changes["map"]
+        if not (isinstance(m, dict) and set(m) == {"near", "mid", "far"} and all(isinstance(v, str) and v.strip()
+                                                                                for v in m.values())):
+            why.append("the horizons name near, mid and far, each with a label")
+    return why
+
+
 @router.put("/scoring/config/{name}")
 def update_config(name: str, body: dict) -> dict:
     changes = {k: v for k, v in body.items() if k not in PROTECTED_KEYS}
     if not changes:
         raise HTTPException(status_code=422, detail="no editable fields in body")
+    current = get_collection("scoring_config").find_one({"_id": name})
+    if current is None:
+        raise HTTPException(status_code=404, detail=f"unknown scoring_config entry {name!r}")
+    if why := _reasons(name, current, changes):  # checked before anything is saved
+        raise HTTPException(status_code=422, detail="; ".join(why))
     return _apply_edit("scoring_config", name, changes)
 
 

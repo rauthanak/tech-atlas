@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from agent.find_evidence import job as finder
+from agent.scout.tools.addresses import private_host
 from agent.scout.tools.crawl import extract_pdf
 from app.services import websearch
 from app.services.db.mongo import get_collection
@@ -23,6 +24,8 @@ from app.services.timezone import request_tz
 
 router = APIRouter()
 
+NOT_PUBLIC = ("this link points inside a private network: the radar reads only public websites. "
+              "Save the page as a PDF and add the file instead")
 NO_LOGINS = ("a link can't carry a login: the radar reads pages as any visitor would and never keeps passwords. "
              "Save the page as a PDF and add the file instead")
 
@@ -34,6 +37,8 @@ def _bad_link(url: str) -> str | None:
     parts = urlsplit(url)
     if parts.username or parts.password:
         return NO_LOGINS
+    if private_host(url):
+        return NOT_PUBLIC
     return None
 
 
@@ -87,6 +92,12 @@ def start(body: Start, tz: str = Depends(request_tz)) -> dict:
     gap = body.gap.model_dump()
     if not get_collection("technologies").find_one({"_id": gap["tech_id"]}, {"_id": 1}):
         raise HTTPException(status_code=404, detail=f"unknown technology {gap['tech_id']!r}")
+    if gap.get("measure_id"):
+        m = get_collection("measures").find_one({"_id": gap["measure_id"]}, {"name": 1, "scope": 1}) or {}
+        if m.get("scope") == "tata":
+            raise HTTPException(status_code=422, detail=(
+                f"{m.get('name')} is a figure Tata enters, not one scored from pages: enter it on the "
+                "technology's Assessment tab, or leave it out."))
     if gap["kind"] == "link":
         if why := _bad_link(gap.get("url") or ""):
             raise HTTPException(status_code=422, detail=why)
@@ -97,7 +108,10 @@ def start(body: Start, tz: str = Depends(request_tz)) -> dict:
     return {"job_id": finder.start(gap, tz)}
 
 
-MAX_LINKS, MAX_FILES, MAX_FILE_MB = 20, 10, 25
+MAX_LINKS, MAX_FILES = 20, 10
+# what one job can hold (a stored record is at most 16 MB) and what the portal passes on; its AddEvidence mirrors them
+MAX_FILE_MB, MAX_FILES_MB, MAX_TEXT_MB = 8, 16, 12
+MB = 1024 * 1024
 READABLE = (".pdf", ".txt", ".md", ".html", ".htm")
 
 
@@ -105,8 +119,6 @@ def _text_of(name: str, content: bytes) -> str:
     """An uploaded file as text, or a refusal that says why."""
     if not name.lower().endswith(READABLE):
         raise HTTPException(status_code=422, detail=f"{name}: only PDF, text, Markdown or HTML files can be read")
-    if len(content) > MAX_FILE_MB * 1024 * 1024:
-        raise HTTPException(status_code=422, detail=f"{name} is larger than {MAX_FILE_MB} MB")
     text = extract_pdf(content) if name.lower().endswith(".pdf") else content.decode("utf-8", errors="replace")
     if not (text or "").strip():
         raise HTTPException(status_code=422, detail=f"{name} has no text to read (a scanned PDF needs its text first)")
@@ -114,7 +126,7 @@ def _text_of(name: str, content: bytes) -> str:
 
 
 @router.post("/find-evidence/add", status_code=202)
-async def add_evidence(tech_id: str = Form(...), urls: str = Form("[]"), through: str = Form("judge"),
+def add_evidence(tech_id: str = Form(...), urls: str = Form("[]"), through: str = Form("judge"),
                        assess_anyway: bool = Form(False), files: list[UploadFile] = File(default=[]),
                        tz: str = Depends(request_tz)) -> dict:
     """Links (a JSON list) and files for one technology: read and filed under
@@ -130,7 +142,23 @@ async def add_evidence(tech_id: str = Form(...), urls: str = Form("[]"), through
         raise HTTPException(status_code=422, detail=why)
     if len(links) > MAX_LINKS or len(files) > MAX_FILES:
         raise HTTPException(status_code=422, detail=f"at most {MAX_LINKS} links and {MAX_FILES} files at a time")
-    given = [{"name": f.filename or "file", "text": _text_of(f.filename or "file", await f.read())} for f in files]
+    given, size, chars = [], 0, 0
+    for f in files:  # read no more than the limit allows, so an oversized file is refused at once
+        name = f.filename or "file"
+        content = f.file.read(MAX_FILE_MB * MB + 1)
+        if len(content) > MAX_FILE_MB * MB:
+            raise HTTPException(status_code=413, detail=f"{name} is larger than {MAX_FILE_MB} MB: split it, or save "
+                                                        "only the pages you need as a PDF")
+        size += len(content)
+        if size > MAX_FILES_MB * MB:
+            raise HTTPException(status_code=413, detail=f"the files together are larger than {MAX_FILES_MB} MB: "
+                                                        "add them in two goes")
+        text = _text_of(name, content)
+        chars += len(text.encode())
+        if chars > MAX_TEXT_MB * MB:
+            raise HTTPException(status_code=422, detail=f"the text read from these files is more than {MAX_TEXT_MB} MB "
+                                                        "together: add fewer files at a time")
+        given.append({"name": name, "text": text})
     if not links and not given:
         raise HTTPException(status_code=422, detail="add at least one link or file")
     if through not in ("judge", "pov"):

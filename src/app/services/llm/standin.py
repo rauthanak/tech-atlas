@@ -37,8 +37,10 @@ def _pick(seed: str, n: int) -> list[str]:
     return [names[(h >> (8 * i)) % len(names)] for i in range(n)]
 
 
-def _measure() -> dict:
-    return {"score": 6, "justification": "The evidence shows it (stand-in).", "evidence_urls": ["https://example.com/standin"],
+def _measure(text: str = "") -> dict:
+    cited = re.search(r"url: (\S+)", text)  # a page from the evidence it was given, as a real answer cites
+    return {"score": 6, "justification": "The evidence shows it (stand-in).",
+            "evidence_urls": [cited.group(1) if cited else "https://example.com/standin"],
             "counter_case": "Stand-in.", "unscorable": False, "missing": None}
 
 
@@ -83,7 +85,7 @@ def _answer(skill: str, text: str):
         return {i: {"names": [], "not_a_technology": None} for i in re.findall(r"^\s*-?\s*([\w.-]+):", text, re.M)}
     if skill == "name_check":
         return {n: "about" for n in re.findall(r"^\s*\[?(\d+)\]?[.:)]", text, re.M)}
-    return _measure()  # measure_scoring, and anything else that asks for one measure
+    return _measure(text)  # measure_scoring, and anything else that asks for one measure
 
 
 def _skill_of(key: str) -> str:

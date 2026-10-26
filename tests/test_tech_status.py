@@ -160,3 +160,46 @@ def test_big_technologies_are_worked_out_in_smaller_batches(db, monkeypatch):
     db["technologies"].update_one({"_id": "quantum-sensing"}, {"$set": {"page_count": 30}})
     assert list(tech_status._batches(["edge-ai", "quantum-sensing"])) == [["edge-ai"], ["quantum-sensing"]]
     assert tech_status.refresh(["edge-ai", "quantum-sensing"]) == 2
+
+
+def test_putting_back_a_list_value_marks_every_technology(db, seeds):
+    """Code review CR13: Put back the default refreshes the answers, as the edit it undoes did."""
+    from app.services.db import seeding
+    _world(db)
+    seeding.load_if_new()
+    db["availability"].update_one({"_id": "pilot"}, {"$set": {"name": "Trial", "updated_at": "2999-01-01T00:00:00+00:00"}})
+    tech_status.refresh(["edge-ai", "quantum-sensing"])
+    assert tech_status.pending() == 0
+    assert client.post("/api/changes/revert", json={"items": [{"collection": "availability", "id": "pilot"}]}).status_code == 200
+    assert tech_status.pending() == 2
+
+
+def test_putting_back_a_signal_marks_none(db, seeds):
+    from app.services.db import seeding
+    _world(db)
+    seeding.load_if_new()
+    tech_status.refresh(["edge-ai", "quantum-sensing"])
+    signal = db["signals"].find_one()
+    db["signals"].update_one({"_id": signal["_id"]}, {"$set": {"name": "x", "updated_at": "2999-01-01T00:00:00+00:00"}})
+    assert client.post("/api/changes/revert", json={"items": [{"collection": "signals", "id": signal["_id"]}]}).status_code == 200
+    assert tech_status.pending() == 0
+
+
+def test_a_setup_edit_marks_every_technology_off_the_event_loop(db, monkeypatch):
+    """Code review CR21: the refresh after a Setup edit runs in the threadpool, so other requests go on."""
+    import asyncio
+    _world(db)
+    tech_status.refresh(["edge-ai", "quantum-sensing"])
+    on_loop, real = [], tech_status.touch_all
+
+    def touch_all():
+        try:
+            asyncio.get_running_loop()
+            on_loop.append(True)
+        except RuntimeError:
+            on_loop.append(False)
+        return real()
+    monkeypatch.setattr(tech_status, "touch_all", touch_all)
+    settings = client.get("/api/settings/radar").json()
+    assert client.put("/api/settings/radar", json=settings).status_code == 200
+    assert on_loop == [False] and tech_status.pending() == 2

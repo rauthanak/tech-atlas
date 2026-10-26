@@ -52,6 +52,8 @@ from app.services.timezone import now_utc
 
 PRIORITIES = {f"P{n}" for n in range(1, 7)}
 MOVE_FIELDS = {"availability", "domain", "subdomain", "trl"}
+MOVE_LISTS = {"availability": ("availability", "Commercial availability"), "domain": ("domains", "Domain"),
+              "subdomain": ("subdomains", "Sub-domain")}  # the list each move's value must be in
 REASON_REQUIRED = {"override", "hand_score", "tata_entry"}
 # a finance choice's inputs (services/finance): amounts, shares from 0 to 1, and the rungs' notes
 FINANCE_AMOUNTS = ("upfront", "running", "revenue", "volume", "price", "displaced")
@@ -95,6 +97,10 @@ def _check(kind: str, d: dict) -> dict:
             raise Refused("TRL is a whole number from 1 to 9")
         if d["field"] != "trl" and not (isinstance(v, str) and v.strip()):
             raise Refused("choose a value from the list")
+        listed, list_name = MOVE_LISTS.get(d["field"], (None, None))
+        if listed and not (d["field"] == "subdomain" and v.startswith("new:")) \
+                and not get_collection(listed).find_one({"_id": v}, {"_id": 1}):
+            raise Refused(f"{v!r} isn't in the {list_name} list: choose a value from the list")
     elif kind == "override":
         if not d.get("fabric_id"):
             raise Refused("an override is for one fabric")
@@ -198,10 +204,16 @@ def create(kind: str, tech_id: str, *, value=None, fabric_id: str | None = None,
     d = _check(kind, {"kind": kind, "tech_id": tech_id, "fabric_id": fabric_id, "measure_id": measure_id,
                       "field": field, "key": key, "value": value, "reason": (reason or "").strip() or None})
     coll = get_collection("decisions")
-    coll.update_many({**_key(d), "active": True}, {"$set": {"active": False, "replaced_at": now_utc()}})
     doc = {"_id": uuid.uuid4().hex[:12], **d, "computed": computed, "at": now_utc(), "tz": tz, "by": None, "active": True,
            **({"extra": extra} if extra else {})}
-    coll.insert_one(doc)
+    coll.insert_one(doc)  # first: a save that fails leaves the choice in force as it was
+    # then the one it replaces; the newest stays in force even when two people save at once
+    retire = {"$set": {"active": False, "replaced_at": now_utc()}}
+    older = {"$or": [{"at": {"$lt": doc["at"]}}, {"at": None}, {"at": doc["at"], "_id": {"$lt": doc["_id"]}}]}
+    coll.update_many({**_key(d), "active": True, "_id": {"$ne": doc["_id"]}, **older}, retire)
+    if coll.find_one({**_key(d), "active": True, "_id": {"$ne": doc["_id"]}}, {"_id": 1}):  # a newer one landed first
+        coll.update_one({"_id": doc["_id"]}, retire)
+        doc["active"] = False
     return doc
 
 

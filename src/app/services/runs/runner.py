@@ -53,6 +53,13 @@ def request_terminate(run_id: str) -> bool:
 
 
 def _execute(run_id: str, params: dict) -> None:
+    status = store.run_status(run_id)
+    if status != "running":  # stopped (or cut off) before it started: nothing to do, nothing spent
+        if status == "terminating":
+            store.set_stage(run_id, "done")
+            store.finish_run(run_id, "terminated", "terminated by user")
+        log.info("run %s is %s: not started", run_id, status)
+        return
     log.info("run %s started (params=%s)", run_id, params)
     try:
         llm = LLM.initialize()
@@ -131,11 +138,11 @@ def _execute(run_id: str, params: dict) -> None:
         store.finish_run(run_id, "terminated", error=str(exc)[:500])
 
 
-def shutdown() -> None:
+def shutdown(keep=()) -> None:
     """Graceful-stop hook (FastAPI lifespan exit): running runs die with this
-    process, so record that truthfully."""
+    process, so record that truthfully; runs still in the queue (`keep`) start later."""
     result = get_collection("runs").update_many(
-        {"status": {"$in": list(store.RUNNING_STATES)}},
+        {"status": {"$in": list(store.RUNNING_STATES)}, "_id": {"$nin": list(keep)}},
         {"$set": {"status": "terminated", "error": "interrupted — service shutdown",
                   "run_end_date_time": now_utc()}})
     if result.modified_count:

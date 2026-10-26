@@ -22,7 +22,7 @@ def last_gates() -> dict[str, list[str]]:
 def estimate(tech_ids: list[str]) -> dict:
     """`calls` uses each technology's last gate (every enabled fabric when it
     has none); `calls_max` assumes every enabled fabric."""
-    measures = get_collection("measures").count_documents({})
+    measures = get_collection("measures").count_documents({"scope": {"$ne": "tata"}})  # Tata's are never asked
     enabled = set(get_collection("fabrics").distinct("_id", {"enabled": True}))
     gates = last_gates()
 

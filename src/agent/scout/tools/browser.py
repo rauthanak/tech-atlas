@@ -16,7 +16,24 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as Timeout
 
+from agent.scout.tools.addresses import PRIVATE, NotPublic, private_host
+
 log = logging.getLogger(__name__)
+
+
+def _public_only(seen: dict):
+    """A Playwright route handler: requests to addresses that aren't public are
+    aborted (each host checked once per page)."""
+    def guard(route):
+        url = route.request.url
+        host = url.split("/")[2] if "://" in url else url
+        if host not in seen:
+            seen[host] = bool(url.startswith(("http://", "https://")) and private_host(url))
+        if seen[host]:
+            route.abort("blockedbyclient")
+        else:
+            route.continue_()
+    return guard
 
 MORE_BUTTON = re.compile(
     r"(load|show|view|see)\s*more|more\s*(stories|articles|news|posts|results)", re.I)
@@ -64,10 +81,17 @@ class BrowserFetcher:
 
     def _fetch(self, url: str, clicks: int) -> tuple[str, str]:
         self._ensure()
-        context = self._browser.new_context(user_agent=self._user_agent)
+        # every request the page makes goes through the public-address check (service workers would bypass it)
+        context = self._browser.new_context(user_agent=self._user_agent, service_workers="block")
+        context.route("**/*", _public_only({}))
         page = context.new_page()
         try:
-            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            response = page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            hop = response.request if response else None
+            while hop is not None:  # a redirect the browser followed on its own: refused if it went private
+                if private_host(hop.url):
+                    raise NotPublic(PRIVATE)
+                hop = hop.redirected_from
             page.wait_for_timeout(1500)  # let first client-side render settle
             for _ in range(clicks):
                 try:

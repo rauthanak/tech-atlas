@@ -56,10 +56,15 @@ def _relevance_check(fabrics: list[dict]):
     return check
 
 
-def _measure_check(value, task):
+def _measure_check(value, task, cite: set[str] | None = None):
     if not isinstance(value, dict):
         raise ValueError("a measure's answer must be an object")
-    return engine.measure_result(value)
+    return engine.measure_result(value, cite)
+
+
+def _cited_check(cite: set[str]):
+    """_measure_check, counting only citations of pages the call was given."""
+    return lambda value, task: _measure_check(value, task, cite)
 
 
 def _watch_check(urls: set[str] | None):
@@ -128,7 +133,7 @@ def technology_call(llm: LLM, run: dict, entry: dict, dossier: str, measures: li
     ls = _lists()
     built = technology_built(_recipe(run, "technology"), entry["name"], dossier, measures, fabrics, ls,
                              engine.previous_watch(entry["tech_id"], run["_id"]))
-    checks = {"fabric_relevance": _relevance_check(fabrics), "measure_scoring": _measure_check,
+    checks = {"fabric_relevance": _relevance_check(fabrics), "measure_scoring": _cited_check(engine.cited_keys(dossier)),
               "watch_metrics": _watch_check(engine.page_urls(pages)), **(classification_checks(ls, pages or []) if ls is not None else {})}
     # a gate that fails widens scoring to every fabric, never narrows it; a
     # failed classification answer isn't asked again (Classify has one from the pages)
@@ -151,7 +156,7 @@ def fabric_call(llm: LLM, run: dict, entry: dict, dossier: str, measures: list[d
         if not built.tasks:
             return {"measures": {}, "value": None, "retries": 0}
         out, retries = _ask(llm, built, run["_id"],
-                            {"measure_scoring": _measure_check,
+                            {"measure_scoring": _cited_check(engine.cited_keys(dossier, fabric)),
                              "value_levers": value.check(fabric, value.mechanisms(), pages or [])},
                             {"value_levers": value.failed})  # failed twice: the reason is kept and shown
     return {"measures": {m["_id"]: out[f"measure:{m['_id']}"] for m in measures if scope(m) == "fabric"},
@@ -195,16 +200,22 @@ def assess(run_id: str, tech_id: str, llm: LLM, executor: ThreadPoolExecutor) ->
                for f in owed if not engine.cancelled(run_id)}
     tech_scored = {mid: {**r, "scope": "technology"} for mid, r in done["measures"].items()}
     waiting = {mid: {**r, "scope": "tata"} for mid, r in tata_results(measures).items()}
-    assessed = []
+    assessed, errors = [], []
     for f in owed:
         if f["_id"] not in futures:
             continue
-        fab = futures[f["_id"]].result()
+        try:
+            fab = futures[f["_id"]].result()
+        except Exception as exc:  # the other fabrics' answers are still stored; Resume asks only this again
+            errors.append(f"{f.get('name')}: {str(exc)[:200] or type(exc).__name__}")
+            continue
         results = {**tech_scored, **{mid: {**r, "scope": "fabric"} for mid, r in fab["measures"].items()}, **waiting}
         get_collection("assessments").insert_one(engine.assessment_doc(
             run, entry, f, built, results, watch_metrics=done["watch_metrics"],
             **(value.fields(fab["value"]) if fab.get("value") else {}), engine="stacked",
             calls={"technology_call": 1, "fabric_call": 1, "retries": done["retries"] + fab["retries"]}))
         assessed.append(f.get("name"))
+    if errors:
+        raise RuntimeError("couldn't be assessed in " + "; ".join(errors))
     engine.mark_progress(run_id)
     return f"{entry['name']}: assessed in {', '.join(assessed) or 'no new fabrics'}"

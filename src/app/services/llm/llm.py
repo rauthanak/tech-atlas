@@ -68,13 +68,45 @@ def parse_json(reply: str):
     raise ValueError("the reply is not valid JSON")
 
 
+class Transient(Exception):
+    """An error worth trying again (a throttled API, a reply cut off)."""
+
+
+class CutOff(Transient, ValueError):
+    """A reply cut off at the length limit: tried again, as before."""
+
+
+# what trying again can fix: the providers' own retry rule (408, 409, 429, any 5xx),
+# errors they send mid-reply, and network, timeout and database-connection errors
+TRANSIENT_STATUS = (408, 409, 429)
+TRANSIENT_KINDS = {"rate_limit_error", "overloaded_error", "api_error", "timeout_error"}
+TRANSIENT_TYPES = {"APIConnectionError", "TransportError", "ConnectionFailure", "Transient"}
+
+
+def transient(exc: Exception) -> bool:
+    """Whether trying again can help. A wrong key, a refused request or a bug
+    fails the same way every time."""
+    if isinstance(exc, (TimeoutError, ConnectionError)) or TRANSIENT_TYPES & {c.__name__ for c in type(exc).__mro__}:
+        return True
+    status = getattr(exc, "status_code", None)
+    if isinstance(status, int) and (status in TRANSIENT_STATUS or status >= 500):
+        return True
+    body = getattr(exc, "body", None)
+    error = body.get("error") if isinstance(body, dict) else None
+    return isinstance(error, dict) and error.get("type") in TRANSIENT_KINDS
+
+
 def call_with_backoff(fn, cancelled=None):
-    """Call fn(); on an error (rate limits above all) wait and retry on the
-    BACKOFFS schedule. Gives up early when cancelled() turns true."""
+    """Call fn(); on an error trying again can fix (rate limits above all) wait
+    and retry on the BACKOFFS schedule. Any other error raises at once, and it
+    gives up early when cancelled() turns true."""
     for attempt in range(len(BACKOFFS) + 1):
         try:
             return fn()
         except Exception as exc:
+            if not transient(exc):
+                log.warning("model call failed and trying again won't help: %s", exc)
+                raise
             if attempt >= len(BACKOFFS) or (cancelled is not None and cancelled()):
                 raise
             delay = BACKOFFS[attempt]
@@ -161,7 +193,7 @@ class LLM:
                     response = stream.get_final_message()
                 tokens = usage.anthropic_usage(response.usage)
                 if response.stop_reason == "max_tokens":
-                    raise ValueError(f"the reply was cut off at the {MAX_TOKENS:,}-token limit")
+                    raise CutOff(f"the reply was cut off at the {MAX_TOKENS:,}-token limit")
                 text = "".join(b.text for b in response.content if b.type == "text")
             else:
                 instructions = "\n\n".join([*(blocks or []), *([system] if system else [])]) or None

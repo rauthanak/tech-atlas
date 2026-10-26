@@ -291,11 +291,15 @@ If the app stops part-way, the next start carries on where it was.
 **Your settings: check Changes first.** Edits made in the portal — sources,
 signals, skills, the scoring method, crawl settings — apply at once, but they
 live only in this running app. When a new version brings changed *seeding
-data* (the configuration in the code), it replaces them with its own. Before
-updating, open **Setup → Changes** in the portal: anything listed there is not
-in the seeding data yet. Tick what you want to keep, click **Update seeding
-data**, and make sure those files reach GitHub (send them to whoever maintains
-the repos) — otherwise the new version's settings replace them.
+data* (the configuration in the code), its changes load into everything not
+edited in the portal. Items edited in the portal keep their values and are
+listed in **Setup → Changes** against the new defaults; items added in the
+portal and proposals awaiting review are never removed, and an item deleted in
+the portal is not brought back. Before updating, open **Setup → Changes**:
+anything listed there is not in the seeding data yet. Tick what you want to
+keep, click **Update seeding data**, and make sure those files reach GitHub
+(send them to whoever maintains the repos), so a fresh install starts with
+them too.
 
 *If you use git:* `git pull` in both folders, then `docker compose up
 --build` from `tech-atlas`.
@@ -308,7 +312,7 @@ the repos) — otherwise the new version's settings replace them.
 | --- | --- |
 | `command not found: docker` / `'docker' is not recognized` | Docker Desktop isn't running, or your terminal window is older than the install. Start Docker Desktop, wait for "running", open a **new** terminal window. |
 | `Cannot connect to the Docker daemon` | Docker Desktop is installed but not running. Launch it and wait for the whale. |
-| `port is already allocated` (mentions 27017, 8100, or 3100) | Another program on your computer uses that port. On a Mac with a locally installed MongoDB, run `brew services stop mongodb-community` and try again. |
+| `port is already allocated` (mentions 8100, 3100 or 3200) | Another program on your computer uses that port: stop it and try again. (The database's port isn't published, so a locally installed MongoDB no longer clashes.) |
 | Build error mentioning `../tech-lens` | The folders aren't side by side, or the `-main` rename in step 1 was skipped. |
 | `MongoDB cannot start: Linux kernel versions 6.19 and newer…` | A workaround for this is already built in (`GLIBC_TUNABLES` on the `mongo` service in `docker-compose.yml`). If you still see it, you may have an old copy of the code — re-download it. If it persists, change `image: mongo:8` to `image: mongo:7` in `docker-compose.yml` and start again. |
 | First start seems stuck for minutes | Normal — it is downloading and building. Watch Docker Desktop's whale menu or the scrolling log. |
@@ -346,7 +350,14 @@ Native setup needs local installs: **MongoDB** listening on
 
 Both scripts create the environment, install dependencies and start dev
 servers: API on **8100**, portal on **3100**. The API loads the seeding data
-(the files in `seeds/`) into a fresh database, and again whenever those files
-change; a plain restart keeps your live edits. Settings live in `.env`
+(the files in `seeds/`) into a fresh database, and the files' changes into
+anything not edited in the app whenever they change; a plain restart keeps
+your live edits. Settings live in `.env`
 (created from `.env.example` on first start). Tests: `pip install -e .[dev]`
 then `pytest` (they use a throwaway `tech_atlas_test` database).
+
+Dependencies are pinned in `uv.lock`; `requirements.txt` is exported from it,
+with hashes, and is what the image and the start scripts install. To change one:
+edit `pyproject.toml`, run `uv lock`, then
+`uv export --frozen --no-dev --no-emit-project --format requirements-txt -o requirements.txt`
+(a test checks the two agree).

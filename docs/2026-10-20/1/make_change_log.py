@@ -20,7 +20,7 @@ OUT = ROOT / "Tech Radar - changes after the midpoint review.docx"
 NAVY = RGBColor(0x04, 0x1A, 0x4A)
 MUTED = RGBColor(0x49, 0x4A, 0x52)
 
-VERSION = "Version 29 · 25 October 2026"
+VERSION = "Version 30 · 25 October 2026"
 HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the midpoint review, with today's screens and design mock-ups."),
            ("2", "20 Oct 2026", "Change 0 built: technologies say how solid their assessment is, a technology's result in each fabric stays "
                                 "with the technology, plain names on every screen. Real screens replace its mock-up."),
@@ -108,7 +108,9 @@ HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the mi
            ("28", "23 Oct 2026", "Change 49, the eighth phase: long jobs run in their own worker container, so a big job "
                                  "never slows the web pages and an update of the web app never stops a job; stress-tested."),
            ("29", "25 Oct 2026", "Change 50: the radar re-tested at ten million pages after the scale fixes, and the live radar "
-                                 "upgraded to them. Change 51: a person can now re-score a measure the model scored.")]
+                                 "upgraded to them. Change 51: a person can now re-score a measure the model scored."),
+           ("30", "25 Oct 2026", "Change 52: the fixes from the code review, so results, choices and settings stay "
+                                 "truthful and the radar is ready to run on Tata's own servers.")]
 
 # The numbers in the text, from the live radar on 21 Oct (6 Oct is the run before these changes).
 N = dict(
@@ -142,6 +144,8 @@ SOURCES = [
     ("S9", "Hasan's email “Oct 21 - Sync Summary: Ankur's Three Tests, Demo & Deployment” (22 Oct), and the Zoom summary",
      "What was agreed on 21 Oct: market size as bands, an introduction in each Point of View, metrics flagged when they "
      "cross, view counts, wider sources and the comparison with the catalog, and the deployment."),
+    ("S10", "The code review of 25 Oct (review_v1)",
+     "An independent review of the code: 21 findings, each checked against the code; the 18 that matter now were fixed."),
 ]
 
 # Built screens, in reading order, with their captions: item-N.png or item-N-<screen>.png
@@ -1393,6 +1397,38 @@ ITEMS.append(
          metrics=[("Scored measures a person can change", "None", "All")],
          diagram=None, before=[]))
 
+ITEMS.append(
+    dict(n="52", title="Fixes from the code review: truthful results, safe choices, ready for Tata's servers", status="Live",
+         source=[("S10", "the code review of 25 Oct: the 18 findings that matter now")],
+         what=["An assessment run where a technology failed now says 'failed: 1 of 3 technologies failed', with the reason, "
+               "instead of 'completed'; Resume redoes only what's missing. A fabric that fails no longer throws away the "
+               "others' answers.",
+               "A score counts only when it is a real number, the AI didn't say the pages can't support it, and it cites a "
+               "page from the evidence it was given (or the fabric's TCL TODAY source); links it wasn't given are removed. "
+               "Checked against today's 14,614 stored scores first: 3 cited pages their assessment never read.",
+               "Measures only Tata enters are never sent to the AI, on any path.",
+               "A model error that retrying can't fix (a wrong key, a refused request) fails at once, with its reason, "
+               "instead of after four minutes of retries.",
+               "A restart or update no longer cancels runs still waiting to start.",
+               "Saving a choice can no longer lose the previous one or leave two in force.",
+               "Merging technologies moves the choices people made on the one merged in, and its catalog membership; where "
+               "both have a choice on the same thing, the one kept wins and the merge says which.",
+               "Removing a list value withdraws the choices that used it (History keeps them) and classifies those "
+               "technologies again; a move to a value not in its list is refused.",
+               "Put back the default refreshes every technology's answers at once; scoring settings the radar couldn't use "
+               "are refused before they're saved.",
+               "A new version's defaults no longer overwrite edits made in the radar: they are kept and listed in Setup › "
+               "Changes, and items added in the radar are never deleted.",
+               "The leaders' address reads only published data; the radar never reads private-network addresses; uploads "
+               "are limited to what can be stored (8 MB a file, 16 MB together); a large upload no longer pauses other "
+               "requests; ports answer on the server itself only; builds install the tested versions, fonts included.",
+               "Error messages say what happened, in plain words fit for a deployed server; the top bar says when its status "
+               "is out of date; actions always refresh it; switching tabs quickly always ends on the one chosen."],
+         why="Before Tata's teams rely on it every day, every result, choice and setting must stay truthful, and the radar must "
+             "be safe to run on Tata's own servers.",
+         metrics=[("Tests", "318", "440 (all pass)")],
+         diagram=None, before=[]))
+
 DECISIONS = [
     "Finance (contribution, payback, break-even) is set aside on every screen until Tata has discussed it; figures and "
     "code are kept (21 Oct).",
@@ -1496,6 +1532,7 @@ def main():
     doc.add_paragraph("Tech Radar: changes after the midpoint review", style="Title")
     p = doc.add_paragraph("Tata Communications × Wharton Mack Institute · Emerging Technology Radar"); p.runs[0].font.color.rgb = MUTED
     p = doc.add_paragraph(VERSION); p.runs[0].bold = True
+    p = doc.add_paragraph("Prepared by Nick, Hasan and Akshay"); p.runs[0].font.color.rgb = MUTED
 
     doc.add_heading("About this document", level=1)
     doc.add_paragraph("Every change we made after the midpoint review of 13 October, built from the review itself, the emails "

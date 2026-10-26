@@ -27,6 +27,7 @@ from agent.scout.tools.crawl import why_failed
 from agent.scout.tools.context import Context, Outcome
 from app.services.db.mongo import get_collection
 from app.services.llm import call_with_backoff
+from app.services.llm.llm import Transient
 from app.services.timezone import now_utc
 
 log = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ class NotConfigured(Exception):
     """A key the adapter needs is missing from .env."""
 
 
-class _Retry(Exception):
+class _Retry(Transient):
     pass
 
 

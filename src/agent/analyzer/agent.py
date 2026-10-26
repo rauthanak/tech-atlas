@@ -49,7 +49,7 @@ def resume_scoring_run(run_id: str) -> bool:
             raise busy.Busy(reason)
         doc = get_collection("scoring_runs").find_one_and_update(
             {"_id": run_id, "status": {"$in": ["failed", "terminated"]}},
-            {"$set": {"status": "running", "stage": "scoring", "error": None,
+            {"$set": {"status": "running", "stage": "scoring", "error": None, "failed": [],
                       "finished_at": None, "progress.techs_done": 0},
              "$push": {"stage_history": {"stage": "resumed", "at": now_utc()}}})
     if doc is None:
@@ -59,14 +59,29 @@ def resume_scoring_run(run_id: str) -> bool:
 
 
 def run_scoring(run_id: str) -> None:
+    status = (get_collection("scoring_runs").find_one({"_id": run_id}, {"status": 1}) or {}).get("status")
+    if status != "running":  # stopped (or cut off) before it started: nothing to do, nothing spent
+        if status == "terminating":
+            engine.finish(run_id, "terminated", "terminated by user")
+        log.info("scoring run %s is %s: not started", run_id, status)
+        return
     log.info("scoring run %s started", run_id)
     try:
         llm = LLM.initialize()
         engine.set_stage(run_id, "scoring")
         if engine.engine_mode(run_id) == "stacked":
-            _sweep_in_parallel(run_id, llm)
-            status = "terminated" if engine.cancelled(run_id) else "completed"
-            engine.finish(run_id, status, "terminated by user" if status == "terminated" else None)
+            failed = _sweep_in_parallel(run_id, llm)
+            if failed:  # which, and why: Resume does only these again
+                get_collection("scoring_runs").update_one({"_id": run_id}, {"$set": {"failed": failed}})
+            if engine.cancelled(run_id):
+                status, error = "terminated", "terminated by user"
+            elif failed:
+                total = len(get_collection("scoring_runs").find_one({"_id": run_id}, {"technologies": 1})["technologies"])
+                status, error = "failed", (f"{len(failed)} of {total} technologies failed: "
+                                           + "; ".join(f"{f['name']}: {f['error']}" for f in failed))[:500]
+            else:
+                status, error = "completed", None
+            engine.finish(run_id, status, error)
             log.info("scoring run %s %s", run_id, status)
             return
         with ThreadPoolExecutor(max_workers=get_settings().scoring_concurrency,
@@ -110,23 +125,29 @@ def run_scoring(run_id: str) -> None:
         engine.finish(run_id, "failed", str(exc)[:500])
 
 
-def _sweep_in_parallel(run_id: str, llm) -> None:
+def _sweep_in_parallel(run_id: str, llm) -> list[dict]:
     """The stacked engine's run: technologies assessed several at a time (each
     makes one technology call, then its fabric calls together), every one owed
     covered. A technology's calls are few and large, so the deep agent's
-    one-at-a-time plan is left out here: it would only slow the run."""
+    one-at-a-time plan is left out here: it would only slow the run. Returns
+    the technologies that failed: [{tech_id, name, error}]."""
     from app.services.llm.context import carry
     n = get_settings().scoring_concurrency
     run = get_collection("scoring_runs").find_one({"_id": run_id})
     skipped = {s["tech_id"] for s in run.get("skipped", [])}
     owed = [t["tech_id"] for t in run["technologies"] if t["tech_id"] not in skipped]
+    names = {t["tech_id"]: t["name"] for t in run["technologies"]}
+    failed = []
     with ThreadPoolExecutor(max_workers=n, thread_name_prefix="fabric") as fabrics, \
             ThreadPoolExecutor(max_workers=n, thread_name_prefix="technology") as techs:
-        futures = [techs.submit(carry(engine.assess_technology), run_id, t, llm, fabrics) for t in owed]
-        for f in futures:
+        futures = {t: techs.submit(carry(engine.assess_technology), run_id, t, llm, fabrics) for t in owed}
+        for tech_id, f in futures.items():
             if engine.cancelled(run_id):
                 break
             try:
                 f.result()
-            except Exception:  # one technology must not sink the run; the others go on
+            except Exception as exc:  # one technology must not sink the run; the others go on
                 log.exception("assessing a technology failed in run %s", run_id)
+                failed.append({"tech_id": tech_id, "name": names.get(tech_id, tech_id),
+                               "error": str(exc)[:300] or type(exc).__name__})
+    return failed

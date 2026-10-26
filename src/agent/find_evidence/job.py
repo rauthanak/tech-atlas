@@ -290,10 +290,13 @@ def rerun_measure(gap: dict, tech: dict, job_id: str) -> str:
     out again (no other call)."""
     from agent.analyzer import engine
     from agent.analyzer.stacked import WHOLE, scope
+    m = get_collection("measures").find_one({"_id": gap["measure_id"]})
+    if scope(m) == "tata":  # never scored from pages
+        return (f"{m.get('name')} is a figure Tata enters, not one scored from pages, so it wasn't scored again: "
+                "enter it on the technology's Assessment tab.")
     a = latest_assessment(gap["tech_id"], gap.get("fabric_id"))
     if a is None:
         return "It hasn't been assessed, so there's no measure to score again."
-    m = get_collection("measures").find_one({"_id": gap["measure_id"]})
     fabric = WHOLE if scope(m) == "technology" else (get_collection("fabrics").find_one({"_id": a["fabric_id"]}) or WHOLE)
     config = list(get_collection("scoring_config").find())
     dossier = engine.build_dossier(tech["name"], engine.dossier_limit(config), signals_first=True)["text"]

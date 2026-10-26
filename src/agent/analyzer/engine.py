@@ -12,6 +12,8 @@ marked partial. Roll-ups are recomputable later from stored scores without
 any LLM call."""
 
 import logging
+import math
+import re
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
@@ -22,7 +24,7 @@ from app.services.llm.llm import LLM, call_with_backoff, parse_json
 from app.services.prompts.store import PromptStore
 from app.services.timezone import now_utc
 from app.services.evidence import page_key
-from app.services.pages import NEWEST as pages_newest
+from app.services.pages import NEWEST as pages_newest, link_key
 
 log = logging.getLogger(__name__)
 
@@ -108,19 +110,20 @@ def _bump(run_id: str, **inc) -> None:
          "$set": {"heartbeat": now_utc()}})
 
 
-def reconcile_stale_scoring_runs() -> None:
-    """A 'running' scoring run at boot died with the last process."""
+def reconcile_stale_scoring_runs(keep=()) -> None:
+    """A 'running' scoring run at boot died with the last process, unless it's
+    still waiting in the queue (`keep`)."""
     result = get_collection("scoring_runs").update_many(
-        {"status": {"$in": list(RUNNING_STATES)}},
+        {"status": {"$in": list(RUNNING_STATES)}, "_id": {"$nin": list(keep)}},
         {"$set": {"status": "terminated", "error": "interrupted — found running at start-up",
                   "finished_at": now_utc()}})
     if result.modified_count:
         log.warning("reconciled %d stale scoring run(s)", result.modified_count)
 
 
-def shutdown() -> None:
+def shutdown(keep=()) -> None:
     result = get_collection("scoring_runs").update_many(
-        {"status": {"$in": list(RUNNING_STATES)}},
+        {"status": {"$in": list(RUNNING_STATES)}, "_id": {"$nin": list(keep)}},
         {"$set": {"status": "terminated", "error": "interrupted — service shutdown",
                   "finished_at": now_utc()}})
     if result.modified_count:
@@ -318,7 +321,7 @@ def _score_measure(llm: LLM, run_id: str, measure: dict, tech_name: str,
         data = _ask_json(llm, rendered, run_id)
     if not isinstance(data, dict):
         return unscored("the reply wasn't a JSON object, twice")
-    return measure_result(data)
+    return measure_result(data, cited_keys(dossier, fabric))
 
 
 def unscored(why: str) -> dict:
@@ -339,28 +342,50 @@ def _figure(f, cited: list) -> dict | None:
     return {"amount_usd_bn": amount, "year": f.get("year"), "scope": f.get("scope"), "url": f["url"]} if amount > 0 else None
 
 
-def measure_result(data: dict) -> dict:
-    """A measure's answer under the scoring rules: the score clamped to 0–10,
-    and a score that cites no pages doesn't count."""
-    score = data.get("score")
-    if isinstance(score, (int, float)):
-        score = max(0, min(10, round(float(score), 1)))
-    else:
-        score = None
-    result = {
+ABSTAINED = "the answer said the pages don't support a score, so its number isn't used"
+NOT_A_NUMBER = "the answer's score wasn't a number from 0 to 10"
+NOT_GIVEN = "the answer cited only pages it wasn't given, so its score isn't used"
+
+
+def cited_keys(dossier: str, fabric: dict | None = None) -> set[str]:
+    """The links a measure's answer may cite, tidied: every page in the
+    evidence it was shown (its `url:` lines), and the sources in the fabric's
+    TCL TODAY text."""
+    urls = re.findall(r"url: (\S+)", dossier or "")
+    urls += [u.rstrip(".,;)") for u in re.findall(r"https?://\S+", (fabric or {}).get("tcl_today") or "")]
+    return {link_key(u) for u in urls}
+
+
+def measure_result(data: dict, cite: set[str] | None = None) -> dict:
+    """A measure's answer under the scoring rules: the score a real number,
+    clamped to 0–10; no score when the answer abstained; and a score counts
+    only when it cites pages — with `cite`, pages from its evidence (cited_keys):
+    links it wasn't given are dropped."""
+    raw = data.get("score")
+    ok = isinstance(raw, (int, float)) and not isinstance(raw, bool) and math.isfinite(raw)
+    score = max(0, min(10, round(float(raw), 1))) if ok else None
+    urls = data.get("evidence_urls")
+    urls = [urls] if isinstance(urls, str) else urls if isinstance(urls, list) else []
+    given = [u.strip() for u in urls if isinstance(u, str) and u.strip()]
+    kept = given if cite is None else [u for u in given if link_key(u) in cite]
+    said = bool(data.get("unscorable"))
+    missing = data.get("missing")
+    if score is not None and said:
+        score, missing = None, missing or ABSTAINED
+    elif score is not None and not kept:
+        # the prompt's own rule: a score without citations is invalid
+        score, missing = None, "model scored without citing dossier URLs" if not given else NOT_GIVEN
+    elif score is None and raw is not None and not missing:
+        missing = NOT_A_NUMBER
+    return {
         "score": score,
         "justification": data.get("justification"),
-        "evidence_urls": data.get("evidence_urls") or [],
+        "evidence_urls": kept,
         "counter_case": data.get("counter_case"),
-        "unscorable": bool(data.get("unscorable")) or score is None,
-        "missing": data.get("missing"),
-        "figure": _figure(data.get("figure"), data.get("evidence_urls") or []),
+        "unscorable": said or score is None,
+        "missing": missing,
+        "figure": _figure(data.get("figure"), kept),
     }
-    if result["score"] is not None and not result["evidence_urls"]:
-        # the prompt's own rule: a score without citations is invalid
-        result.update(score=None, unscorable=True,
-                      missing="model scored without citing dossier URLs")
-    return result
 
 
 def rollup_tora(measure_results: dict[str, dict], measures: list[dict]) -> dict:
@@ -489,10 +514,13 @@ def _assess_per_measure(run_id: str, tech_id: str, llm: LLM, executor: ThreadPoo
             {"_id": f"{run_id}:{tech_id}:{fabric['_id']}"}, {"_id": 1})
         if existing:
             continue  # agent already did it; the sweep must not redo it
+        from agent.analyzer import stacked
+        # Tata's own measures are never asked: they wait for Tata's figure, as in the stacked engine
+        waiting = {mid: {**r, "scope": "tata"} for mid, r in stacked.tata_results(measures).items()}
         futures = {m["_id"]: executor.submit(
             carry(_score_measure), llm, run_id, m, entry["name"], fabric, dossier)
-            for m in measures}
-        results = {mid: f.result() for mid, f in futures.items()}
+            for m in measures if m["_id"] not in waiting}
+        results = {m["_id"]: waiting.get(m["_id"]) or futures[m["_id"]].result() for m in measures}
         get_collection("assessments").insert_one(assessment_doc(run, entry, fabric, built, results))
         assessed.append(fabric.get("name"))
 

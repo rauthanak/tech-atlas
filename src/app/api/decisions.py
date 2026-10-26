@@ -49,11 +49,18 @@ def create(d: DecisionIn, tz: str = Depends(request_tz)) -> dict:
                                field=d.field, key=d.key, reason=d.reason, tz=tz, computed=computed, extra=extra)
     except decisions.Refused as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    note = None
     if d.kind == "nascent" and d.value == "yes":
-        decisions.create("move", d.tech_id, field="availability", value=_nascent_availability(d.tech_id),
-                         reason="Confirmed as possibly nascent", tz=tz)
+        listed = get_collection("availability")
+        value = next((v for v in (_nascent_availability(d.tech_id), "pilot", "research")
+                      if listed.find_one({"_id": v}, {"_id": 1})), None)  # one that's still in the list
+        if value:
+            decisions.create("move", d.tech_id, field="availability", value=value,
+                             reason="Confirmed as possibly nascent", tz=tz)
+        else:
+            note = "Commercial availability wasn't changed: neither Pilot nor Research is in the list."
     tech_status.touch([d.tech_id], now=True)  # the list shows it moved as soon as it reloads
-    return {"decision": doc}
+    return {"decision": doc, **({"note": note} if note else {})}
 
 
 TRIAL = ("trial", "pilot", "deploy", "field test", "rollout")

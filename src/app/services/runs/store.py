@@ -170,11 +170,12 @@ def finish_source(run_id: str, source_id: str, pages: int, docs: int, new_docs: 
     )
 
 
-def reconcile_stale_runs() -> None:
+def reconcile_stale_runs(keep=()) -> None:
     """Startup: only this process runs runs, so anything still 'running' at
-    boot died with a previous process — mark it terminated."""
+    boot died with a previous process — mark it terminated, unless it's still
+    waiting in the queue (`keep`)."""
     result = get_collection("runs").update_many(
-        {"status": {"$in": list(RUNNING_STATES)}},
+        {"status": {"$in": list(RUNNING_STATES)}, "_id": {"$nin": list(keep)}},
         {"$set": {"status": "terminated", "error": "interrupted — service restarted",
                   "run_end_date_time": now_utc()}},
     )

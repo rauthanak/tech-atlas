@@ -29,6 +29,11 @@ LISTS = {"availability": "availability_id", "domains": "domain_id", "subdomains"
 # where a technology's classification holds each list's id
 CLASSIFIED_AS = {"availability": "classification.availability.value_id", "domains": "classification.domain.domain_id",
                  "subdomains": "classification.domain.subdomain_id", "trl_levels": "classification.trl.level"}
+# where people's moves (their `field`) and the assessment's answer hold each list's id
+MOVED_AS = {"availability": "availability", "domains": "domain", "subdomains": "subdomain"}
+ASSESSED_AS = {"availability": "assessed_classification.availability.value_id",
+               "domains": "assessed_classification.domain.domain_id",
+               "subdomains": "assessed_classification.domain.subdomain_id"}
 # where a technology's stored answers (services/tech_status) hold its effective classification: what the counts use
 EFFECTIVE = {"availability": "f.availability", "domains": "f.domain", "subdomains": "f.subdomain", "trl_levels": "f.trl"}
 EDITABLE = {"name", "definition", "order", "emerging", "catch_all", "domain_id", "status", "evidence_needed",
@@ -114,6 +119,27 @@ def edit(name: str, item_id: str, item: Item) -> dict:
     return {"item": coll.find_one({"_id": item_id}), "marked_for_review": marked}
 
 
+def repair(name: str, item_id: str) -> dict:
+    """Before an item leaves its list: the choices people (or an import) made
+    for it are withdrawn (History keeps them), the assessment's answer for it is
+    cleared, and those technologies are marked to be classified again, so none
+    points at a value that's gone."""
+    if name not in MOVED_AS:
+        return {"choices_withdrawn": 0, "assessments_cleared": 0}
+    decs, techs = get_collection("decisions"), get_collection("technologies")
+    moves = {"kind": "move", "field": MOVED_AS[name], "value": item_id, "active": True}
+    tech_ids = set(decs.distinct("tech_id", moves))
+    withdrawn = decs.update_many(moves, {"$set": {"active": False, "replaced_at": now_utc(),
+                                                  "removed_from_list": item_id}}).modified_count
+    assessed = techs.distinct("_id", {ASSESSED_AS[name]: item_id})
+    clear = ({"$set": {ASSESSED_AS[name]: None}} if name == "subdomains"
+             else {"$unset": {ASSESSED_AS[name].rsplit(".", 1)[0]: ""}})
+    if assessed:
+        techs.update_many({"_id": {"$in": assessed}}, clear)
+    techs.update_many({"_id": {"$in": list(tech_ids | set(assessed))}}, {"$set": {"classification_stale": True}})
+    return {"choices_withdrawn": withdrawn, "assessments_cleared": len(assessed)}
+
+
 @router.delete("/lists/{name}/{item_id}")
 def remove(name: str, item_id: str) -> dict:
     coll = _list(name)
@@ -129,8 +155,9 @@ def remove(name: str, item_id: str) -> dict:
         catch = None if name == "subdomains" else (coll.find_one({"catch_all": True}, {"_id": 1}) or {}).get("_id")
         moved = get_collection("technologies").update_many(
             _match(name, old), {"$set": {CLASSIFIED_AS[name]: catch, "classification_stale": True}}).modified_count
+    repaired = repair(name, item_id)
     coll.delete_one({"_id": item_id})
-    return {"removed": item_id, "moved_to_catch_all": moved}
+    return {"removed": item_id, "moved_to_catch_all": moved, **repaired}
 
 
 class Merge(BaseModel):

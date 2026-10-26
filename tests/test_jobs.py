@@ -69,3 +69,57 @@ def test_work_safe_to_run_again_is_queued_again_after_a_restart(db, monkeypatch)
     jobs.recover()
     assert db["jobs"].find_one({"again": True})["status"] == "queued"        # done again by the next worker
     assert db["jobs"].find_one({"again": {"$exists": False}})["status"] == "failed"
+
+
+def test_a_restart_leaves_work_that_has_not_started_alone(db, monkeypatch):
+    """A run still waiting in the queue at a restart starts afterwards; one that was running was cut off."""
+    from agent.analyzer import agent
+    from app.services.runs import runner
+    monkeypatch.setattr(get_settings(), "jobs_in_worker", True)
+    db["scoring_runs"].insert_many([{"_id": "s1", "status": "running"}, {"_id": "s2", "status": "running"}])
+    db["runs"].insert_one({"_id": "c1", "status": "running"})
+    jobs.start(agent.run_scoring, "s1")
+    jobs.start(runner._execute, "c1", {})
+    jobs.recover()
+    assert db["scoring_runs"].find_one({"_id": "s1"})["status"] == "running"
+    assert db["runs"].find_one({"_id": "c1"})["status"] == "running"
+    cut = db["scoring_runs"].find_one({"_id": "s2"})
+    assert cut["status"] == "terminated" and cut["error"] == "interrupted — found running at start-up"
+
+
+def test_a_worker_stop_leaves_queued_work_alone(db, monkeypatch):
+    from agent.analyzer import agent, engine
+    from app.services.runs import runner
+    monkeypatch.setattr(get_settings(), "jobs_in_worker", True)
+    db["scoring_runs"].insert_many([{"_id": "s1", "status": "running"}, {"_id": "s2", "status": "running"}])
+    db["runs"].insert_many([{"_id": "c1", "status": "running"}, {"_id": "c2", "status": "running"}])
+    jobs.start(agent.run_scoring, "s1")
+    jobs.start(runner._execute, "c1", {})
+    keep = jobs.waiting()
+    engine.shutdown(keep)
+    runner.shutdown(keep)
+    assert [r["status"] for r in db["scoring_runs"].find(sort=[("_id", 1)])] == ["running", "terminated"]
+    assert [r["status"] for r in db["runs"].find(sort=[("_id", 1)])] == ["running", "terminated"]
+
+
+def test_work_stopped_before_it_started_does_not_run(db, monkeypatch):
+    """No model is even made: a run that isn't running when its job comes up ends at once, at no cost."""
+    from agent.analyzer import agent
+    from app.services.runs import runner
+
+    def no_model(*a, **k):
+        raise AssertionError("no model call for work that didn't start")
+    monkeypatch.setattr(agent.LLM, "initialize", classmethod(no_model))
+    monkeypatch.setattr(runner.LLM, "initialize", classmethod(no_model))
+    db["scoring_runs"].insert_many([
+        {"_id": "s1", "status": "terminated", "error": "interrupted — found running at start-up"},
+        {"_id": "s2", "status": "terminating"}])
+    db["runs"].insert_one({"_id": "c1", "status": "terminating"})
+    agent.run_scoring("s1")
+    agent.run_scoring("s2")
+    runner._execute("c1", {})
+    assert db["scoring_runs"].find_one({"_id": "s1"})["error"] == "interrupted — found running at start-up"
+    s2 = db["scoring_runs"].find_one({"_id": "s2"})
+    assert (s2["status"], s2["error"]) == ("terminated", "terminated by user")
+    c1 = db["runs"].find_one({"_id": "c1"})
+    assert (c1["status"], c1["error"]) == ("terminated", "terminated by user")

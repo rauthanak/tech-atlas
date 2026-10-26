@@ -178,3 +178,70 @@ def test_the_run_table_comes_a_page_at_a_time_counted_by_cell(db):
                                         "value": "P6", "reason": "not for us this year"})
     row = client.get("/api/scoring/runs/r1/rows").json()["rows"][0]
     assert row["placement"]["priority"] == "P6" and row["override"]["priority"] == "P6"
+
+
+# ── one choice in force per thing chosen (code review CR03) ──────────
+
+def _active(db):
+    return list(db["decisions"].find({"active": True}))
+
+
+def test_a_failed_save_keeps_the_choice_in_force(db, monkeypatch):
+    from factories import tech
+    tech(db)
+    from pymongo.collection import Collection
+    from pymongo.errors import PyMongoError
+    from app.services import decisions
+    first = decisions.create("move", "edge-ai", field="trl", value=5, tz="UTC")
+    real = Collection.insert_one
+
+    def fail(self, doc, *a, **k):
+        if self.name == "decisions":
+            raise PyMongoError("the database went away")
+        return real(self, doc, *a, **k)
+    monkeypatch.setattr(Collection, "insert_one", fail)
+    try:
+        decisions.create("move", "edge-ai", field="trl", value=6, tz="UTC")
+    except PyMongoError:
+        pass
+    assert [d["_id"] for d in _active(db)] == [first["_id"]]
+
+
+def test_a_newer_choice_saved_first_stays_in_force(db):
+    from factories import tech
+    tech(db)
+    from app.services import decisions
+    db["decisions"].insert_one({"_id": "zzz", "kind": "move", "tech_id": "edge-ai", "fabric_id": None,
+                                "measure_id": None, "field": "trl", "key": None, "value": 4,
+                                "at": "2999-01-01T00:00:00+00:00", "active": True})
+    doc = decisions.create("move", "edge-ai", field="trl", value=6, tz="UTC")
+    assert doc["active"] is False and [d["_id"] for d in _active(db)] == ["zzz"]
+
+
+def test_many_saves_at_once_leave_one_choice(db):
+    from factories import tech
+    tech(db)
+    import threading
+    from app.services import decisions
+    threads = [threading.Thread(target=decisions.create, args=("move", "edge-ai"),
+                                kwargs={"field": "trl", "value": 1 + i, "tz": "UTC"}) for i in range(8)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    rows = list(db["decisions"].find())
+    newest = max(rows, key=lambda d: (d["at"], d["_id"]))
+    assert [d["_id"] for d in _active(db)] == [newest["_id"]]
+
+
+def test_start_up_keeps_the_newest_of_duplicate_choices(db):
+    from app.services.db import bootstrap
+    base = {"kind": "move", "tech_id": "edge-ai", "fabric_id": None, "measure_id": None, "field": "availability",
+            "active": True}
+    db["decisions"].insert_many([
+        {"_id": "old", **base, "value": "pilot", "at": "2026-10-01T00:00:00+00:00"},          # no `key` at all
+        {"_id": "new", **base, "key": None, "value": "mature", "at": "2026-10-02T00:00:00+00:00"},
+        {"_id": "other", **base, "tech_id": "quic", "value": "pilot", "at": "2026-10-01T00:00:00+00:00"}])
+    bootstrap.dedupe_decisions()
+    assert sorted(d["_id"] for d in _active(db)) == ["new", "other"]
+    assert db["decisions"].find_one({"_id": "old"})["replaced_at"]

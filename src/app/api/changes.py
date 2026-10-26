@@ -4,6 +4,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.api.lists import LISTS, MOVED_AS, repair
+from app.services import tech_status
 from app.services.db import seeding
 
 router = APIRouter()
@@ -36,11 +38,21 @@ def _known(params: UpdateSeedingData) -> None:
         raise HTTPException(status_code=422, detail=f"unknown list(s): {', '.join(unknown)}")
 
 
+# what an edit through main.CONFIG_PATHS would have marked: putting it back marks the same
+ANSWERS_FROM = {"settings", "fabrics", "measures", "scoring_config", *LISTS}
+
+
 @router.post("/changes/revert")
 def revert(params: UpdateSeedingData) -> dict:
     """Put back the default: the ticked items return to the seeding data."""
     _known(params)
+    for i in params.items:  # a classification value added in the app is removed: repaired as Remove does
+        if i.collection in MOVED_AS and not any(
+                s.get(seeding.ID_FIELDS[i.collection]) == i.id for s in seeding.read_list(i.collection)):
+            repair(i.collection, i.id)
     done = seeding.revert([i.model_dump() for i in params.items])
+    if done["put_back"] and any(i.collection in ANSWERS_FROM for i in params.items):
+        tech_status.touch_all()  # as the edit it undoes did
     if any(i.collection == "signals" for i in params.items):
         from app.services import briefing_days
         briefing_days.rerank()  # a kind's place in the Briefing's order may have changed back

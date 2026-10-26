@@ -1,0 +1,36 @@
+  http://localhost:8100  Status pill (every page): 0.03s, five at once 0.00s, 1 KB, 200
+  http://localhost:8100  Setup badge (every page): 0.01s, five at once 0.05s, 0 KB, 200
+  http://localhost:8100  Briefing (a week): 0.01s, five at once 0.03s, 3 KB, 200
+  http://localhost:8100  Briefing, 30 days: 0.01s, five at once 0.03s, 3 KB, 200
+  http://localhost:8100  Briefing, all time: 0.01s, five at once 0.01s, 3 KB, 200
+  http://localhost:8100  Briefing: To do: 0.05s, five at once 0.04s, 55 KB, 200
+  http://localhost:8100  Briefing: findings (a week): 0.02s, five at once 0.03s, 16 KB, 200
+  http://localhost:8100  Technologies: 0.04s, five at once 0.07s, 197 KB, 200
+  http://localhost:8100  Technologies, a filter: 0.03s, five at once 0.05s, 2 KB, 200
+  http://localhost:8100  Technology: 0.00s, five at once 0.00s, 18 KB, 200
+  http://localhost:8100  Technology: pages: 0.05s, five at once 0.02s, 271 KB, 200
+  http://localhost:8100  Points of View: 0.04s, five at once 0.05s, 37 KB, 200
+  http://localhost:8100  Assessment runs: 0.00s, five at once 0.01s, 80 KB, 200
+  http://localhost:8100  Operations: problems: 0.00s, five at once 0.01s, 13 KB, 200
+  http://localhost:8100  Collections: 0.00s, five at once 0.01s, 4 KB, 200
+  http://localhost:8100  Leaders' view: 0.01s, five at once 0.04s, 726 KB, 200
+screen                                                  8100
+                                   one · five at once · size
+Status pill (every page)          0.03s    0.00s       1 KB     
+Setup badge (every page)          0.01s    0.05s       0 KB     
+Briefing (a week)                 0.01s    0.03s       3 KB     
+Briefing, 30 days                 0.01s    0.03s       3 KB     
+Briefing, all time                0.01s    0.01s       3 KB     
+Briefing: To do                   0.05s    0.04s      55 KB     
+Briefing: findings (a week)       0.02s    0.03s      16 KB     
+Technologies                      0.04s    0.07s     197 KB     
+Technologies, a filter            0.03s    0.05s       2 KB     
+Technology                        0.00s    0.00s      18 KB     
+Technology: pages                 0.05s    0.02s     271 KB     
+Points of View                    0.04s    0.05s      37 KB     
+Assessment runs                   0.00s    0.01s      80 KB     
+Operations: problems              0.00s    0.01s      13 KB     
+Collections                       0.00s    0.01s       4 KB     
+Leaders' view                     0.01s    0.04s     726 KB     
+
+http://localhost:8100: 10,514 technologies; 0 of 16 calls over 0.5 s

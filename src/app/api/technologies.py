@@ -434,8 +434,12 @@ class MergeParams(BaseModel):
 def merge_technologies(tech_id: str, params: MergeParams) -> dict:
     """Merge whole technologies into this one — the user's judgment overriding
     the LLM's. Each entry in `others` is a tech id or exact name. The target's
-    name survives; every alias of the absorbed technologies moves over, the
-    absorbed entries are deleted, and all documents restamp."""
+    name survives; every alias of the absorbed technologies moves over, and so
+    do the choices people made on them (where the target has its own choice on
+    the same thing, the target's is kept and the merge says so) and catalog
+    membership; the absorbed entries are deleted, and all documents restamp.
+    History stays where it was: assessments, Points of View and editions keep
+    the absorbed ids."""
     techs = get_collection("technologies")
     target = techs.find_one({"_id": tech_id})
     if target is None:
@@ -449,6 +453,7 @@ def merge_technologies(tech_id: str, params: MergeParams) -> dict:
         if other["_id"] == tech_id:
             raise HTTPException(status_code=422, detail="cannot merge a technology into itself")
         absorbed.append(other)
+    merged = _carry_over(tech_id, absorbed)  # before the delete, so running it again after a stop is safe
     aliases = sorted({a for o in absorbed for a in o.get("aliases", [])}
                      | {o["name"] for o in absorbed})
     techs.update_one({"_id": tech_id},
@@ -457,7 +462,40 @@ def merge_technologies(tech_id: str, params: MergeParams) -> dict:
     techs.delete_many({"_id": {"$in": [o["_id"] for o in absorbed]}})
     jobs.later(restamp, techs.find_one({"_id": tech_id}, {"aliases": 1})["aliases"])  # the pages that name it or what it took in
     tech_status.touch([tech_id, *(o["_id"] for o in absorbed)], now=True)  # the absorbed lose their rows
-    return get_collection("technologies").find_one({"_id": tech_id})
+    return {**get_collection("technologies").find_one({"_id": tech_id}), "merge": merged}
+
+
+def _same_thing(d: dict) -> tuple:
+    return d["kind"], d.get("fabric_id"), d.get("measure_id"), d.get("field"), d.get("key")
+
+
+def _carry_over(tech_id: str, absorbed: list[dict]) -> dict:
+    """The absorbed technologies' choices in force move to the target, one
+    technology after another, unless the target already has one on the same
+    thing: then the target's is kept and the other is replaced. Catalog
+    membership moves when the target has none. What moved, in plain words."""
+    from app.api.decisions import described
+    coll, techs = get_collection("decisions"), get_collection("technologies")
+    moved, conflicts, carried = 0, [], False
+    for o in absorbed:
+        theirs = {_same_thing(d): d for d in decisions.active([tech_id])}
+        mine = decisions.active([o["_id"]])
+        clash = [d for d in mine if _same_thing(d) in theirs]
+        if clash:
+            coll.update_many({"_id": {"$in": [d["_id"] for d in clash]}},
+                             {"$set": {"active": False, "replaced_at": now_utc()}})
+        coll.update_many({"_id": {"$in": [d["_id"] for d in mine]}}, {"$set": {"tech_id": tech_id, "merged_from": o["_id"]}})
+        moved += len(mine) - len(clash)
+        for d in clash:
+            kept, dropped = described([theirs[_same_thing(d)], d])
+            conflicts.append({"kept": kept["what"], "dropped": dropped["what"], "from": o["name"]})
+        target = techs.find_one({"_id": tech_id}, {"imported": 1, "origin": 1}) or {}
+        catalog = {f: o[f] for f in ("imported", "origin") if o.get(f) and not target.get(f)}
+        if catalog:
+            techs.update_one({"_id": tech_id}, {"$set": catalog})
+            carried = True
+    return {"absorbed": [{"id": o["_id"], "name": o["name"]} for o in absorbed], "choices_moved": moved,
+            "catalog_carried": carried, "conflicts": conflicts}
 
 
 class AliasMove(BaseModel):

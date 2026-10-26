@@ -212,3 +212,71 @@ def test_who_waits_for_classify_is_read_from_the_answers_kept_ready_or_the_pages
     tech_status.touch(["a", "b", "c"])                                         # marked: their pages just changed
     monkeypatch.setattr(tech_status, "FRESH_MAX", 0)                          # nothing worked out at once
     assert classify.pending() == ["c", "b", "a"]
+
+
+# ── removing a list value repairs what used it (code review CR12) ────
+
+def _lists_world(db):
+    from fastapi.testclient import TestClient
+    from app.main import app
+    load_seeded(db, "availability", "domains", "subdomains", "trl_levels")
+    for t, name in (("a", "alpha"), ("b", "beta"), ("c", "gamma")):
+        tech(db, t, name)
+    db["technologies"].update_one({"_id": "a"}, {"$set": {"classification.availability": {"value_id": "pilot"}}})
+    db["technologies"].update_one({"_id": "b"}, {"$set": {"assessed_classification.availability":
+                                                          {"value_id": "pilot", "source": "assessment"}}})
+    db["technologies"].update_one({"_id": "c"}, {"$set": {"classification.availability": {"value_id": "research"}}})
+    decisions.create("move", "c", field="availability", value="pilot", tz="UTC")
+    return TestClient(app)
+
+
+def _shown(db, tech_id):
+    lists = classify.lists()
+    return classify_effective.effective(db["technologies"].find_one({"_id": tech_id}), decisions.active([tech_id]),
+                                        {k: {i["_id"]: i for i in v} for k, v in lists.items()})
+
+
+def test_removing_an_item_withdraws_moves_and_clears_the_assessment(db):
+    client = _lists_world(db)
+    r = client.delete("/api/lists/availability/pilot").json()
+    assert (r["moved_to_catch_all"], r["choices_withdrawn"], r["assessments_cleared"]) == (1, 1, 1)
+    catch = db["availability"].find_one({"catch_all": True})["_id"]
+    assert _shown(db, "a")["availability"]["id"] == catch
+    assert _shown(db, "b")["availability"]["id"] == catch           # the assessment's answer is gone with it
+    assert _shown(db, "c")["availability"]["id"] == "research"      # its pages' answer, now the person's is withdrawn
+    move = db["decisions"].find_one({"tech_id": "c"})
+    assert not move["active"] and move["removed_from_list"] == "pilot"   # History keeps it
+    assert all(t["classification_stale"] for t in db["technologies"].find())
+
+
+def test_a_move_to_a_value_not_in_its_list_is_refused(db):
+    client = _lists_world(db)
+    r = client.post("/api/decisions", json={"kind": "move", "tech_id": "a", "field": "availability", "value": "nope"})
+    assert r.status_code == 422 and r.json()["detail"] == \
+        "'nope' isn't in the Commercial availability list: choose a value from the list"
+    r = client.post("/api/decisions", json={"kind": "move", "tech_id": "a", "field": "subdomain", "value": "new:Foo"})
+    assert r.status_code == 201   # a sub-domain an import proposes still waits for review
+
+
+def test_nascent_yes_uses_an_early_value_still_in_the_list(db):
+    client = _lists_world(db)
+    db["availability"].delete_one({"_id": "pilot"})
+    db["technologies"].update_many({}, {"$set": {"classification.nascent": {"flag": True, "page": None}}})
+    r = client.post("/api/decisions", json={"kind": "nascent", "tech_id": "a", "value": "yes"})
+    assert r.status_code == 201 and "note" not in r.json()
+    assert decisions.pick(decisions.active(["a"]), "move", field="availability")["value"] == "research"
+    db["availability"].delete_one({"_id": "research"})
+    r = client.post("/api/decisions", json={"kind": "nascent", "tech_id": "b", "value": "yes"})
+    assert r.json()["note"] == "Commercial availability wasn't changed: neither Pilot nor Research is in the list."
+
+
+def test_putting_back_an_added_value_repairs_like_remove(db, seeds):
+    client = _lists_world(db)
+    from app.services.db import seeding
+    seeding.load_if_new()
+    db["availability"].insert_one({"_id": "beta_x", "availability_id": "beta_x", "name": "Beta",
+                                   "updated_at": "2999-01-01T00:00:00+00:00"})
+    decisions.create("move", "a", field="availability", value="beta_x", tz="UTC")
+    r = client.post("/api/changes/revert", json={"items": [{"collection": "availability", "id": "beta_x"}]})
+    assert r.status_code == 200 and db["availability"].find_one({"_id": "beta_x"}) is None
+    assert decisions.pick(decisions.active(["a"]), "move", field="availability") is None

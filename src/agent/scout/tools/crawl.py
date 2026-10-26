@@ -27,6 +27,7 @@ from bs4 import BeautifulSoup
 from protego import Protego
 from pypdf import PdfReader
 
+from agent.scout.tools.addresses import PRIVATE, PUBLIC_ONLY, NotPublic
 from agent.scout.tools.browser import BrowserFetcher
 from agent.scout.tools.context import Context, Outcome
 from app.services.llm.context import with_context
@@ -72,6 +73,8 @@ def skipped(url: str, patterns: list[str]) -> bool:
 def why_failed(exc: Exception) -> str:
     """A page or link that couldn't be read, in plain words, grouped so
     counts add up: the same cause reads the same."""
+    if isinstance(exc, NotPublic):
+        return PRIVATE
     if isinstance(exc, UnicodeError):
         return "its text had characters that couldn't be stored"
     if isinstance(exc, ValueError):
@@ -330,6 +333,9 @@ def crawl(ctx: Context, source: dict) -> Outcome:
         response = None
         try:
             response = client.get(url)
+        except NotPublic as exc:  # not even the browser tries it
+            outcome.skip(url, why_failed(exc))
+            return
         except FETCH_ERRORS as exc:
             why = why_failed(exc)
         if response is not None and response.status_code >= 400:
@@ -385,7 +391,7 @@ def crawl(ctx: Context, source: dict) -> Outcome:
                 queue(link, next_frontier)
 
     try:
-        with httpx.Client(timeout=20, follow_redirects=True,
+        with httpx.Client(timeout=20, follow_redirects=True, event_hooks=PUBLIC_ONLY,
                           headers={"User-Agent": USER_AGENT}) as client:
             robots = _robots(client, scheme, root, robots_cache)
             sitemap_hints = list(robots.sitemaps) if robots is not None else []
@@ -460,7 +466,8 @@ def fetch_page(url: str) -> tuple[str | None, dict, str | None]:
     a script shell or blocks a plain fetch."""
     text, meta, why = None, {}, None
     try:
-        with httpx.Client(timeout=20, follow_redirects=True, headers={"User-Agent": USER_AGENT}) as client:
+        with httpx.Client(timeout=20, follow_redirects=True, event_hooks=PUBLIC_ONLY,
+                          headers={"User-Agent": USER_AGENT}) as client:
             response = client.get(url)
         if response.status_code >= 400:
             why = f"the site answered {response.status_code}"
@@ -473,6 +480,8 @@ def fetch_page(url: str) -> tuple[str | None, dict, str | None]:
                 meta.pop("bad_links", None)
             else:
                 why = f"not a page or a PDF ({content_type or 'unknown type'})"
+    except NotPublic:
+        return None, {}, PRIVATE
     except FETCH_ERRORS as exc:
         why = why_failed(exc)
     if (not text or len(text.strip()) < MIN_TEXT_CHARS) and meta.get("kind") != "pdf" and get_settings().use_playwright:
