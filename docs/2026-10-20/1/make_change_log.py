@@ -20,7 +20,7 @@ OUT = ROOT / "Tech Radar - changes after the midpoint review.docx"
 NAVY = RGBColor(0x04, 0x1A, 0x4A)
 MUTED = RGBColor(0x49, 0x4A, 0x52)
 
-VERSION = "Version 31 · 26 October 2026"
+VERSION = "Version 32 · 26 October 2026"
 HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the midpoint review, with today's screens and design mock-ups."),
            ("2", "20 Oct 2026", "Change 0 built: technologies say how solid their assessment is, a technology's result in each fabric stays "
                                 "with the technology, plain names on every screen. Real screens replace its mock-up."),
@@ -112,7 +112,9 @@ HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the mi
            ("30", "25 Oct 2026", "Change 52: the fixes from the code review, so results, choices and settings stay "
                                  "truthful and the radar is ready to run on Tata's own servers."),
            ("31", "26 Oct 2026", "Change 53: sign-in, with administrators and leaders at one address; who did what on "
-                                 "every choice, setting, run, import and edition; Point of View reads counted for leaders, by name.")]
+                                 "every choice, setting, run, import and edition; Point of View reads counted for leaders, by name."),
+           ("32", "26 Oct 2026", "Change 54: Points of View print with no half-empty pages, and leaders get an edition pack: "
+                                 "the edition's summary and each Act now Point of View in one PDF.")]
 
 # The numbers in the text, from the live radar on 21 Oct (6 Oct is the run before these changes).
 N = dict(
@@ -1458,6 +1460,21 @@ ITEMS.append(
          metrics=[("Who can open the radar", "Anyone who reaches it", "Named accounts only"),
                   ("Point of View reads", "Counted, no names", "Counted for leaders, by name"),
                   ("Tests", "441", "484 (all pass)")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="54", title="Printing: no half-empty pages, and the edition pack", status="Built",
+         source=[("S11", "Akshay's review of a printed Point of View, 26 Oct")],
+         what=["A Point of View printed or saved as a PDF no longer leaves half-empty or near-blank pages: long sections, "
+               "the scores and each fabric's use cases flow from page to page; only small blocks (a card, a lever, a use "
+               "case, a source line) stay whole. The use cases print as cards, so no column is cut off.",
+               "Leaders get an Edition pack (PDF) beside the edition's name: the grid, Act now, what moved, what Tata "
+               "has committed and the assumptions, then the full Point of View of each Act now technology, each on a new "
+               "page. Administrators can preview it from the Briefing. Saving it counts as printing each Point of View in it.",
+               "The grid prints whole, without its zoom controls."],
+         why="Leaders read and share Points of View on paper and as PDFs; a pack gives a meeting one document instead of many.",
+         metrics=[("Middle pages of a printed Point of View", "As low as 3% full", "72–86% full"),
+                  ("A Point of View's pages (four checked, A4)", "9 · 14 · 19 · 17", "8 · 13 · 16 · 14")],
          diagram=None, before=[]))
 
 DECISIONS = [
