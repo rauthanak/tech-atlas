@@ -20,7 +20,7 @@ OUT = ROOT / "Tech Radar - changes after the midpoint review.docx"
 NAVY = RGBColor(0x04, 0x1A, 0x4A)
 MUTED = RGBColor(0x49, 0x4A, 0x52)
 
-VERSION = "Version 32 · 26 October 2026"
+VERSION = "Version 33 · 26 October 2026"
 HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the midpoint review, with today's screens and design mock-ups."),
            ("2", "20 Oct 2026", "Change 0 built: technologies say how solid their assessment is, a technology's result in each fabric stays "
                                 "with the technology, plain names on every screen. Real screens replace its mock-up."),
@@ -114,7 +114,9 @@ HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the mi
            ("31", "26 Oct 2026", "Change 53: sign-in, with administrators and leaders at one address; who did what on "
                                  "every choice, setting, run, import and edition; Point of View reads counted for leaders, by name."),
            ("32", "26 Oct 2026", "Change 54: Points of View print with no half-empty pages, and leaders get an edition pack: "
-                                 "the edition's summary and each Act now Point of View in one PDF.")]
+                                 "the edition's summary and each Act now Point of View in one PDF."),
+           ("33", "26 Oct 2026", "Change 53, refined: a Point of View's readers fold into a short table, one row per leader, "
+                                 "so the line stays short however many leaders read it.")]
 
 # The numbers in the text, from the live radar on 21 Oct (6 Oct is the run before these changes).
 N = dict(
@@ -1451,8 +1453,9 @@ ITEMS.append(
                "in a row pause the account for 15 minutes.",
                "Who did what: a technology's History, Setup › Changes, Operations › History, the import page and the Briefing's "
                "edition line now name the person behind each choice, edit, run, import and edition.",
-               "A Point of View's page says how many times leaders opened it, which leaders, and how often it was printed or "
-               "saved as a PDF. Only leaders' reads count; administrators can look at the leaders' view without being "
+               "A Point of View's page says how many times leaders opened it, by how many leaders, and how often it was "
+               "printed or saved as a PDF; Who opened it folds open a table with one row per leader (opened, printed, last "
+               "opened). Only leaders' reads count; administrators can look at the leaders' view without being "
                "counted. The count starts from zero with sign-in.",
                "The separate leaders' address is gone: the radar now runs as four containers instead of five."],
          why="Tata asked to know who reads each Point of View, and the radar is moving to Tata's own servers, where only named "
