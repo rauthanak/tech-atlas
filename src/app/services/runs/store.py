@@ -93,7 +93,7 @@ def finish_run(run_id: str, status: str, error: str | None = None) -> None:
     )
 
 
-def start_source(run_id: str, category: str, source: dict) -> None:
+def start_source(run_id: str, category: str, source: dict, budget: int | None = None) -> None:
     get_collection("runs").update_one({"_id": run_id}, {
         "$push": {"sources": {
             "category": category,
@@ -108,6 +108,7 @@ def start_source(run_id: str, category: str, source: dict) -> None:
             "error": None,
             "incomplete": False,
             "incomplete_note": None,
+            "budget": budget,  # its page budget: its own, or the default
         }},
         "$inc": {"totals.sources": 1},
     })

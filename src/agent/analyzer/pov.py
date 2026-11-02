@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
-from app.services import auth, decisions, evidence, watch
+from app.services import auth, decisions, evidence, market, watch
 from app.services.llm.context import with_context
 from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM, parse_json
@@ -234,9 +234,14 @@ def _plan(tech_id: str, fabric_id: str, f: dict, decs: list[dict], decisions, fi
     return (". ".join(parts) + f". Commitment: {state}.") if parts else "nothing recorded yet."
 
 
+def _size_line(size: dict, src: "Sources") -> str:
+    comparable = f" (comparable: {size['comparable']}: {size['why_comparable']})" if size["basis"] == "comparable" else ""
+    return f"{market.size_words(size)}{comparable}{src.cite_docs([size['page']]) if size.get('page') else ''}"
+
+
 def _extras(tech: dict, applied: list[dict], decs: list[dict], src: Sources) -> str:
     """What a Point of View adds to the scores: the classification, where the
-    value lands, the path to scale, the finance figures and people's choices
+    value lands, the path to scale and people's choices
     (`decs`: the technology's choices in force)."""
     from app.services import classify_effective, finance
     c = classify_effective.effective(tech, decs, classify_effective.names())
@@ -259,14 +264,13 @@ def _extras(tech: dict, applied: list[dict], decs: list[dict], src: Sources) -> 
              f"- Domain: {c['domain']['name']}" + (f" › {c['domain']['subdomain']}" if c["domain"].get("subdomain") else ""),
              (f"- Evidence: judged {c['evidence']['verdict'].replace('_', ' ')}: {c['evidence'].get('reason')}"
               + src.cite_docs(c["evidence"].get("pages") or []) if c.get("evidence") else "- Evidence: not judged yet")]
-    from app.services import market
     size = next((s for s in (market.market_size(a.get("measures")) for a in applied) if s), None)
     if size:  # the band the page shows; quote it as a band, with the figure it comes from
         lines.append(f"- Market size: the {size['band']} band, from a figure of ${size['amount_usd_bn']:g}B"
                      f" ({', '.join(str(x) for x in (size.get('scope'), size.get('year')) if x)}){src.cite_urls([size['url']])}"
                      if size["band"] else "- Market size: no page gives a market figure")
     accepted = {d["key"] for d in decs if d["kind"] == "use_case" and d["value"] == "accept"}
-    value = ["VALUE, per fabric (cite as [n]; never write a figure):"]
+    value = ["VALUE, per fabric (cite as [n]; never write a figure other than the ballpark sizes given):"]
     for a in applied:
         cases = a.get("use_cases") or []
         if cases:
@@ -279,6 +283,8 @@ def _extras(tech: dict, applied: list[dict], decs: list[dict], src: Sources) -> 
                 cap = uc.get("capital") or {}
                 if cap.get("direction"):
                     value.append(f"    capital: {cap['direction']}: {cap.get('why')}")
+                if uc.get("size"):
+                    value.append(f"    ballpark size: {_size_line(uc['size'], src)}")
         else:
             ok = [s for s in a.get("suggested_use_cases") or [] if s["key"] in accepted]
             for sgg in ok:
@@ -292,24 +298,15 @@ def _extras(tech: dict, applied: list[dict], decs: list[dict], src: Sources) -> 
     path = finance.steps()
     steps = ["TATA'S PLAN (typed in by Tata's people on each fabric's tab, not from the pages: Tata's own record; "
              "quote it exactly and never cite a page number for it), per fabric:"]
-    money, people = ["FINANCE (figures entered by people; quote exactly):"], ["PEOPLE'S CHOICES:"]
+    people = ["PEOPLE'S CHOICES:"]
     for a in applied:
         f = finance.figures(tech["_id"], a["fabric_id"], decs, None, path)
         steps.append(f"- {a['fabric']}: " + _plan(tech["_id"], a["fabric_id"], f, decs, decisions, finance))
-        if not f["needed"]:
-            money.append(f"- {a['fabric']}: not needed yet (asked for from Proof of concept on)")
-        else:
-            got = [f"{k.replace('_', '-')}: {f[k]['value']:,}" + (f" {f[k].get('unit')}" if f[k].get("unit") else "")
-                   + f" ({f[k]['formula']})" for k in ("contribution", "payback", "break_even") if f.get(k) and f[k].get("value") is not None]
-            miss = [f"{k.replace('_', '-')} needs {', '.join(v)}" for k, v in f["missing"].items()]
-            margin = f"margin {f['margin']['value']:.0%} ({f['margin']['source']})" if f.get("margin") else "no margin yet"
-            money.append(f"- {a['fabric']}: {'; '.join(got) or 'no figures yet'}; {margin}" + (f"; {'; '.join(miss)}" if miss else ""))
         # a priority a person set is on its fabric's priority line, a hand score on its measure's
         for mid, m in a["measures"].items():
             if m.get("state") == "gap_accepted":
                 people.append(f"- {a['fabric']}: a person accepted that {mid.replace('-', ' ')} can't be assessed")
-    money = money if finance.SHOWN else []  # set aside until Tata has discussed it
-    return "\n".join(lines + [""] + value + [""] + steps + ([""] + money if money else []) + ([""] + people if len(people) > 1 else []))
+    return "\n".join(lines + [""] + value + [""] + steps + ([""] + people if len(people) > 1 else []))
 
 
 def pov_inputs(run_id: str, tech_id: str, with_sources: bool = False):
@@ -361,6 +358,22 @@ def _written_from(run_id: str, tech_id: str):
     return assessments, [effective.apply(a, decs, method, config) for a in assessments], tech, decs, method, grid
 
 
+def _biggest(uc: dict) -> tuple:
+    """Biggest first, then savings, then those with no size; the skill's rank breaks ties."""
+    size = uc.get("size") or {}
+    if size.get("amount_usd_bn"):
+        return 0, -size["amount_usd_bn"], uc.get("rank", 9)
+    if size.get("saving_pct"):
+        return 1, -size["saving_pct"], uc.get("rank", 9)
+    return 2, 0, uc.get("rank", 9)
+
+
+def _size_view(size: dict | None, src: "Sources") -> dict | None:
+    if not size:
+        return None
+    return {**market.use_case_size(size), "refs": src.docs([size["page"]]) if size.get("page") else []}
+
+
 def pov_view(pov: dict) -> dict:
     """What a Point of View's page shows beside its text, the same for the
     admins and the leaders, every page numbered in its sources: the four
@@ -401,23 +414,21 @@ def pov_view(pov: dict) -> dict:
             "use_cases": [{"title": uc["title"], "refs": src.docs(uc.get("pages")),
                            "levers": [lv["lever_id"] for lv in uc.get("levers") or []],
                            "capital": (uc.get("capital") or {}).get("direction"),
-                           "capital_why": (uc.get("capital") or {}).get("why")} for uc in a.get("use_cases") or []],
+                           "capital_why": (uc.get("capital") or {}).get("why"),
+                           "size": _size_view(uc.get("size"), src)} for uc in sorted(a.get("use_cases") or [], key=_biggest)],
             "suggested": [s["title"] for s in a.get("suggested_use_cases") or [] if s["key"] in accepted],
             "no_use_case": a.get("no_use_case"),
             "path_step": (f["step"] or {}).get("name"), "path_step_order": (f["step"] or {}).get("order"),
-            "path_steps": len(path), "figures_from": {k: path.get(finance.POC, {}).get(k) for k in ("name", "order")},
-            "finance": {k: f.get(k) for k in ("needed", "contribution", "payback", "break_even", "missing", "bottlenecks",
-                                                "next_step")}})
+            "path_steps": len(path), "finance": {k: f.get(k) for k in ("bottlenecks", "next_step")}})
     latest = gates.latest_applied([tech_id]).get(tech_id, [])
     for a in latest:
         for uc in a.get("use_cases") or []:
             src.docs([*(uc.get("pages") or []), *(p for lv in uc.get("levers") or [] for p in lv.get("pages") or [])])
-    from app.services import market
     size = next((s for s in (market.market_size(a.get("measures")) for a in applied) if s), None)
     if size and size.get("url"):
         size["refs"] = src.urls([size["url"]])
     return {"classification": cls, "fabrics": fabrics, "market_size": size, "sources": src.items,
-            "measures": [{k: m.get(k) for k in ("_id", "code", "name", "axis", "weight")} for m in method],
+            "measures": [{k: m.get(k) for k in ("_id", "code", "name", "axis", "weight", "scope")} for m in method],
             "watch_metrics": watch.apply(next((a["watch_metrics"] for a in applied if a.get("watch_metrics")), []),
                                          decisions.active([tech_id], ["watch_threshold", "watch_crossed"])),
             "latest_assessment": {"scoring_run_id": latest[0]["scoring_run_id"], "fabric_ids": [a["fabric_id"] for a in latest],

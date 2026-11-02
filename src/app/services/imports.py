@@ -173,11 +173,12 @@ def match_cost(names: list[str]) -> dict:
     return {"names": len(names), "calls": calls, "register": len(register), "tokens_about": chars // CHARS_PER_TOKEN}
 
 
-def propose(names: list[str], run_id: str, llm=None) -> tuple[dict[str, dict], dict[str, dict], int]:
+def propose(names: list[str], run_id: str, llm=None) -> tuple[dict[str, dict], dict[str, dict], list[list[str]], int]:
     """({name: the register technology the organize skill folds it into},
     {name: a technology it was folded into but code kept it apart from, as
-    narrower}, calls made): lowercase names, in batches; a name it folds
-    nowhere is left out of both."""
+    narrower}, [names the skill reads as one technology that isn't in the
+    register yet: rows of one file naming it twice], calls made): lowercase
+    names, in batches; a name it folds nowhere is left out of all three."""
     from agent.resolver.resolver import _chunks, _llm_groups
     from app.services.llm.context import with_context
     from app.services.llm.llm import LLM
@@ -186,17 +187,19 @@ def propose(names: list[str], run_id: str, llm=None) -> tuple[dict[str, dict], d
     register = {t["name"]: t for t in get_collection("technologies").find({}, {"name": 1, "label": 1, "aliases": 1})}
     llm = llm or LLM.initialize()
     prompt = PromptStore.get("technology_resolve")
-    found, kept, calls = {}, {}, 0
+    found, kept, together, calls = {}, {}, [], 0
     with with_context(run_kind="import", run_id=run_id, skills=["technology_resolve"]):
         for chunk in _chunks(sorted(names), get_settings().resolve_batch_size):
             calls += 1
             for g in _llm_groups(llm, prompt, chunk, sorted(register)):
                 target = register.get(g["name"])
+                if target is None and len(g["members"]) > 1:
+                    together.append(g["members"])
                 for m in g["members"]:
                     if target and m != g["name"]:
                         own = [target["name"], target.get("label") or "", *(target.get("aliases") or [])]
                         (kept if narrower(m, own) else found)[m] = target
-    return found, kept, calls
+    return found, kept, together, calls
 
 
 def target_info(tech_ids: list[str]) -> dict[str, dict]:
@@ -440,7 +443,7 @@ def match(import_id: str, llm=None) -> dict:
     keeps apart as narrower, is new."""
     imp = load(import_id)
     names = {it["name"].lower(): it for it in imp["items"] if it["group"] == "unmatched"}
-    found, kept, calls = propose(list(names), import_id, llm)
+    found, kept, together, calls = propose(list(names), import_id, llm)
     for name, it in names.items():
         target = found.get(name)
         if target:
@@ -449,6 +452,11 @@ def match(import_id: str, llm=None) -> dict:
             it["group"] = "new"
             if name in kept:
                 it["kept_apart"] = {"tech_id": kept[name]["_id"], "name": kept[name].get("label") or kept[name]["name"]}
+    for members in together:  # rows of this file the skill reads as one new technology: the first comes in, the rest join it
+        rows = sorted((names[m] for m in members if m in names and names[m]["group"] == "new"), key=lambda it: it["row"])
+        for it in rows[1:]:
+            if not narrower(it["name"], [rows[0]["name"]]) and not narrower(rows[0]["name"], [it["name"]]):
+                it.update(group="proposed", same_as_row=rows[0]["row"], target_name=rows[0]["name"])
     imp["calls"] = imp.get("calls", 0) + calls
     imp["status"] = "ready"
     imp["counts"] = counts(imp)
@@ -457,7 +465,32 @@ def match(import_id: str, llm=None) -> dict:
 
 
 def _joins(it: dict) -> bool:
-    return it["group"] == "matched" or (it["group"] == "proposed" and it["decision"] == "accept")
+    """The row joins a technology: an exact match, an accepted proposed one, or
+    a new row a later row of the file was accepted as the same as (confirm
+    gives it its technology first)."""
+    return it["group"] == "matched" or (it["group"] == "proposed" and it["decision"] == "accept") \
+        or (it["group"] == "new" and bool(it.get("target_tech_id")))
+
+
+def _same_rows(imp: dict) -> tuple[set[int], int]:
+    """Before confirming: a row accepted as the same as an earlier row of the
+    file joins that row's technology, added now when it comes in new. Returns
+    (the rows given a technology, technologies added)."""
+    techs = get_collection("technologies")
+    by_row = {it["row"]: it for it in imp["items"]}
+    settled, made = set(), 0
+    for it in imp["items"]:
+        first = by_row.get(it.get("same_as_row"))
+        if first is None or it["decision"] != "accept":
+            continue
+        if not first.get("target_tech_id"):
+            name = first["name"].lower()
+            existing = techs.find_one({"$or": [{"name": name}, {"aliases": name}]}, {"_id": 1})
+            first["target_tech_id"] = existing["_id"] if existing else new_technology(first["name"], "imported", {})
+            made += not existing
+        it["target_tech_id"] = first["target_tech_id"]
+        settled |= {it["row"], first["row"]}
+    return settled, made
 
 
 def _joining(imp: dict) -> dict[str, list[dict]]:
@@ -488,8 +521,9 @@ def confirm(import_id: str, tz: str) -> dict:
     from agent.resolver import restamp
     imp = load(import_id)
     techs = get_collection("technologies")
+    settled, made = _same_rows(imp)
     at, joining = now_utc(), _joining(imp)
-    made = joined = shared = 0
+    joined = shared = 0
     for it in imp["items"]:
         if _joins(it):
             tech_id, its = it["target_tech_id"], joining[it["target_tech_id"]]
@@ -511,6 +545,8 @@ def confirm(import_id: str, tz: str) -> dict:
         set_values(tech_id, resolved_values(it["values"], imp["unknown_values"]), f"{IMPORTED}{imp['file']}", tz,
                    extra={"import_id": import_id, "row": it["row"]}, imported=True)
     result = {"joined": joined, "added": made, "shared": shared}
+    if settled:
+        save(imp, settled)  # the technology each row joined, so a reopen knows it
     get_collection("imports").update_one({"_id": import_id}, {"$set": {"status": "confirmed", "confirmed_at": at,
                                                                      "confirmed_tz": tz, "confirmed_by": auth.by(),
                                                                      "result": result}})

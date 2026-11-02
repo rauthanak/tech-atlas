@@ -36,6 +36,14 @@ def _pages(path: str, params: dict) -> tuple[list[dict], int]:
     return rows[:MAX_RESULTS], total
 
 
+def _first(path: str, params: dict) -> list[dict]:
+    """One page of results, for a one-off search."""
+    key = get_settings().openalex_api_key
+    with httpx.Client(timeout=30) as client:
+        data = fetch(client, "GET", f"{BASE}{path}", params={**params, **({"api_key": key} if key else {})}).json()
+    return data.get("results") or []
+
+
 def _abstract(index: dict | None) -> str:
     if not index:
         return ""
@@ -49,6 +57,18 @@ class Works(Adapter):
     kind = "paper"
     search_help = "Plain words, matched in paper titles and abstracts."
     example = "quantum networking"
+    by_name = True
+    find_label = "Research papers"
+    find_gives = "the most-cited papers of the last three years"
+
+    def top(self, query: str, n: int) -> list[Item]:
+        """The most-cited papers of the last three years."""
+        since = date.today().replace(year=date.today().year - 3).isoformat()
+        rows = _first("/works", {
+            "filter": f'title_and_abstract.search:"{_words(query)}",from_publication_date:{since}',
+            "sort": "cited_by_count:desc", "per_page": n,
+            "select": "id,doi,display_name,publication_date,primary_location,authorships,abstract_inverted_index,type"})
+        return [self._item(r) for r in rows]
 
     def window(self, query: str, since: date, until: date) -> tuple[list[Item], int]:
         rows, total = _pages("/works", {
@@ -86,6 +106,14 @@ class Awards(Adapter):
     kind = "grant"
     search_help = "Plain words, matched in grant titles and descriptions."
     example = "quantum key distribution"
+    by_name = True
+    find_label = "Research grants"
+    find_gives = "the newest public research grants"
+
+    def top(self, query: str, n: int) -> list[Item]:
+        """The newest grants."""
+        rows = _first("/awards", {"filter": f'default.search:"{_words(query)}"', "sort": "start_year:desc", "per_page": n})
+        return [self._item(r) for r in rows]
 
     def window(self, query: str, since: date, until: date) -> tuple[list[Item], int]:
         # there is no start-date filter: read from the year before, then window by start_date

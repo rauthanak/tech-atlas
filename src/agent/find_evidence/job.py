@@ -43,6 +43,7 @@ from app.services.timezone import now_utc
 from app.services import websearch
 from app.services.display import display_name
 from app.services import jobs as background
+from app.services import places
 
 log = logging.getLogger(__name__)
 QUERY_CHARS = 120  # a search, not a sentence: cut at a word
@@ -52,7 +53,8 @@ FILLER = {"a", "an", "and", "or", "of", "for", "the", "to", "in", "on", "with", 
 
 def query_for(gap: dict) -> str:
     """The technology, the fabric, and what the gap says is missing: an
-    unscored measure's `missing`, or a fabric's `no_use_case.evidence_needed`,
+    unscored measure's `missing`, a use case's market size (`key`), or a
+    fabric's `no_use_case.evidence_needed`,
     up to its first comma or full stop (the thing itself, not its
     qualifiers), cut at a word to about QUERY_CHARS characters. A thin
     verdict names nothing, so it asks for the kinds of signal that count."""
@@ -67,8 +69,10 @@ def query_for(gap: dict) -> str:
         measure = get_collection("measures").find_one({"_id": gap["measure_id"]}, {"name": 1}) or {}
         needed = m.get("missing") or measure.get("name") or ""
     elif gap.get("kind") == "use_case":
-        a = latest_assessment(gap["tech_id"], gap.get("fabric_id"))
-        needed = ((a or {}).get("no_use_case") or {}).get("evidence_needed") or "enterprise use case"
+        a = latest_assessment(gap["tech_id"], gap.get("fabric_id")) or {}
+        case = next((uc for uc in a.get("use_cases") or [] if gap.get("key") and uc.get("key") == gap["key"]), None)
+        needed = (f"market size of {case['title']}" if case
+                  else (a.get("no_use_case") or {}).get("evidence_needed") or "enterprise use case")
     else:
         needed = f"deployment trial funding standard {date.today().year}"
     clause = re.split(r"[,;:()]|\.(?:\s|$)", str(needed).strip(), maxsplit=1)[0]
@@ -97,6 +101,58 @@ def latest_assessment(tech_id: str, fabric_id: str | None) -> dict | None:
         return None
     fab = next((f for f in a["fabrics"] if f["fabric_id"] == fabric_id), a["fabrics"][0] if a["fabrics"] else None)
     return get_collection("assessments").find_one({"_id": fab["assessment_id"]}) if fab else None
+
+
+def gather(job: dict, tech: dict, chosen: list[str], n_all: int, search,
+           counts: dict[str, int] | None = None) -> tuple[list[dict], list[dict]]:
+    """The vertical search: up to n results from each chosen place (its own
+    number in `counts`, else n_all), under all the technology's names. Returns the results ({url, title, place, and for
+    a data source its text, meta and source_id}) and, per place, what it
+    found or why not."""
+    from agent.scout.tools.adapters import REGISTRY
+    offered = {p["id"]: p for p in places.places()}
+    names = places.names(tech) or [tech["name"]]
+    found: dict[str, dict] = {}
+    done: list[dict] = []
+    for pid in chosen:
+        n = (counts or {}).get(pid) or n_all
+        place = offered.get(pid)
+        row = {"place": pid, "label": (place or {}).get("label", pid), "kind": (place or {}).get("kind"), "found": 0}
+        done.append(row)
+        # a data source is checked here; the web search was checked at start, and says why if it fails
+        if not place or (place["kind"] in ("search", "counts") and not place["available"]):
+            row["why"] = (place or {}).get("why") or "not one of the places that can be searched"
+            continue
+        try:
+            got: list[dict] = []
+            if place["kind"] in ("search", "counts"):
+                source = get_collection("sources").find_one({"_id": place["source_id"]})
+                adapter = REGISTRY[source["adapter"]]
+                for name in names:
+                    if place["kind"] == "counts":
+                        item, _ = adapter.digest_item(adapter.name_query(name), None)
+                        items = [item]
+                    else:
+                        items = [adapter.complete(i) for i in adapter.top(adapter.name_query(name), n)]
+                    got += [{"url": i.url, "title": i.title, "text": i.text, "source_id": source["_id"],
+                             "meta": {"kind": i.kind, "title": i.title, "published_date": i.published_date}} for i in items]
+                    if place["kind"] == "counts" and "No results" not in item.text:
+                        break  # one page of counts is enough
+            else:
+                sites = sorted(places.hosts()) if place["kind"] == "websites" else None
+                by_host = places.hosts()
+                with with_context(skills=["web_search"]):
+                    for r in search(job["query"], n, sites) if sites else search(job["query"], n):
+                        source_id = by_host.get(websearch.site(r["url"])) if sites else None
+                        got.append({"url": r["url"], "title": r.get("title"), **({"source_id": source_id} if source_id else {})})
+            for g in got:
+                if g["url"] not in found and sum(1 for f in found.values() if f["place"] == pid) < n:
+                    found[g["url"]] = {**g, "place": pid}
+            row["found"] = sum(1 for f in found.values() if f["place"] == pid)
+        except Exception as exc:  # one place failing never stops the others
+            log.warning("find evidence %s: %s failed: %s", job["_id"], pid, exc)
+            row["why"] = why_failed(exc)
+    return list(found.values()), done
 
 
 WAIT_S = 10  # how often an Add evidence job looks whether an assessment already going has finished
@@ -149,17 +205,19 @@ def _run(job: dict, fetch, search) -> None:
     gap = job["gap"]
     tech = get_collection("technologies").find_one({"_id": gap["tech_id"]})
     from app.services.settings_store import radar_settings
-    n = int(radar_settings()["find_evidence_results"])
+    n = int(gap.get("per_place") or radar_settings()["find_evidence_results"])
     if gap.get("kind") == "link":
         found = [{"url": gap["url"], "title": None}]
     elif gap.get("kind") == "links":
         found = [{"url": u, "title": None} for u in gap.get("urls") or []] + \
                 [{"url": f["url"], "title": f["name"]} for f in job.get("files") or []]
     else:
-        with with_context(skills=["web_search"]):
-            found = list({r["url"]: r for r in search(job["query"], n)}.values())  # each address once
+        found, done = gather(job, tech, gap.get("places") or [places.WEB], n, search, gap.get("counts") or {})
+        jobs.update_one({"_id": job["_id"]}, {"$set": {"places_done": done}})
     known = set(documents.distinct("end_url", {"end_url": {"$in": [r["url"] for r in found]}}))
-    results = [{"url": r["url"], "title": r.get("title"), "status": "already" if r["url"] in known else "new"} for r in found]
+    results = [{"url": r["url"], "title": r.get("title"), "place": r.get("place"),
+                "status": "already" if r["url"] in known else "new"} for r in found]
+    by_url = {r["url"]: r for r in found}  # a data source's results come with their text
     jobs.update_one({"_id": job["_id"]}, {"$set": {"results": results, "stage": "reading"}})
 
     fresh = [r for r in results if r["status"] == "new"]
@@ -171,18 +229,25 @@ def _run(job: dict, fetch, search) -> None:
         uploaded = {f["url"]: f for f in job.get("files") or []}
         for r in fresh:
             try:
+                item = by_url.get(r["url"]) or {}
                 if r["url"] in uploaded:
                     f = uploaded[r["url"]]
                     text, meta, why = f["text"], {"kind": "pdf" if f["name"].lower().endswith(".pdf") else "document",
                                                   "title": f["name"], "published_date": None}, None
+                elif item.get("text"):
+                    text, meta, why = item["text"], item["meta"], None
                 else:
                     text, meta, why = fetch(r["url"])
                 if not text:
                     r.update(status="failed", reason=why or "no text came back")
                     continue
-                given = "uploaded" if r["url"] in uploaded else "added by hand" if gap.get("kind") in PASTED else "web search"
-                site = uploaded[r["url"]]["name"] if r["url"] in uploaded else websearch.site(r["url"])
-                source = {**websearch.SOURCE, "url": r["url"], "name": f"{site} ({given})"}
+                own = get_collection("sources").find_one({"_id": item["source_id"]}) if item.get("source_id") else None
+                if own:  # found in one of the radar's sources: filed under it
+                    source = own
+                else:
+                    given = "uploaded" if r["url"] in uploaded else "added by hand" if gap.get("kind") in PASTED else "web search"
+                    site = uploaded[r["url"]]["name"] if r["url"] in uploaded else websearch.site(r["url"])
+                    source = {**websearch.SOURCE, "url": r["url"], "name": f"{site} ({given})"}
                 with with_context(run_kind="find_evidence", run_id=run_id):
                     store.save_document(run_id, source["horizon"], source, r["url"], text,
                                         lambda url, t: summarize_page(llm, url, t, snap), meta=meta)

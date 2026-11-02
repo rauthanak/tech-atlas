@@ -48,3 +48,22 @@ def test_the_page_budget_comes_from_crawl_settings_and_a_runs_own_wins(db):
     assert page_budget(recorded_snapshot("r")) == 12          # the run keeps what it started with
     assert page_budget(recorded_snapshot("r"), override=5) == 5
     assert page_budget(snapshot.build()) == 99                # the next run gets the edit
+    assert page_budget(snapshot.build(), source={"pages": 300}) == 300          # a source's own budget
+    assert page_budget(snapshot.build(), override=5, source={"pages": 300}) == 5  # a test run's still wins
+
+
+def test_each_source_is_collected_with_its_own_budget_and_the_run_records_it(db, monkeypatch):
+    from agent.scout.tools import collect
+    from agent.scout.tools.context import Outcome
+    from app.services.signals import snapshot
+
+    db["settings"].insert_one({"_id": "crawl", "pages_per_source": 150})
+    db["runs"].insert_one({"_id": "r", "status": "running", "sources": [], "totals": {"sources": 0}, **snapshot.build()})
+    budgets = {}
+    monkeypatch.setattr(collect, "crawl", lambda ctx, source: budgets.setdefault(source["source_id"], ctx.max_pages) and Outcome())
+    tool = collect.make_collect_tool("r", "H1", [
+        {"source_id": "big", "name": "Big", "url": "https://big.example", "access": "crawl", "pages": 300},
+        {"source_id": "usual", "name": "Usual", "url": "https://usual.example", "access": "crawl"}], llm=None)
+    tool("big"), tool("usual")
+    assert budgets == {"big": 300, "usual": 150}
+    assert {s["source_id"]: s["budget"] for s in db["runs"].find_one({"_id": "r"})["sources"]} == budgets

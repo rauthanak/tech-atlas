@@ -89,10 +89,11 @@ def coverage() -> list[dict]:
     limits are in Crawl settings."""
     run = _latest_run()
     access = source_access()
-    budget = ((run or {}).get("crawl_settings") or {}).get("pages_per_source")
+    default = ((run or {}).get("crawl_settings") or {}).get("pages_per_source")
+    budget = lambda row: row.get("budget") or default  # its own budget, recorded since 1 Nov
     return [{"kind": "didnt_finish", "source_id": row["source_id"], "source_name": row.get("source_name"),
              "run_id": run["_id"], "note": row.get("incomplete_note") or "",
-             "limit": "pages" if budget and (row.get("pages_visited") or 0) >= budget else "depth"}
+             "limit": "pages" if budget(row) and (row.get("pages_visited") or 0) >= budget(row) else "depth"}
             for row in (run or {}).get("sources") or [] if didnt_finish(row, access)]
 
 

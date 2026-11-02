@@ -8,7 +8,7 @@ import logging
 
 from deepagents import create_deep_agent
 
-from agent.scout.tools.collect import make_collect_tool, page_budget, recorded_snapshot
+from agent.scout.tools.collect import link_depth, make_collect_tool, page_budget, recorded_snapshot
 from app.services.llm.context import with_context
 from app.services.db.mongo import get_collection
 from app.services.prompts import PromptStore
@@ -41,7 +41,7 @@ def _run_scout(run_id: str, category: str, sources: list[dict], llm,
     collect_source = make_collect_tool(run_id, category, sources, llm, max_pages_override)
 
     prompt = PromptStore.get("scout").render(**scout_values(
-        category, sources, settings.scrape_max_depth,
+        category, sources, link_depth(recorded_snapshot(run_id)),
         page_budget(recorded_snapshot(run_id), max_pages_override)))
     agent = create_deep_agent(
         model=llm.chat_model(),

@@ -39,13 +39,24 @@ def test_a_market_figure_needs_a_page_the_measure_cites():
         assert engine.measure_result({"score": 7, "evidence_urls": ["https://m.example"], "figure": bad})["figure"] is None
 
 
-def test_the_bands():
-    assert [market.band(x) for x in (0.4, 1, 4.9, 5, 19, 20, 99, 100, 4400)] == [
-        "under $1B", "$1–5B", "$1–5B", "$5–20B", "$5–20B", "$20–100B", "$20–100B", "over $100B", "over $100B"]
+def test_the_bands(db):
+    # Hasan's scale; with no market_bands in the database (one from before), the seeded list
+    assert [market.band(x) for x in (0.05, 0.1, 0.9, 1, 9.9, 10, 100, 999, 1000, 4400)] == [
+        "under $100M", "$100M–1B", "$100M–1B", "$1–10B", "$1–10B", "$10–100B", "$100B–1T", "$100B–1T",
+        "over $1T", "over $1T"]
     assert market.market_size({}) is None  # assessed before figures were asked
     assert market.market_size({market.MEASURE: {"score": None, "figure": None}}) == {"band": None}
     size = market.market_size({market.MEASURE: {"figure": {"amount_usd_bn": 7.2, "year": 2026, "scope": "w", "url": "u"}}})
-    assert size["band"] == "$5–20B"
+    assert size["band"] == "$1–10B"
+
+
+def test_the_bands_come_from_setup(db):
+    db["scoring_config"].insert_one({"_id": "market_bands", "bands": [{"below_usd_bn": 5, "label": "small"},
+                                                                      {"below_usd_bn": None, "label": "big"}]})
+    assert [market.band(x) for x in (4.9, 5)] == ["small", "big"]
+    assert market.use_case_size({"basis": "evidence", "amount_usd_bn": 7, "page": "d"})["band"] == "big"
+    assert market.use_case_size({"basis": "none", "reason": "r"})["band"] is None
+    assert market.use_case_size(None) is None
 
 
 def test_the_briefing_lists_crossings_from_each_latest_assessment(db):
@@ -81,7 +92,7 @@ def test_the_point_of_view_shows_the_band_and_its_page(db, monkeypatch):
         "score": 7, "evidence_urls": ["https://m.example"],
         "figure": {"amount_usd_bn": 7.2, "year": 2026, "scope": "worldwide", "url": "https://m.example"}}}}})
     view = pov.pov_view({"tech_id": "edge-ai", "scoring_run_id": "r1", "sources": []})
-    assert view["market_size"]["band"] == "$5–20B" and view["market_size"]["refs"] == [1]
+    assert view["market_size"]["band"] == "$1–10B" and view["market_size"]["refs"] == [1]
     assert view["sources"][0]["url"] == "https://m.example"
 
 

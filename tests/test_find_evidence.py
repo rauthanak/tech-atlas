@@ -1,6 +1,6 @@
 """Find evidence: known pages skipped, new ones read and filed under the
 technology (or set aside by a Can ignore rule, and said so), only the gap's
-call run again, the budget refusal, the message when no search is set up,
+call run again, no daily cap, the message when no search is set up,
 Add a link without a search, the query built from what the gap says is
 missing, each page found counted as its own site, and a Find evidence run
 not counted as a collection."""
@@ -77,14 +77,16 @@ def test_without_a_search_it_says_why_and_a_link_still_works(db, monkeypatch):
                                                            "url": "x.example"}}).status_code == 422
 
 
-def test_the_daily_budget_refuses_with_the_reason(db, monkeypatch):
+def test_there_is_no_daily_cap(db, monkeypatch):
+    """1 Nov: the person sees the cost in the panel and decides there."""
     _world(db, monkeypatch)
     monkeypatch.setattr(websearch, "configured", lambda: True)
-    db["settings"].update_one({"_id": "radar"}, {"$set": {"find_evidence_daily_budget": 1}}, upsert=True)
+    monkeypatch.setattr(finder, "start", lambda gap, tz: "job")
     from datetime import datetime, timezone
-    db["find_evidence_jobs"].insert_one({"_id": "old", "gap": {}, "searched": True, "at": datetime.now(timezone.utc).isoformat()})
+    db["find_evidence_jobs"].insert_many([{"_id": f"old{i}", "gap": {}, "searched": True,
+                                           "at": datetime.now(timezone.utc).isoformat()} for i in range(30)])
     r = client.post("/api/find-evidence", json={"gap": {"kind": "technology", "tech_id": "edge-ai"}})
-    assert r.status_code == 429 and "Today's 1 searches are used up" in r.json()["detail"]
+    assert r.status_code == 202
 
 
 TRIAL = "A field trial of edge AI began at a Singapore operator. " * 20
@@ -133,11 +135,15 @@ def test_the_query_is_what_the_gap_says_is_missing_cut_at_a_word(db, monkeypatch
                "and the year it covers.")
     monkeypatch.setattr(finder, "latest_assessment", lambda t, f: {
         "measures": {"m1": {"missing": missing}},
-        "no_use_case": {"evidence_needed": "Named operators running 50G-PON for enterprise backhaul (with dates)"}})
+        "no_use_case": {"evidence_needed": "Named operators running 50G-PON for enterprise backhaul (with dates)"},
+        "use_cases": [{"key": "network:1", "title": "Backhaul for enterprise campuses, on Tata's fibre"}]})
     q = finder.query_for({"kind": "measure", "tech_id": "pon", "fabric_id": "network", "measure_id": "m1"})
     assert q == "50G-PON Network dated analyst or primary market-size figure for 50G-PON equipment or services"
     q = finder.query_for({"kind": "use_case", "tech_id": "pon", "fabric_id": "network"})
     assert q == "50G-PON Network Named operators running 50G-PON for enterprise backhaul"
+    # a use case with no size: its market size
+    q = finder.query_for({"kind": "use_case", "tech_id": "pon", "fabric_id": "network", "key": "network:1"})
+    assert q == "50G-PON Network market size of Backhaul for enterprise campuses"
     long = finder._cut("word " * 10 + "figures for regional spending on equipment or software and services", 60)
     assert len(long) <= 60 and long.split()[-1] not in finder.FILLER
 

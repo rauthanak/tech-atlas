@@ -41,9 +41,12 @@ def preview() -> dict:
     the cost before anything starts."""
     sources, query = get_collection("sources"), collectable_query()
     data_sources = sources.count_documents({**query, "access": "query"})
-    return {"websites": sources.count_documents(query) - data_sources,
+    snap = snapshot.build()
+    websites = list(sources.find({"$and": [query, {"access": {"$ne": "query"}}]}, {"pages": 1}))
+    return {"websites": len(websites),
             "data_sources": data_sources,
-            "pages_per_source": page_budget(snapshot.build())}
+            "pages_per_source": page_budget(snap),
+            "pages_in_all": sum(page_budget(snap, source=s) for s in websites)}  # each website's own budget
 
 
 @router.get("/runs/named")

@@ -181,3 +181,17 @@ def test_a_publish_reads_each_latest_assessment_from_the_answers_kept_ready(db):
     assert {t: [a["_id"] for a in rows] for t, rows in kept.items()} == \
         {t: [a["_id"] for a in rows] for t, rows in from_pages.items()}
     assert kept["edge-ai"][0]["scoring_run_id"] == "r2"
+
+
+def test_an_edition_records_which_measures_make_each_axis(db):
+    _world(db)
+    publish()
+    grid = db["scoring_config"].find_one({"_id": "priority_grid"})
+    body = client.get("/api/frontier").json()
+    assert body["grid_from"] == {"how_soon": grid["timeline_from"], "how_big": grid["potential_from"]}
+    # the panel names each measure and knows which apply in every fabric
+    measures = {m["_id"]: m for m in client.get("/api/frontier/pov/edge-ai").json()["measures"]}
+    assert "scope" in next(iter(measures.values()))
+    # an edition from before it recorded them: none, not an error
+    db["editions"].update_many({}, {"$unset": {"grid_from": ""}})
+    assert client.get("/api/frontier").json()["grid_from"] is None

@@ -136,7 +136,7 @@ def described(decs: list[dict]) -> list[dict]:
         elif k == "path_step":
             what = f"Step reached{where}: {steps.get(v, v)}"
         elif k == "finance":
-            what = f"Finance figures entered{where}"
+            what = f"Proof for the next step recorded{where}"
         elif k == "bottlenecks":
             n = len((v or {}).get("picked") or []) + (1 if (v or {}).get("other") else 0)
             what = f"Blockers picked{where}: {n}"

@@ -357,7 +357,7 @@ def stop() -> None:
 
 LISTED = 50  # names a To do item carries; it says how many in all, and links to the full list
 GATE2_KINDS = ("unscored", "waiting_for_tata", "override_moved", "maturity_mismatch", "suggested_use_cases",
-               "finance_missing", "ready_next_step")
+               "ready_next_step")
 
 
 def _name(r: dict) -> str:

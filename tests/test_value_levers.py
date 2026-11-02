@@ -105,3 +105,46 @@ def test_two_levers_with_miscopied_ids_are_taken_in_the_order_asked_for(db):
     assert out["use_cases"][0]["levers"][1]["metric"] == "hours per ticket"
     with pytest.raises(ValueError, match=r"leaves out lever 2"):  # one right id and one wrong: still refused
         check({"use_cases": [_case([_lever("network_contribution"), _lever("something else")])]}, None)
+
+
+def _sized(size):
+    return {**_case([_lever("network_contribution"), _lever("network_delivery_cost")]), "size": size}
+
+
+def test_a_ballpark_size_from_the_evidence_or_a_comparable(db):
+    fabric, mechs = _fabric(db)
+    check = value.check(fabric, mechs, PAGES)
+    out = check({"use_cases": [_sized({"basis": "evidence", "amount_usd_bn": 2.4, "covers": "quantum-safe WAN", "year": 2025,
+                                        "page": 2})]}, None)
+    assert out["use_cases"][0]["size"] == {"basis": "evidence", "amount_usd_bn": 2.4, "saving_pct": None,
+                                           "covers": "quantum-safe WAN", "year": 2025, "comparable": None,
+                                           "why_comparable": None, "page": "p2"}
+    out = check({"use_cases": [_sized({"basis": "comparable", "saving_pct": 15, "covers": "WAN spend", "page": 3,
+                                        "comparable": "SD-WAN in 2018", "why_comparable": "same buyers"})]}, None)
+    size = out["use_cases"][0]["size"]
+    assert size["basis"] == "comparable" and size["saving_pct"] == 15 and size["amount_usd_bn"] is None
+    assert size["comparable"] == "SD-WAN in 2018" and size["page"] == "p3"
+
+
+def test_a_size_that_cant_be_used_is_kept_as_none_with_why(db):
+    fabric, mechs = _fabric(db)
+    check = value.check(fabric, mechs, PAGES)
+
+    def reason(size):
+        return check({"use_cases": [_sized(size)]}, None)["use_cases"][0]["size"]
+
+    assert reason(None) == {"basis": "none", "reason": "No size was given.", "evidence_needed": ""}
+    assert reason({"basis": "none", "reason": "No page sizes it.", "evidence_needed": "an analyst figure"}) == {
+        "basis": "none", "reason": "No page sizes it.", "evidence_needed": "an analyst figure"}
+    assert reason({"basis": "evidence", "amount_usd_bn": 2, "page": 9})["reason"] == "The size cited no page from the evidence."
+    assert reason({"basis": "evidence", "page": 1})["reason"] == "The size gave no usable figure."
+    assert reason({"basis": "evidence", "amount_usd_bn": 2, "saving_pct": 5, "page": 1})["reason"] == "The size gave no usable figure."
+    assert reason({"basis": "comparable", "amount_usd_bn": 2, "page": 1, "comparable": "x"})["reason"] == (
+        "A comparable must say what it is compared with and why.")
+
+
+def test_the_levers_still_never_carry_a_figure_with_a_size(db):
+    fabric, mechs = _fabric(db)
+    with pytest.raises(ValueError, match="wrote a figure"):
+        value.check(fabric, mechs, PAGES)({"use_cases": [{**_sized({"basis": "evidence", "amount_usd_bn": 2, "page": 1}),
+                                                          "capital": {"direction": "light", "why": "$2M of kit"}}]}, None)

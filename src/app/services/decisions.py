@@ -16,14 +16,10 @@ replaces the old one (the old one is kept, inactive), and undo deactivates.
               technologies) or not
   use_case    a suggested use case in a fabric     accept | reject       —
   path_step   a technology in a fabric             a path-to-scale step  optional
-  finance     a technology in a fabric             {upfront, running,    —
-                                                    revenue | volume and
-                                                    price, displaced,
-                                                    margin, loss rates,
-                                                    mechanism, and the
-                                                    rungs' notes: buyer,
-                                                    budget, exposed
-                                                    contracts, cost per
+  finance     a technology in a fabric: the path   {price, and the       —
+              to scale's evidence (the name stays   rungs' notes: buyer,
+              as stored; finance figures were       budget, exposed
+              removed)                              contracts, cost per
                                                     outcome} (services/
                                                     finance)
   bottlenecks a technology in a fabric             {picked: from the     optional
@@ -56,9 +52,7 @@ MOVE_FIELDS = {"availability", "domain", "subdomain", "trl"}
 MOVE_LISTS = {"availability": ("availability", "Commercial availability"), "domain": ("domains", "Domain"),
               "subdomain": ("subdomains", "Sub-domain")}  # the list each move's value must be in
 REASON_REQUIRED = {"override", "hand_score", "tata_entry"}
-# a finance choice's inputs (services/finance): amounts, shares from 0 to 1, and the rungs' notes
-FINANCE_AMOUNTS = ("upfront", "running", "revenue", "volume", "price", "displaced")
-FINANCE_SHARES = ("margin", "loss_without", "loss_with")
+# what a finance choice keeps (services/finance): the rungs' notes and an indicative price
 FINANCE_NOTES = ("buyer", "budget", "exposed_contracts", "cost_per_outcome")
 # what a leader records: who answers for it, the next action and its date, then the resources committed
 COMMITMENT_FIELDS = ("owner", "next_action", "due", "people", "budget", "poc")
@@ -147,21 +141,17 @@ def _check(kind: str, d: dict) -> dict:
     elif kind == "finance":
         if not d.get("fabric_id") or not isinstance(v, dict):
             raise Refused("finance inputs are for one fabric")
+        if other := [k for k, x in v.items() if k not in (*FINANCE_NOTES, "price") and x not in (None, "")]:
+            raise Refused(f"only a price and the path to scale's notes are kept, not {', '.join(sorted(other))}")
         clean = {}
-        for k in (*FINANCE_AMOUNTS, *FINANCE_SHARES):
-            x = v.get(k)
-            if x is None or x == "":
-                continue
-            if isinstance(x, bool) or not isinstance(x, (int, float)) or x < 0 or (k in FINANCE_SHARES and x > 1):
-                raise Refused(f"{k} must be a number of at least 0" + (" and at most 1 (a share)" if k in FINANCE_SHARES else ""))
-            clean[k] = float(x)
+        x = v.get("price")
+        if x is not None and x != "":
+            if isinstance(x, bool) or not isinstance(x, (int, float)) or x < 0:
+                raise Refused("price must be a number of at least 0")
+            clean["price"] = float(x)
         for k in FINANCE_NOTES:
             if str(v.get(k) or "").strip():
                 clean[k] = str(v[k]).strip()[:1000]
-        if v.get("mechanism") not in (None, "", "protect", "earn"):
-            raise Refused("the revenue counts as protected (protect) or new (earn)")
-        if v.get("mechanism"):
-            clean["mechanism"] = v["mechanism"]
         d["value"] = clean
     elif kind == "bottlenecks":
         if not d.get("fabric_id") or not isinstance(v, dict):

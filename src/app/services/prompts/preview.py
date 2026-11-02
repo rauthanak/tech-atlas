@@ -16,8 +16,8 @@ from agent.analyzer.engine import (build_dossier, dossier_limit, fabric_relevanc
 from agent.analyzer.pov import pov_inputs
 from agent.resolver.resolver import LABEL_BATCH, known_register, label_values, resolve_values
 from agent.scout.agent import scout_values
-from agent.scout.tools.collect import page_budget
-from agent.scout.tools.crawl import LINK_SELECTION_WIDTH, link_selection_values
+from agent.scout.tools.collect import link_depth, page_budget
+from agent.scout.tools.crawl import LINK_SELECTION_WIDTH, level_width, link_selection_values
 from agent.scout.tools.summarize import article_summary_values, split_text
 from agent.supervisor.agent import supervisor_values
 from agent.supervisor.tools.sources import collectable_query, fetch_sources
@@ -72,13 +72,15 @@ BLANKS: dict[str, dict[str, dict]] = {
     "scout": {
         "category": HORIZON,
         "sources": _blank("each source in the scout's batch: its id, name and address", "Sources", SOURCES),
-        "max_depth": _blank("how many links deep a crawl may go", "a server setting",
-                            ("Server setting SCRAPE_MAX_DEPTH, not editable here", None)),
-        "max_pages": _blank("pages per source", "Settings", ("Settings › pages per source", CRAWL[1])),
+        "max_depth": _blank("how many links deep a crawl may go", "Settings",
+                            ("Settings › levels of links to follow", CRAWL[1])),
+        "max_pages": _blank("pages per source (a source's own number, else the default)", "Settings",
+                            ("Settings › pages per source", CRAWL[1])),
     },
     "link_selection": {
-        "budget": _blank("how many links to keep: the pages left for the source, at most "
-                         f"{LINK_SELECTION_WIDTH}", "Settings", ("Settings › pages per source", CRAWL[1])),
+        "budget": _blank("how many links to keep: Settings › links kept per level, or with Automatic the pages "
+                         f"left shared across the levels left, at least {LINK_SELECTION_WIDTH}", "Settings",
+                         ("Settings › links kept per level", CRAWL[1])),
         "never_miss_names": _blank("the never-miss signal names", "Signal list", SIGNALS),
         "links": _blank("the links found at this level of the crawl", "the crawl", ("The crawl", None)),
     },
@@ -359,7 +361,7 @@ def _scout(choices: dict) -> dict:
     sources = fetch_sources(horizon)
     values = note = why = None
     if sources:
-        values = scout_values(horizon, sources[:per], settings.scrape_max_depth, page_budget(snapshot.build()))
+        values = scout_values(horizon, sources[:per], link_depth(snapshot.build()), page_budget(snapshot.build()))
         if len(sources) > per:
             note = (f"{horizon} has {_n(len(sources), 'source')}, so {math.ceil(len(sources) / per)} scouts: "
                     "this is the first one's batch.")
@@ -383,7 +385,7 @@ def _link_selection(choices: dict) -> dict:
     settings = get_settings()
     snap = snapshot.build()
     pages = page_budget(snap)
-    depth = settings.scrape_max_depth
+    depth = link_depth(snap)
     websites = list(get_collection("sources").find({**collectable_query(), "access": "crawl"}).sort("name", 1))
     options = [{"value": s["source_id"], "label": s["name"], "data": s} for s in websites]
     switch, option = _pick("source", "Source", options, choices.get("source"),
@@ -394,7 +396,7 @@ def _link_selection(choices: dict) -> dict:
             {"source_id": option["value"], "end_url": {"$nin": [None, ""]}}, {"end_url": 1})
             .sort("scraped_at", -1).limit(pages)))
         if links:
-            values = link_selection_values(links, min(pages, LINK_SELECTION_WIDTH),
+            values = link_selection_values(links, min(pages, level_width(pages, depth, snap["crawl_settings"].get("links_per_level"))),
                                            prompt_lines(snap["signal_list"])["never_miss_names"])
             stand_in = ("The crawler doesn't keep the links it was offered, so {links} here is this "
                         "source's pages from the collections so far.")
@@ -404,11 +406,12 @@ def _link_selection(choices: dict) -> dict:
         why = "No websites are switched on in Sources."
     return {
         "fires": "At each level of a website's crawl that finds more links than it may follow: "
-                 f"the smaller of the pages left and {LINK_SELECTION_WIDTH} (fixed in code).",
+                 "the smaller of the pages left and the links kept per level (Settings: a fixed number, or "
+                 "Automatic, the pages left shared across the levels left).",
         "versions": _versions(f"Up to {depth} crawl levels × {_n(len(websites), 'website')} = "
                               f"up to {depth * len(websites):,} per collection run.",
                               depth * len(websites), "collection run", up_to=True,
-                              set_in=(SOURCES, ("Server setting SCRAPE_MAX_DEPTH", None))),
+                              set_in=(SOURCES, ("Settings › levels of links to follow", CRAWL[1]))),
         "last_run": _last("collection", _collection(), "run_start_date_time",
                           why="Not counted: the crawler doesn't record link-selection calls."),
         "switches": [switch],
@@ -481,7 +484,8 @@ def _technology_resolve(choices: dict) -> dict:
     organize = _newest("resolves", "started_at")
     return {
         "fires": "When technologies are organized: pass 1 over the names not yet in the register, then "
-                 f"pass 2 over all names, in chunks of up to {settings.resolve_batch_size:,}.",
+                 f"pass 2 over all names, in chunks of up to {settings.resolve_batch_size:,}. An import uses it "
+                 "too, to match a file's rows to the register and to each other.",
         "versions": _versions(f"One per chunk of up to {settings.resolve_batch_size:,} names, in two passes. "
                               f"Each carries the register's {settings.resolve_known_limit:,} names with the "
                               "most pages.", None, "organize",

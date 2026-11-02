@@ -113,11 +113,14 @@ def live() -> dict:
                              if missing else "No priority yet"})
     placed.sort(key=lambda r: (r["priority"], -(r["how_big"] or 0)))
     held.sort(key=lambda r: r["name"])
-    grid = get_collection("scoring_config").find_one({"_id": "priority_grid"}, {"timeline_cutpoints": 1, "potential_cutpoints": 1}) or {}
+    grid = get_collection("scoring_config").find_one(
+        {"_id": "priority_grid"}, {"timeline_cutpoints": 1, "potential_cutpoints": 1, "timeline_from": 1, "potential_from": 1}) or {}
     return {"placed": placed, "held": held, "fabrics": [{"id": k, "name": v} for k, v in fabrics.items()],
             "stages": [{"id": a["_id"], "name": a["name"], "emerging": bool(a.get("emerging")), "known": not a.get("catch_all")}
                        for a in sorted(lists["availability"].values(), key=lambda a: a.get("order", 99))],
-            "cutpoints": {"how_soon": grid.get("timeline_cutpoints", [4, 7]), "how_big": grid.get("potential_cutpoints", [4, 7])}}
+            "cutpoints": {"how_soon": grid.get("timeline_cutpoints", [4, 7]), "how_big": grid.get("potential_cutpoints", [4, 7])},
+            # which measures make each axis, so the leaders' grid can show what placed a dot
+            "grid_from": {"how_soon": grid.get("timeline_from", []), "how_big": grid.get("potential_from", [])}}
 
 
 def assumptions() -> list[dict]:
@@ -285,7 +288,7 @@ def publish(name: str | None, tz: str) -> dict:
             continue
         for f in pv.get("fabrics") or []:
             f["leader"] = leaders[tech_id].get(f["fabric_id"])
-        # the value fold, frozen too, so leaders see the edition's levers, path and finance, not today's
+        # the value fold, frozen too, so leaders see the edition's levers and path, not today's
         pv["value"] = [technology_assessment(tech_id, fid) for fid in (pv.get("latest_assessment") or {}).get("fabric_ids", [])]
         frozen.append({"_id": f"{edition_id}:{tech_id}", "edition_id": edition_id, "tech_id": tech_id, "pov": pv})
     if frozen:  # the Points of View first: Frontier never finds an edition without them

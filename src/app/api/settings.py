@@ -1,7 +1,8 @@
-"""Settings documents. One so far, `crawl`: the links the crawler never
-follows, the page budget per source, the page-part size and parallelism for
-long pages, and the first-run lookback for data sources. Read once per run
-and recorded on it."""
+"""Settings documents. `crawl`: the links the crawler never follows, the page
+budget per source, the levels of links a crawl follows and the links it keeps
+per level (None: Automatic, shared from the budget), the page-part size and
+parallelism for long pages, and the first-run lookback for data sources. Read
+once per run and recorded on it."""
 
 
 from fastapi import APIRouter
@@ -19,6 +20,8 @@ router = APIRouter()
 class CrawlSettingsEdit(BaseModel):
     skip_url_patterns: list[str] = Field(max_length=500)
     pages_per_source: int = Field(ge=1, le=500)
+    link_depth: int = Field(default=8, ge=1, le=20)
+    links_per_level: int | None = Field(default=None, ge=1, le=200)  # None: Automatic
     page_part_chars: int = Field(ge=20000)
     page_part_concurrency: int = Field(ge=1, le=16)
     lookback_days: int = Field(ge=1, le=365)
@@ -54,7 +57,6 @@ class RadarSettingsEdit(BaseModel):
     classify_pages_cap: int = Field(ge=1, le=50)
     emerging_availability: list[str] = Field(max_length=20)
     find_evidence_results: int = Field(ge=1, le=10)
-    find_evidence_daily_budget: int = Field(ge=0, le=500)
 
     @field_validator("default_time_zone")
     @classmethod
@@ -73,7 +75,7 @@ def get_radar_settings() -> dict:
     return radar_settings()
 
 
-RETIRED = {"classify_token_budget": ""}  # settings the radar no longer has: a save removes them
+RETIRED = {"classify_token_budget": "", "find_evidence_daily_budget": ""}  # settings the radar no longer has: a save removes them
 
 
 @router.put("/settings/radar")

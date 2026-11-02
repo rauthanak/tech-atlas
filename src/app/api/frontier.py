@@ -21,7 +21,7 @@ def frontier(fabric: str | None = None) -> dict:
     if e is None:
         return {"edition": None}
     return {"edition": editions.summary(e), "placed": editions.with_why(e, fabric), "held": editions.rows(e, "held", fabric),
-            **{k: e.get(k) for k in ("fabrics", "stages", "cutpoints", "near_band", "assumptions", "evidence")}}
+            **{k: e.get(k) for k in ("fabrics", "stages", "cutpoints", "grid_from", "near_band", "assumptions", "evidence")}}
 
 
 class Seen(BaseModel):

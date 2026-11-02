@@ -13,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from agent.orchestrator.agent import run_orchestrator
 from agent.orchestrator.tools.categories import category_keys
 from agent.supervisor.agent import Supervisor
+from agent.supervisor.tools.sources import fetch_sources
 from app.services.llm.context import with_context
 from app.services import busy, jobs
 from app.services.db.mongo import get_collection
@@ -73,6 +74,10 @@ def _execute(run_id: str, params: dict) -> None:
             log.exception("orchestrator agent failed; continuing with deterministic categories")
 
         categories = params.get("categories") or category_keys()
+        # how many sources the run will read, so the portal shows "X of N" from the start
+        cap = params.get("max_sources_per_category")
+        get_collection("runs").update_one({"_id": run_id}, {"$set": {
+            "planned_sources": sum(len(fetch_sources(c)[:cap]) for c in categories)}})
         store.set_substage(run_id, "orchestrating", "dispatching")
         store.set_stage(run_id, "crawling")
         with ThreadPoolExecutor(max_workers=get_settings().scout_concurrency,

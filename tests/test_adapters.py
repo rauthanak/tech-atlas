@@ -1,5 +1,5 @@
 """Adapter parsing, offline: the documented response shapes of the APIs that
-need keys (EPO, SEC, USAJOBS), and the job-board digest's stability."""
+need keys (EPO, SEC, USAJOBS), the job-board digest's stability, and the trend pages."""
 
 from datetime import date
 
@@ -130,3 +130,71 @@ def test_usajobs_digest(monkeypatch):
     assert count == 2 and item.kind == "jobs-digest"
     assert "Postings by agency:" in item.text and "(1 at the last run, +1)" in item.text
     assert item.url == "https://www.usajobs.gov/Search/Results?k=post-quantum%20cryptography"
+
+
+def _openalex_answers(papers=True):
+    """OpenAlex's answers by what is asked: years, the most-cited papers, countries, grants."""
+    def fake_fetch(client, method, url, params=None, **kw):
+        if url.endswith("/awards"):
+            return FakeResponse({"group_by": [{"key": "2024", "count": 3}] if papers else []})
+        if params.get("group_by") == "publication_year":
+            return FakeResponse({"group_by": [{"key": "2024", "count": 120}, {"key": "2025", "count": 300}] if papers else []})
+        if params.get("group_by"):
+            return FakeResponse({"group_by": [
+                {"key": "https://openalex.org/countries/CN", "key_display_name": "China", "count": 90},
+                {"key": "https://openalex.org/countries/DE", "key_display_name": "Germany", "count": 40},
+                {"key": "https://openalex.org/countries/US", "key_display_name": "United States", "count": 70}]})
+        return FakeResponse({"results": [
+            {"counts_by_year": [{"year": 2025, "cited_by_count": 10}, {"year": 2024, "cited_by_count": 4}]},
+            {"counts_by_year": [{"year": 2025, "cited_by_count": 5}]}]})
+    return fake_fetch
+
+
+def test_openalex_trends_page(monkeypatch):
+    from agent.scout.tools.adapters import trends
+    monkeypatch.setattr(trends, "fetch", _openalex_answers())
+    monkeypatch.setattr(trends, "years", lambda: [2023, 2024, 2025, 2026])
+    item, count = trends.OPENALEX.digest_item("quantum networking", None)
+    assert "Papers per year: 2023: 0 · 2024: 120 · 2025: 300" in item.text
+    assert "Citations per year to the 2 most-cited of these papers: 2023: 0 · 2024: 4 · 2025: 15" in item.text
+    # the countries Tata named first, 0 when none, then the rest by count
+    assert "United States 70 · IL 0 · CA 0 · SG 0 · China 90 · Germany 40" in item.text
+    assert "Public research grants started per year (not venture funding): 2023: 0 · 2024: 3" in item.text
+    assert item.kind == "trend" and item.url.startswith("https://api.openalex.org/works?") and count == 0
+    again, _ = trends.OPENALEX.digest_item("quantum networking", count)
+    assert again.text == item.text  # stable: an unchanged count stores a stub
+
+
+def test_openalex_trends_no_results(monkeypatch):
+    from agent.scout.tools.adapters import trends
+    monkeypatch.setattr(trends, "fetch", _openalex_answers(papers=False))
+    item, _ = trends.OPENALEX.digest_item("nothing like it", None)
+    assert trends.NONE in item.text and "Papers per year" not in item.text
+
+
+def test_epo_trends_page(monkeypatch):
+    from agent.scout.tools.adapters import trends
+    asked = []
+
+    def fake_search(self, client, cql, first, last):
+        asked.append(cql)
+        if "2023" in cql:
+            return None  # OPS answers "no results" with 404
+        return {"ops:world-patent-data": {"ops:biblio-search": {
+            "@total-result-count": "40" if "2025" in cql else "12",
+            "ops:search-result": {"exchange-documents": [{"exchange-document": EPO_DOC}, {"exchange-document": EPO_DOC}]}}}}
+
+    monkeypatch.setattr(epo_ops.EpoOps, "_search", fake_search)
+    monkeypatch.setattr(trends, "years", lambda: [2023, 2024, 2025, 2026])
+    item, count = trends.EPO.digest_item('ta="qkd"', None)
+    assert asked[0] == '(ta="qkd") and pd within "20230101 20231231"' and len(asked) == 4
+    assert "Patent filings published per year: 2023: 0 · 2024: 12 · 2025: 40" in item.text
+    assert "Applicants on 25 of 2025's filings: TOSHIBA CORP [JP] (2)" in item.text
+    assert item.kind == "patent-trend" and count == 12
+
+
+def test_epo_trends_need_keys(monkeypatch):
+    from agent.scout.tools.adapters import trends
+    from app.settings import get_settings
+    monkeypatch.setattr(get_settings(), "epo_ops_key", "")
+    assert "EPO_OPS_KEY" in trends.EPO.missing_keys()

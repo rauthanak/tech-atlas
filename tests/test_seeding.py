@@ -340,3 +340,14 @@ def test_the_log_names_the_kept_items(db, seeds, caplog):
         assert seeding.load_if_new() is True
     assert ("seeding data: loaded the code's changes; kept 2 edits made in the app "
             "(prompts/scout, signals/ipo); Setup › Changes lists them") in caplog.messages
+
+
+def test_a_field_no_seeded_item_has_yet_is_still_a_change_and_kept(db, seeds):
+    """1 Nov: a source's own page budget is a field no seeded source had, so Changes never showed it."""
+    seeding.load_if_new()
+    _touch("sources", "ietf", pages=300)
+    rows = seeding.changes()["items"]
+    assert [(r["collection"], r["id"], [f["field"] for f in r["fields"]]) for r in rows] == [("sources", "ietf", ["pages"])]
+    seeding.update_seeding_data([{"collection": "sources", "id": "ietf"}])
+    saved = next(s for s in json.loads((seeds / "sources.json").read_text())["sources"] if s["source_id"] == "ietf")
+    assert saved["pages"] == 300 and seeding.changes()["count"] == 0

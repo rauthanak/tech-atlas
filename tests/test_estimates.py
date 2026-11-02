@@ -52,7 +52,7 @@ def test_the_collection_preview_counts_only_sources_a_run_collects(db, monkeypat
         {"_id": "n", "enabled": True, "access": "none", "cost": "free"},        # never collected
         {"_id": "q", "enabled": True, "access": "query", "cost": "free_tier"}])
     assert client.get("/api/runs/preview").json() == {
-        "websites": 1, "data_sources": 1, "pages_per_source": 25}  # from Crawl settings
+        "websites": 1, "data_sources": 1, "pages_per_source": 25, "pages_in_all": 25}  # from Crawl settings
 
 
 def test_an_empty_list_of_technologies_starts_nothing(db):

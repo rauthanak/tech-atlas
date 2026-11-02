@@ -79,14 +79,21 @@ def read_list(name: str) -> list[dict]:
     return json.loads(_path(name).read_text())[name]
 
 
-def list_fields(items: list[dict]) -> list[str]:
-    """A list's seeded fields: every key its items use, in first-seen order."""
+# fields the app can set that no seeding item may have yet: compared, kept as
+# defaults and put back like the others (a source's own page budget; the crawl's
+# levels and links per level)
+EDITABLE = {"sources": ("pages",), "settings": ("link_depth", "links_per_level")}
+
+
+def list_fields(items: list[dict], name: str = "") -> list[str]:
+    """A list's seeded fields: every key its items use, in first-seen order,
+    then the fields the app can set (EDITABLE)."""
     fields: list[str] = []
     for item in items:
         for key in item:
             if key not in fields:
                 fields.append(key)
-    return fields
+    return fields + [f for f in EDITABLE.get(name, ()) if f not in fields]
 
 
 def fingerprint() -> str:
@@ -149,7 +156,7 @@ def _edited_in_app(loaded_at: str, old_ids: dict[str, list[str]]) -> list[dict]:
     refs = []
     for name, id_field in ID_FIELDS.items():
         seeded = {i[id_field]: i for i in read_list(name)}
-        fields = list_fields(list(seeded.values()))
+        fields = list_fields(list(seeded.values()), name)
         for doc in get_collection(name).find({"_id": {"$in": sorted({*seeded, *old_ids.get(name, [])})}}):
             seed = seeded.get(doc["_id"])
             # no seeded_at (a database from before it was kept): loaded_at alone decides
@@ -165,7 +172,7 @@ def _mark_equal() -> None:
     now = _now()
     for name, id_field in ID_FIELDS.items():
         seeded = {i[id_field]: i for i in read_list(name)}
-        fields = list_fields(list(seeded.values()))
+        fields = list_fields(list(seeded.values()), name)
         coll = get_collection(name)
         same = [d["_id"] for d in coll.find({"_id": {"$in": list(seeded)}})
                 if not _differs(fields, seeded[d["_id"]], d)]
@@ -183,7 +190,7 @@ def load(keep=(), old_ids: dict[str, list[str]] | None = None) -> None:
     now = _now()
     for name, id_field in ID_FIELDS.items():
         items = read_list(name)
-        fields = list_fields(items)
+        fields = list_fields(items, name)
         coll = get_collection(name)
         was = set((old_ids or {}).get(name, []))
         live = set(coll.distinct("_id", {"_id": {"$in": sorted(was)}})) if was else set()
@@ -258,7 +265,7 @@ def changes() -> dict:
 
     for name, id_field in ID_FIELDS.items():
         seeded = {i[id_field]: i for i in read_list(name)}
-        fields = list_fields(list(seeded.values()))
+        fields = list_fields(list(seeded.values()), name)
         live = {d["_id"]: d for d in get_collection(name).find()}
         for item_id, doc in live.items():
             seed = seeded.get(item_id)
@@ -301,7 +308,7 @@ def revert(refs: list[dict]) -> dict:
             continue
         now = _now()
         update: dict = {"$set": {**seed, "updated_at": now, "seeded_at": now}}
-        dropped = {f: "" for f in list_fields(items) if f not in seed}
+        dropped = {f: "" for f in list_fields(items, name) if f not in seed}
         if dropped:
             update["$unset"] = dropped
         coll.update_one({"_id": item_id}, update, upsert=True)
@@ -337,7 +344,7 @@ def _write_list(name: str, ids: list[str]) -> int:
     path = _path(name)
     data = json.loads(path.read_text())
     items: list[dict | None] = data[name]
-    fields = list_fields([i for i in items if i])
+    fields = list_fields([i for i in items if i], name)
     position = {item[id_field]: n for n, item in enumerate(items)}
     live = {d["_id"]: d for d in get_collection(name).find({"_id": {"$in": ids}})}
     changed = 0

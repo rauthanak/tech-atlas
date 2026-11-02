@@ -12,9 +12,9 @@
         "mid": "5: material category, ~$1B-scale, or credible path to it.",
         "high": "8–10: reshapes a multi-billion category or creates one."
       },
-      "required_evidence": "At least one analyst or primary market figure WITH its scope and date recorded. One TAM figure is thin support — say so. Give the one market figure your score rests on as figure: the radar shows it to Tata as a band, with its page.",
+      "required_evidence": "A market figure WITH its scope and date recorded, used in this order. 1) A figure for this technology itself. 2) Failing that, a figure for a wider or neighbouring market on the pages that this technology sells into: begin the figure's scope with 'Wider market:' and name it; in the justification, say why it compares and roughly what share of it this technology could take, and score that share, not the whole market. 3) Failing both, mark it unscorable and say what figure is missing. One figure is thin support: say so. Give the one market figure your score rests on as figure: the radar shows it to Tata as a band, with its page.",
       "open_question": "The $100M and $1B marks for a low and a high score: to confirm with Tata.",
-      "version": 2,
+      "version": 3,
       "scope": "technology"
     },
     {

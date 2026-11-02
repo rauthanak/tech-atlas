@@ -65,7 +65,7 @@ def test_the_page_numbers_everything_in_one_list_and_states_the_override(db, mon
     f = got["fabrics"][0]
     assert (f["priority"], f["computed_priority"], f["override"]["reason"]) == ("P1", "P2", "the board asked for it")
     assert f["measures"]["m1"]["refs"] == [1] and f["measures"]["m2"]["refs"] == []
-    assert f["finance"]["needed"] is False and f["path_step"] is None
+    assert f["finance"]["next_step"]["name"] == "Evaluation" and f["path_step"] is None
     assert {m["_id"] for m in got["measures"]} >= {"growth"}  # the run's own measures, for their names
 
 
@@ -198,3 +198,35 @@ def test_the_list_comes_a_page_at_a_time_with_its_filters_and_counts(db):
     assert client.get("/api/scoring/povs", params={"limit": 48, "priority": "none"}).json()["total"] == 1
     assert client.get("/api/scoring/povs", params={"limit": 48, "q": "qui"}).json()["total"] == 1
     assert client.get("/api/scoring/povs", params={"limit": 48, "unsent": True}).json()["total"] == 3  # nothing published: lets go
+
+
+def test_use_cases_carry_their_ballpark_size_biggest_first(db, monkeypatch):
+    a1, a2 = _world(db, monkeypatch, Writer())
+    lever = {"lever_id": "x", "operating_change": "o", "metric": "m", "financial_effect": "f", "evidence_needed": "e",
+             "next_step_when": "n", "pages": []}
+    db["assessments"].update_one({}, {"$set": {"use_cases": [
+        {"key": "cloud:1", "title": "Small one", "rank": 1, "pages": [a1], "levers": [lever],
+         "size": {"basis": "evidence", "amount_usd_bn": 0.3, "covers": "edge kits", "year": 2025, "page": a1}},
+        {"key": "cloud:2", "title": "Big one", "rank": 2, "pages": [a2], "levers": [lever],
+         "size": {"basis": "comparable", "amount_usd_bn": 40, "covers": "CDN", "year": 2018, "page": a2,
+                  "comparable": "CDN in 2018", "why_comparable": "the same buyers"}},
+        {"key": "cloud:3", "title": "Unsized", "rank": 3, "pages": [], "levers": [lever],
+         "size": {"basis": "none", "reason": "No page sizes it.", "evidence_needed": "an analyst figure"}}]}})
+    data = pov.pov_inputs("r1", "edge-ai")[1]["assessment_data"]
+    assert "never write a figure other than the ballpark sizes given" in data
+    assert "ballpark size: $10–100B (CDN, 2018) (comparable: CDN in 2018: the same buyers) [" in data
+    assert "ballpark size: no reliable data: No page sizes it." in data
+    pov.compose_pov("r1", "edge-ai")
+    cases = client.get("/api/scoring/runs/r1/pov/edge-ai").json()["fabrics"][0]["use_cases"]
+    assert [c["title"] for c in cases] == ["Big one", "Small one", "Unsized"]
+    assert cases[0]["size"]["band"] == "$10–100B" and cases[0]["size"]["refs"] and cases[1]["size"]["words"] == (
+        "$100M–1B (edge kits, 2025)")
+    assert cases[2]["size"]["band"] is None and cases[2]["size"]["refs"] == []
+
+
+def test_writing_them_all_waits_for_an_assessment_run(db, monkeypatch):
+    """Writing every waiting Point of View mid-Assess would write from half-finished assessments."""
+    db["scoring_runs"].insert_one({"_id": "busy", "status": "running"})
+    monkeypatch.setattr(pov, "start_compose_all", lambda *a, **k: "never")
+    r = TestClient(app).post("/api/scoring/povs/compose_all", json={})
+    assert r.status_code == 409 and r.json()["detail"].startswith("An assessment run is in progress.")

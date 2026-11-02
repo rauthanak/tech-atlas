@@ -5,6 +5,7 @@ adapter (adapters/). Either way every item takes the same path — stored,
 summarized with the run's signal list, counted — so nothing downstream
 changes."""
 
+import dataclasses
 import logging
 
 from agent.scout.tools import adapters
@@ -13,6 +14,7 @@ from agent.scout.tools.crawl import crawl
 from app.services.db.mongo import get_collection
 from app.services.runs import store
 from app.services.signals import snapshot as run_snapshot
+from app.settings import get_settings
 
 log = logging.getLogger(__name__)
 
@@ -26,9 +28,15 @@ def recorded_snapshot(run_id: str) -> dict:
             else run_snapshot.build())
 
 
-def page_budget(snapshot: dict, override: int | None = None) -> int:
-    """Pages per source: a run's own max_pages_per_source wins over Crawl settings."""
-    return override or int(snapshot["crawl_settings"]["pages_per_source"])
+def page_budget(snapshot: dict, override: int | None = None, source: dict | None = None) -> int:
+    """Pages per source: a run's own max_pages_per_source wins, then the
+    source's own `pages`, then Crawl settings."""
+    return override or (source or {}).get("pages") or int(snapshot["crawl_settings"]["pages_per_source"])
+
+
+def link_depth(snapshot: dict) -> int:
+    """Levels of links a crawl follows: Crawl settings, else the server's .env."""
+    return int((snapshot.get("crawl_settings") or {}).get("link_depth") or get_settings().scrape_max_depth)
 
 
 def make_collect_tool(run_id: str, category: str, sources: list[dict], llm,
@@ -56,10 +64,11 @@ def make_collect_tool(run_id: str, category: str, sources: list[dict], llm,
         if source.get("access") == "none":
             return f"error: {source['source_id']} is never collected ({source.get('note') or 'access: none'})"
         collected.add(source["source_id"])
-        store.start_source(run_id, category, source)
+        own = dataclasses.replace(ctx, max_pages=page_budget(snapshot, max_pages_override, source))
+        store.start_source(run_id, category, source, own.max_pages)
         try:
-            outcome = (adapters.collect(ctx, source) if source.get("access") == "query"
-                       else crawl(ctx, source))
+            outcome = (adapters.collect(own, source) if source.get("access") == "query"
+                       else crawl(own, source))
         except Exception as exc:  # a tool must never raise; the run carries on
             log.exception("collecting %s failed", source["source_id"])
             outcome = Outcome(error=str(exc)[:300])

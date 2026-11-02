@@ -1,23 +1,22 @@
 """Find evidence (agent/find_evidence): its cost first, start it, and how it
-went. Only a person starts it; searches have a daily budget (radar settings),
-counted in the default time zone. Add a link needs no search, so no budget;
-nor does Add evidence (POST /find-evidence/add): links and files a person
-gives for one technology, optionally carried on to its Point of View."""
+went. Only a person starts it, choosing where to look (services/places: the
+radar's data sources, its websites, the web) and how many per place, with the
+cost shown first; there is no daily cap. Add a link needs no search; nor does
+Add evidence (POST /find-evidence/add): links and files a person gives for one
+technology, optionally carried on to its Point of View."""
 
 import json
 
-from datetime import datetime
 from urllib.parse import urlsplit
 from typing import Literal
-from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from agent.find_evidence import job as finder
 from agent.scout.tools.addresses import private_host
 from agent.scout.tools.crawl import extract_pdf
-from app.services import websearch
+from app.services import places as places_service, websearch
 from app.services.db.mongo import get_collection
 from app.services.settings_store import radar_settings
 from app.services.timezone import request_tz
@@ -47,44 +46,68 @@ class Gap(BaseModel):
     tech_id: str = Field(min_length=1)
     fabric_id: str | None = None
     measure_id: str | None = None
+    key: str | None = None  # a use case's key: look for its market size
     url: str | None = Field(default=None, max_length=2000)
     target: Literal["technology", "measure", "use_case"] | None = None  # what a pasted link re-runs
+    places: list[str] | None = Field(default=None, max_length=50)  # where to look (services/places); none: the web
+    per_place: int | None = Field(default=None, ge=1, le=50)       # how many from each place
+    counts: dict[str, int] | None = None                           # a place's own number; the rest take per_place
+
+    @field_validator("counts")
+    @classmethod
+    def _counts(cls, counts: dict[str, int] | None) -> dict[str, int] | None:
+        if counts and any(not 1 <= n <= 50 for n in counts.values()):
+            raise ValueError("each place takes 1 to 50")
+        return counts
 
 
 class Start(BaseModel):
     gap: Gap
 
 
-def searches_today() -> tuple[int, int]:
-    """(searches started today, the daily budget), today in the default zone."""
-    settings = radar_settings()
-    zone = ZoneInfo(settings["default_time_zone"])
-    today = datetime.now(zone).date()
-    used = sum(1 for j in get_collection("find_evidence_jobs").find({"searched": True}, {"at": 1})
-               if datetime.fromisoformat(j["at"]).astimezone(zone).date() == today)
-    return used, int(settings["find_evidence_daily_budget"])
+NO_SEARCH = "Find evidence needs a web search key (the server's .env), or a data source it can search. Add a link still works."
 
 
-def _why_not(used: int, limit: int) -> HTTPException | None:
+def _why_not(chosen: list[str], offered: list[dict]) -> HTTPException | None:
     """Why a search can't start now, as the refusal starting one gets; None when it can."""
-    if not websearch.configured():
-        return HTTPException(status_code=409, detail="Find evidence needs a web search key (the server's .env). "
-                                                     "Add a link still works.")
-    if used >= limit:
-        return HTTPException(status_code=429, detail=f"Today's {limit} searches are used up (counted in "
-                             f"{radar_settings()['default_time_zone']}); more tomorrow. Add a link still works.")
+    usable = {p["id"] for p in offered if p["available"]}
+    if not usable:
+        return HTTPException(status_code=409, detail=NO_SEARCH)
+    if not set(chosen) & usable:
+        return HTTPException(status_code=422, detail="Choose at least one place that can be searched.")
     return None
 
 
+def _cost(chosen: list[str], offered: list[dict], per_place: int, counts: dict[str, int] | None = None) -> dict:
+    """What a search costs in model calls: each page read (a counts place gives one page;
+    a place with its own number reads up to that), each web search (the model runs it),
+    and one to work out the gap again."""
+    picked = [p for p in offered if p["id"] in chosen and p["available"]]
+    pages = sum(1 if p["kind"] == "counts" else (counts or {}).get(p["id"]) or per_place for p in picked)
+    searches = sum(1 for p in picked if p["kind"] in ("websites", "web"))
+    return {"pages": pages, "searches": searches, "calls": pages + searches + 1}
+
+
 @router.get("/find-evidence/preview")
-def preview(kind: str, tech_id: str, fabric_id: str | None = None, measure_id: str | None = None) -> dict:
-    used, limit = searches_today()
-    gap = {"kind": kind, "tech_id": tech_id, "fabric_id": fabric_id, "measure_id": measure_id}
-    why = _why_not(used, limit)
+def preview(kind: str, tech_id: str, fabric_id: str | None = None, measure_id: str | None = None,
+            key: str | None = None, places: str | None = None, per_place: int | None = None,
+            counts: str | None = None) -> dict:
+    """What a search would do, before it runs: where it can look (every place
+    that can be searched is chosen unless `places` says otherwise), under which
+    names, and what it costs."""
+    gap = {"kind": kind, "tech_id": tech_id, "fabric_id": fabric_id, "measure_id": measure_id, "key": key}
+    offered = places_service.places()
+    chosen = places.split(",") if places is not None else [p["id"] for p in offered if p["available"]]
+    n = per_place or int(radar_settings()["find_evidence_results"])
+    tech = get_collection("technologies").find_one({"_id": tech_id}, {"name": 1, "label": 1, "aliases": 1}) or {}
+    own = {k: int(v) for k, v in (c.split(":") for c in (counts or "").split(",") if ":" in c) if v.isdigit()}
+    why = _why_not(chosen, offered)
+    cost = _cost(chosen, offered, n, own)
     return {"configured": websearch.configured(), "provider": websearch.provider(),
-            "query": finder.query_for(gap) if kind != "link" else None,
-            "searches": 1, "page_reads": int(radar_settings()["find_evidence_results"]), "reruns": 1,
-            "budget": {"used": used, "limit": limit}, "why_not": why.detail if why else None}
+            "query": finder.query_for(gap) if kind != "link" else None, "names": places_service.names(tech),
+            "places": [{**p, "chosen": p["id"] in chosen and p["available"]} for p in offered],
+            "per_place": n, "counts": own, "cost": cost, "searches": cost["searches"], "page_reads": cost["pages"], "reruns": 1,
+            "why_not": why.detail if why else None}
 
 
 @router.post("/find-evidence", status_code=202)
@@ -101,7 +124,7 @@ def start(body: Start, tz: str = Depends(request_tz)) -> dict:
     if gap["kind"] == "link":
         if why := _bad_link(gap.get("url") or ""):
             raise HTTPException(status_code=422, detail=why)
-    elif why := _why_not(*searches_today()):
+    elif why := _why_not(gap.get("places") or [places_service.WEB], places_service.places()):
         raise why
     if gap["kind"] == "measure" and not gap.get("measure_id"):
         raise HTTPException(status_code=422, detail="say which measure")

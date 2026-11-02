@@ -1,9 +1,9 @@
 """Data-source adapters, registered by name — one module per free API. The
 shared path (saved-search windows, progress, digests) is in base.py."""
 
-from agent.scout.tools.adapters import base, epo_ops, job_boards, openalex, sec_edgar, usajobs
+from agent.scout.tools.adapters import base, epo_ops, job_boards, openalex, sec_edgar, trends, usajobs
 
-REGISTRY = {a.name: a for a in (epo_ops.ADAPTER, openalex.WORKS, openalex.AWARDS,
+REGISTRY = {a.name: a for a in (epo_ops.ADAPTER, openalex.WORKS, openalex.AWARDS, trends.OPENALEX, trends.EPO,
                                 sec_edgar.ADAPTER, job_boards.ADAPTER, usajobs.ADAPTER)}
 
 

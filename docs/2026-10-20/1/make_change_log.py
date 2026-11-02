@@ -20,7 +20,7 @@ OUT = ROOT / "Tech Radar - changes after the midpoint review.docx"
 NAVY = RGBColor(0x04, 0x1A, 0x4A)
 MUTED = RGBColor(0x49, 0x4A, 0x52)
 
-VERSION = "Version 33 · 26 October 2026"
+VERSION = "Version 42 · 1 November 2026"
 HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the midpoint review, with today's screens and design mock-ups."),
            ("2", "20 Oct 2026", "Change 0 built: technologies say how solid their assessment is, a technology's result in each fabric stays "
                                 "with the technology, plain names on every screen. Real screens replace its mock-up."),
@@ -116,7 +116,30 @@ HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the mi
            ("32", "26 Oct 2026", "Change 54: Points of View print with no half-empty pages, and leaders get an edition pack: "
                                  "the edition's summary and each Act now Point of View in one PDF."),
            ("33", "26 Oct 2026", "Change 53, refined: a Point of View's readers fold into a short table, one row per leader, "
-                                 "so the line stays short however many leaders read it.")]
+                                 "so the line stays short however many leaders read it."),
+           ("34", "31 Oct 2026", "Changes 55–59, from the review with Ankur's team on 28 Oct: the 2×2 as Tata draws it; what "
+                                 "placed each dot, with scores changeable from the grid; sources added in the portal, and the "
+                                 "kinds of sources early signals need; research and patent trends for when to act; a ballpark "
+                                 "size on each use case."),
+           ("35", "31 Oct 2026", "Changes 56 and 57, refined: the grid uses the full width until a dot is clicked, the "
+                                 "panel works from the keyboard, and every free website the radar can read is switched on, "
+                                 "with why on each one that stays off."),
+           ("36", "1 Nov 2026", "Change 57, refined: while a collection runs, its page counts the sources read out of "
+                                 "all it will read, and names the group it is on."),
+           ("37", "1 Nov 2026", "Changes 60 and 61: Find evidence searches down one technology across the radar's own "
+                                 "sources; pages per source, and the crawl's depth and links per level in Setup; writing "
+                                 "and publishing wait for an assessment run; Publish on the Operations page."),
+           ("38", "1 Nov 2026", "Change 61, refined: forms open in a box over the page instead of pushing it down; Find "
+                                 "evidence on every technology; assessment runs in pages; stopping an assessment asks first."),
+           ("39", "1 Nov 2026", "Change 60, refined: Find evidence names each place plainly with what it brings back, "
+                                 "says in one line what isn't set up yet, and counts every model call; the edition pack uses "
+                                 "the screen's width."),
+           ("40", "1 Nov 2026", "Changes 60 and 61, refined: a number per place in Find evidence, and What now after it; "
+                                 "Manage in five plain parts with suggestions as you type; merging is safer."),
+           ("41", "1 Nov 2026", "Change 62: finance figures removed; a merge reports only real clashes and keeps each name "
+                                 "to look for once."),
+           ("42", "1 Nov 2026", "Change 63: an import brings in two rows of one sheet that name one technology as one; market "
+                                 "size can rest on a wider market, named as such.")]
 
 # The numbers in the text, from the live radar on 21 Oct (6 Oct is the run before these changes).
 N = dict(
@@ -155,6 +178,10 @@ SOURCES = [
     ("S11", "Hasan's note of 25 Oct, and our decisions on sign-in that day",
      "Hasan asked that each Point of View count its readers; we agreed sign-in with two roles, accounts kept by "
      "administrators, reset by an administrator until Tata provides an email account, and reads counted for leaders only."),
+    ("S12", "Hasan's email “Review with Ankur and Tata team - Summary” (29 Oct), with Abhishek's reply of 30 Oct, and our deck of 28 Oct",
+     "Ankur's guidance on the three tests: early signals and where they come from, what to watch to decide when to act, "
+     "the 2×2 as on Tata's radar with the scores behind each placement visible and adjustable, and a ballpark market size "
+     "per use case; Abhishek's test cases."),
 ]
 
 # Built screens, in reading order, with their captions: item-N.png or item-N-<screen>.png
@@ -1480,14 +1507,196 @@ ITEMS.append(
                   ("A Point of View's pages (four checked, A4)", "9 · 14 · 19 · 17", "8 · 13 · 16 · 14")],
          diagram=None, before=[]))
 
+
+ITEMS.append(
+    dict(n="55", title="The 2×2 laid out as Tata's own radar", status="Live",
+         source=[("S12", "axis orientation as on Tata's radar (backlog 1); Tata's reference radar")],
+         what=["The leaders' 2×2 now matches Tata's reference radar: how soon a technology arrives runs up the side, with now "
+               "at the top, and how big the prize is runs across. The Defence view puts the disruption threat across instead.",
+               "The four corners carry Tata's meanings: Act (now and big), Plan (big but later), Watch (now but smaller) and "
+               "Wait (later and smaller). Before, Watch and Wait meant the opposite of Tata's.",
+               "The priorities follow Tata's own definitions, from P1 (act now) to P6 (no action yet), on every screen and in "
+               "the setting behind them; every assessment's priorities were worked out again, at no cost.",
+               "The priority tables in Setup and on an assessment run use the same layout."],
+         why="Leaders read the grid with Tata's meanings; a corner that means something else leads to the wrong action.",
+         metrics=[("Corners matching Tata's meaning", "2 of 4", "4 of 4"),
+                  ("Priority cells matching Tata's definitions", "5 of 9", "9 of 9")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="56", title="What placed each dot, and changing a score from the grid", status="Live",
+         source=[("S12", "sub-scores visible and editable from the placement (backlog 2)")],
+         what=["The grid takes the full width until a dot is clicked. Clicking a dot moves the grid left and opens a panel "
+               "beside it (under it on a narrower screen): the measures behind its how soon and how big, each with its score "
+               "and reason, the case against it and its pages, and, under the name, a link to the Point of View. Closing it "
+               "gives the grid the full width again; it works from the keyboard too.",
+               "Administrators get Change on each measure: the same choice as Score by hand on the technology's page, with "
+               "a reason. It applies on the technology's page at once and on the grid from the next edition.",
+               "Each edition records which measures make each axis, so the panel shows exactly what placed the dot."],
+         why="Ankur asked to see, and adjust, the scores behind each placement.",
+         metrics=[("Scores behind a dot, from the grid", "A count of measures", "Each measure, its score and reason")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="57", title="Sources added in the portal, and the kinds of sources early signals need", status="Live",
+         source=[("S12", "where early signals come from; open sources added by the admin; Abhishek's test cases")],
+         what=["Setup › Sources has Add source: a website, or a data source that runs saved searches through one of the "
+               "radar's connectors. It is live at once, listed on Setup › Changes, and kept as a default from there.",
+               "Added or switched on for the next collection: research labs in Israel and Canada, IEEE standards news, "
+               "optics and data-centre trade press, research blogs where new ideas are announced, AI research, and startup "
+               "and open-source sources. The radar's own test cases are never typed into any search.",
+               "Every free website the radar can read is switched on, each checked first by reading a few of its pages. "
+               "Those that ask crawlers not to read them, block automated readers or can't be reached stay off, with why.",
+               "Each collection now takes up to 150 pages from each source.",
+               "A source that's off says why on its row, in plain words: its site asks crawlers not to read it, it turns "
+               "automated readers away, it couldn't be reached, or it needs a free key (the Deployment Guide says where to "
+               "get each one). A site that refuses the radar is named in the collection's report with that reason.",
+               "While a collection runs, its page counts the sources read out of all it will read (for example \"40 of 133 "
+               "sources read, now group H2\"). It used to count only the groups started so far, so a collection part-way "
+               "through looked smaller than it was."],
+         why="Ankur's early signals come from university research, standards and open-source communities, patents and "
+             "startups; the technologies the radar missed in Abhishek's test cases are written about in sources it didn't read.",
+         metrics=[("Adding a source", "Edit the seed file", "Add source in the portal")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="58", title="Research and patent trends, for deciding when to act", status="Live",
+         source=[("S12", "what to watch: startup activity, seed funding, growth in patents and citations over two to three years")],
+         what=["Two new kinds of data source count rather than read: for each saved search, research trends give the papers "
+               "and citations per year over the last three years, where the research comes from (the US, Israel, Canada, "
+               "Singapore and China first) and the public research grants started; patent trends give the patent filings per "
+               "year and who files them. Each is one page per search at each collection, read like any page.",
+               "Signs to watch now look first for Tata's four signs of when to act: startup activity, seed and incubator "
+               "funding, patent filings per year, and research papers and citations per year, with the counts as their "
+               "current value. They never guess a count.",
+               "Patent trends start once the free patent-office keys are set."],
+         why="Ankur named these as the measures that decide when to act; the pages the radar collects show recent events, "
+             "not three-year trends.",
+         metrics=[("Years of counts behind a sign to watch", "None", "Three, and this year so far")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="59", title="A ballpark size on each use case", status="Live",
+         source=[("S12", "size the opportunity as a ballpark, per use case (backlog 3)")],
+         what=["Each use case carries a ballpark size: the market it addresses, or the saving it brings, as a band from "
+               "hundreds of millions to trillions. It comes from a page in the evidence; failing that, from a page that sizes "
+               "a comparable market, named with why it compares; failing that, the radar says there is no reliable figure, "
+               "and why. It never sizes one from the AI's own knowledge.",
+               "The Point of View's use-case table gains a Ballpark size column, biggest first. A use case with no reliable "
+               "figure has Find its market size, which searches the web and asks again.",
+               "The market-size bands are one setting, used by the use cases and the technology's market size alike."],
+         why="Ankur asked for a ballpark to rank use cases against each other: is it worth putting one person on it?",
+         metrics=[("Use cases with a size", "None", "Every use case: a band, a comparable, or why there's none")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="60", title="Find evidence searches down one technology, across the radar's sources", status="Live",
+         source=[("S12", "how the radar gathers evidence on one technology; Abhishek's test cases")],
+         what=["A collection reads across all sources and notices technologies in what it reads; it never asks a source for "
+               "everything about one technology. Find evidence is now the other direction: it starts from one technology and "
+               "searches many places at once, under all its names.",
+               "Pressing Find evidence opens a panel with three choices, each with a default: what to look for (from the gap), "
+               "where to look (the radar's research papers, grants and patents; research and patent counts per year; the "
+               "radar's own websites; the whole web), and how many per place (5, 10, 20, or any number up to 50). A place "
+               "that can't be searched is greyed out with why, such as a missing patent key, or a source searched by company "
+               "rather than by name.",
+               "The cost shows before it runs. While it runs, each place says what it found. Each page is read like a "
+               "collected page and filed under the source it came from; only the part behind the gap is worked out again.",
+               "From the technology's own button, its evidence is judged again and it joins the Assess list; assessing it on "
+               "its own stays one button on its page.",
+               "There is no daily cap on searches any more: the cost line is the check.",
+               "Each place says in plain words what it brings back (\"the most-cited papers of the last three years\"). The "
+               "radar's websites are one web search across all of them, keeping its best results, not a search of each site. "
+               "Places that need a key are said in one line under the list. The cost counts every model call: each page "
+               "read, each web search, and the one that works out the gap again.",
+               "The edition pack puts the grid and Act now side by side on screen; it still prints a page at a time.",
+               "Each place can take its own number; a blank one takes the shared number. When a search ends, What now says "
+               "what the new pages changed and the one thing to do next, with a link to the technology's Next step."],
+         why="Abhishek's test cases turn on depth for one technology (how big and how fast its research grows, whether it "
+             "is held under two names); a sample of a few pages per topic from each collection can't show that.",
+         metrics=[("Where Find evidence looks", "One web search, up to 5 pages",
+                   "The radar's data sources, its websites and the web, up to 50 per place"),
+                  ("Names searched", "The main name only", "Up to three of its names"),
+                  ("Daily cap", "20 searches", "None: the cost is shown before each search")],
+         diagram=None, before=[]))
+
+ITEMS.append(
+    dict(n="61", title="Pages per source, and how deep a website is read", status="Live",
+         source=[("S12", "a broad first run; the 1 Nov collection stopped most websites near 120 pages")],
+         what=["Each source can have its own Pages per collection; left blank, it uses the default in Setup › Settings.",
+               "Setup › Settings gains Levels of links to follow (8) and Links kept per level: Automatic, or a fixed number. "
+               "Automatic shares the pages left across the levels left, so the page budget can always be reached. With a fixed "
+               "number, the screen says when a budget can't be reached and what would reach it.",
+               "Write Points of View and Publish wait while an assessment run is going, greyed out with the reason, so "
+               "nothing is written or published from a half-finished assessment.",
+               "The last step on the Operations page publishes the edition itself, with the same panel as the Briefing.",
+               "Small fixes: the progress line says \"technologies\"; Organize says it merged the names on the new pages, not "
+               "on every page.",
+               "Forms that used to open in the page and push it down now open in a box over it, closed with Esc or Cancel: "
+               "Find evidence, Add evidence, Add a link, Add technology, Add a person, Change on a classification answer, "
+               "Manage and Override priority. Find evidence is on every technology's page, not "
+               "only when its evidence is thin. Assessment runs are listed 20 to a page. Stopping an assessment run asks "
+               "first, as stopping a collection does. Add a link shows its cost before it starts.",
+               "Manage is in five parts, each saying when to use it: its names, Rename, a name filed under the wrong "
+               "technology (bring it here), the same technology under another name (merge it in), and including it in "
+               "assessments. The name boxes suggest matches as you type. A merge now waits while an assessment runs, keeps "
+               "the names to look for from both, says which merged technology had its own assessment or Point of View (kept "
+               "in history), and ends with: assess this one again. Bringing a name here refuses one no technology has, so a "
+               "typo can't create a stray name."],
+         why="At 15 links per level and 8 levels a website could never give more than about 121 pages, whatever its budget, "
+             "so 121 of 133 websites stopped there on 1 Nov with links still waiting.",
+         metrics=[("Most pages a website can give", "About 121, whatever the budget", "Its page budget"),
+                  ("A source's own page budget", "Not possible", "Pages per collection on its page")],
+         diagram=None, before=[]))
+
+
+ITEMS.append(
+    dict(n="62", title="Finance figures removed", status="Live",
+         source=[("S12", "Tata won't be entering finance figures, so the screens that asked for them go")],
+         what=["The Finance screen in Setup, the Finance part of each technology's fabric tab, the Finance defaults in Setup › "
+               "Fabrics, the \"Does it pay?\" column on the Point of View and the Before publishing item about missing finance "
+               "inputs are gone. They had been hidden since 21 Oct.",
+               "The path to scale is unchanged: each step still says what proof it needs, and the boxes for the buyer, budget, "
+               "contracts at risk, cost per outcome and price stay on the fabric tab.",
+               "A merge now lists only the choices that really differed between the two technologies, names each one as people "
+               "see it, and keeps each name to look for once, whatever its capitals. Tested on the live radar by merging the two "
+               "records of Quantum key distribution."],
+         why="Tata won't be entering margin, revenue or cost figures, so nothing would ever fill them.",
+         metrics=[("Finance screens", "Hidden, still built", "Removed")],
+         diagram=None, before=[]))
+ITEMS.append(
+    dict(n="63", title="Two rows of Tata's sheet that are one technology come in as one; market size from a wider market",
+         status="Live",
+         source=[("S12", "Abhishek's test cases: QRNG and QKD were each split across two names, one of them from Tata's own sheet; "
+                         "PQC and QKD were sized differently from the same page")],
+         what=["Tata's sheet names some technologies twice, once in full and once with the abbreviation in brackets, such as "
+               "\"Quantum Random Number Generation\" and \"Quantum Random Number Generation (QRNG)\". When neither row matched a "
+               "technology the radar knew, the two rows became two technologies. Now the AI's reading that two rows are one is "
+               "kept: the later row is proposed as \"Row N of your file\", and accepting it makes both rows one technology. Values "
+               "from the two rows stay on the import's record for a person to choose, as for any technology several rows name.",
+               "The addressable market now follows the same order as a use case's size: a figure for the technology itself; "
+               "failing that, a wider market it sells into, named as a wider market, with why it compares and the share the "
+               "technology could take, the score being for that share; failing both, not scored, saying which figure is missing. "
+               "Before this, the same page sizing the whole quantum market left PQC unscored but scored QKD 3.",
+               "Merging two technologies the radar already knew, without a person, was tried and left out: across the whole "
+               "register the AI grouped related technologies (Generative AI under Large language models), missed real "
+               "duplicates (the three QRNG names), and a merge can't be undone. Duplicates among known technologies are merged "
+               "by a person from Manage."],
+         why="One technology under two names splits its evidence, so it scores lower than it should; and one rule for market "
+             "size keeps placements comparable.",
+         metrics=[("Repeated rows in Tata's sheet split into two technologies", "10", "Proposed as one at the next import")],
+         diagram=None, before=[]))
+
+
 DECISIONS = [
-    "Finance (contribution, payback, break-even) is set aside on every screen until Tata has discussed it; figures and "
-    "code are kept (21 Oct).",
+    "Finance figures (contribution, payback, break-even) are removed: Tata won't enter them (1 Nov). The path to scale keeps "
+    "its notes and price.",
     "Detection stays the core; each Point of View carries the path to scale; no macro model.",
     "Tata's own categories are used: commercial availability, domain and sub-domain, TRL.",
     "An imported list means 'these are emerging technologies we care about'; each row's own commercial availability is kept.",
     "People's choices are kept and never overwritten by a new run: moves, overrides, hand scores, imports, yes or no on nascent.",
-    "The AI never writes a financial figure; contribution, payback and break-even come only from figures Tata enters.",
+    "The AI never writes a financial figure.",
+    "Merging two technologies the radar already knows needs a person; the AI may propose, never merge on its own (1 Nov).",
     "Disruption threat and Serviceable capture are entered by Tata.",
     "Cloud and Security stay separate fabrics for now.",
     "Leaders get their own view: the leaders' view (called Frontier at the review), at the same address as the portal "

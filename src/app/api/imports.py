@@ -210,7 +210,7 @@ def add_technology(body: AddOne, tz: str = Depends(request_tz)) -> dict:
     kept_apart = None
     if body.confirm != "new":
         if group != "proposed":
-            found, kept, _ = imports.propose([name.lower()], "add-by-hand")
+            found, kept, _, _ = imports.propose([name.lower()], "add-by-hand")
             hit, why = found.get(name.lower()), "The organize skill reads it as this technology in other words"
             kept_apart = kept.get(name.lower())
         if hit:

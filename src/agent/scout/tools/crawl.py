@@ -16,6 +16,7 @@ crawl carries on."""
 
 import io
 import logging
+import math
 import re
 import threading
 import time
@@ -39,7 +40,7 @@ log = logging.getLogger(__name__)
 
 USER_AGENT = "TechAtlas/0.1 (emerging-technology radar; research use)"
 MIN_TEXT_CHARS = 200          # below this a page is navigation, not content
-LINK_SELECTION_WIDTH = 15     # frontier wider than this per level gets LLM-pruned
+LINK_SELECTION_WIDTH = 15     # Automatic links per level never keeps fewer than this
 COMMON_FEED_PATHS = ("/feed", "/rss", "/rss.xml", "/feed.xml", "/atom.xml")
 FETCH_ERRORS = (httpx.HTTPError, ValueError, UnicodeError)  # what one fetch may raise
 SKIP_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".css",
@@ -259,11 +260,18 @@ def select_links(llm, prompt, links: list[str], budget: int, never_miss_names: s
 
 # ── the crawl ────────────────────────────────────────────────────────
 
+def level_width(remaining: int, levels_left: int, fixed: int | None = None) -> int:
+    """How many links a level keeps: a fixed number from Setup › Settings, or
+    Automatic: the pages left shared across the levels left, never fewer than
+    LINK_SELECTION_WIDTH, so any page budget can be reached."""
+    return fixed or max(LINK_SELECTION_WIDTH, math.ceil(remaining / max(1, levels_left)))
+
+
 def crawl(ctx: Context, source: dict) -> Outcome:
     """Crawl one website source; every page with content goes through
     ctx.save (stored, summarized with the run's signal list, counted)."""
     settings = get_settings()
-    max_depth = settings.scrape_max_depth
+    max_depth = int(ctx.settings.get("link_depth") or settings.scrape_max_depth)  # as collect.link_depth
     max_pages = ctx.max_pages
     delay = settings.scrape_delay_seconds
     use_browser = settings.use_playwright
@@ -413,6 +421,8 @@ def crawl(ctx: Context, source: dict) -> Outcome:
                         if allowed(client, url):
                             time.sleep(delay)
                             visit(client, url, depth, next_frontier)
+                        else:
+                            outcome.skip(url, "the site's robots.txt asks crawlers not to read it")
                     except InterruptedError:
                         raise
                     except Exception as exc:  # one bad page never stops the source
@@ -437,7 +447,7 @@ def crawl(ctx: Context, source: dict) -> Outcome:
                 if remaining <= 0 or not next_frontier:
                     frontier = []
                     continue
-                width = min(remaining, LINK_SELECTION_WIDTH)
+                width = min(remaining, level_width(remaining, max_depth - depth, ctx.settings.get("links_per_level")))
                 if len(next_frontier) > width:
                     with with_context(run_kind="collection", run_id=ctx.run_id):
                         next_frontier = select_links(ctx.llm, link_prompt, next_frontier, width,

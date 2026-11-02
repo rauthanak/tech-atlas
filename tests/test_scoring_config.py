@@ -72,3 +72,28 @@ def test_a_refused_save_marks_no_technology(config, db):
     tech_status.refresh(["edge-ai"])
     assert _put("priority_grid", {"timeline_cutpoints": []}).status_code == 422
     assert tech_status.pending() == 0
+
+
+def test_the_market_bands_are_checked(db):
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.services.db import seeding
+    seeding.load_if_new()
+    c = TestClient(app)
+    bad = [{"below_usd_bn": 10, "label": "a"}, {"below_usd_bn": 1, "label": "b"}, {"below_usd_bn": None, "label": "c"}]
+    r = c.put("/api/scoring/config/market_bands", json={"bands": bad})
+    assert r.status_code == 422 and "market bands" in r.json()["detail"]
+    r = c.put("/api/scoring/config/market_bands", json={"bands": bad[:2]})
+    assert r.status_code == 422
+    good = [{"below_usd_bn": 1, "label": "under $1B"}, {"below_usd_bn": None, "label": "$1B or more"}]
+    assert c.put("/api/scoring/config/market_bands", json={"bands": good}).status_code == 200
+
+
+def test_the_seeded_priority_grid_is_tatas():
+    """R1: Tata's reference radar: P1 now and high, P2 later and high, P3 now and medium, P4 later and medium,
+    P5 now and low, P6 later and low; "now" is the near band, "later" mid and far."""
+    from app.services.db import seeding
+    grid = next(c for c in seeding.read_list("scoring_config") if c["name"] == "priority_grid")["grid"]
+    tata = {"near": {"high": "P1", "mid": "P3", "low": "P5"}, "mid": {"high": "P2", "mid": "P4", "low": "P6"},
+            "far": {"high": "P2", "mid": "P4", "low": "P6"}}
+    assert grid == {f"{t}_{p}": v for t, row in tata.items() for p, v in row.items()}

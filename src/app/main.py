@@ -13,7 +13,6 @@ from app.api.briefing import router as briefing_router
 from app.api.changes import router as changes_router
 from app.api.classify import router as classify_router
 from app.api.decisions import router as decisions_router
-from app.api.finance import router as finance_router
 from app.api.editions import router as editions_router
 from app.api.frontier import router as frontier_router
 from app.api.find_evidence import router as find_evidence_router
@@ -101,7 +100,6 @@ def create_app() -> FastAPI:
     app.include_router(find_evidence_router, prefix="/api")
     app.include_router(tagging_router, prefix="/api")
     app.include_router(imports_router, prefix="/api")
-    app.include_router(finance_router, prefix="/api")
     app.include_router(frontier_router, prefix="/api")
     app.include_router(editions_router, prefix="/api")
     return app

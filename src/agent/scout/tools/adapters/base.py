@@ -86,6 +86,9 @@ class Adapter:
     example = ""
     keys: tuple[str, ...] = ()      # .env names it needs
     digest = False
+    by_name = False                 # its searches are words, so a technology's name can be searched (Find evidence)
+    find_label = ""                 # Find evidence: what it is, in plain words ("Research papers")
+    find_gives = ""                 # Find evidence: what one search brings back
 
     def missing_keys(self) -> list[str]:
         from app.settings import get_settings
@@ -101,6 +104,15 @@ class Adapter:
         return item
 
     def digest_item(self, query: str, last_count: int | None) -> tuple[Item, int]:
+        raise NotImplementedError
+
+    def name_query(self, name: str) -> str:
+        """A technology's name as this connector's search."""
+        return name
+
+    def top(self, query: str, n: int) -> list[Item]:
+        """Find evidence: the n best results for a one-off search, in one
+        request: no window, no saved progress."""
         raise NotImplementedError
 
 

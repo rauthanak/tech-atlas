@@ -3,6 +3,7 @@ admin edits here (rename, alias moves, enable/disable) restamp documents
 deterministically — no LLM involved — so corrections are cheap and safe."""
 
 import json
+import re
 from collections import Counter
 from typing import Literal
 
@@ -11,7 +12,8 @@ from pydantic import BaseModel, Field
 
 from agent.analyzer.estimate import estimate
 from agent.resolver import restamp, start_resolve
-from app.services import decisions, evidence, jobs, latest_povs, pages, tech_status, watch
+from app.services import decisions, evidence, jobs, latest_povs, market, pages, tech_status, watch
+from app.services import merge as merging
 from app.services.db.mongo import get_collection
 from app.services.settings_store import radar_settings
 from app.services.timezone import now_utc, request_tz
@@ -184,6 +186,23 @@ def technology_labels() -> dict:
         {"label": {"$nin": [None, ""]}}, {"name": 1, "label": 1})}
 
 
+@router.get("/technologies/lookup")
+def lookup(q: str, limit: int = 8) -> dict:
+    """Suggestions while a person types a technology's name or one of its names
+    (Manage: Claim, Merge): those whose name or a name found on pages contains
+    the words, most pages first, each with the names that matched."""
+    words = q.strip().lower()
+    if len(words) < 2:
+        return {"technologies": []}
+    match = {"$regex": re.escape(words)}
+    rows = get_collection("technologies").find({"$or": [{"name": match}, {"aliases": match}]},
+                                               {"name": 1, "label": 1, "aliases": 1, "page_count": 1, "enabled": 1}
+                                               ).sort("page_count", -1).limit(max(1, min(limit, 20)))
+    return {"technologies": [{"id": t["_id"], "name": display_name(t), "pages": t.get("page_count") or 0,
+                              "enabled": t.get("enabled", True),
+                              "names": [a for a in t.get("aliases") or [] if words in a][:5]} for t in rows]}
+
+
 @router.get("/technologies/{tech_id}")
 def get_technology(tech_id: str) -> dict:
     t = get_collection("technologies").find_one({"_id": tech_id})
@@ -318,12 +337,14 @@ def technology_assessment(tech_id: str, fabric: str | None = None) -> dict:
         "use_case_decisions": {d["key"]: {k: d.get(k) for k in ("_id", "value", "at", "tz")}
                                for d in decs if d["kind"] == "use_case" and d.get("fabric_id") == chosen["fabric_id"]},
         "cited_pages": _pages_of({p for uc in chosen.get("use_cases") or []
-                                  for p in [*(uc.get("pages") or []), *(q for lv in uc.get("levers") or [] for q in lv.get("pages") or [])]}
+                                  for p in [*(uc.get("pages") or []), *(q for lv in uc.get("levers") or [] for q in lv.get("pages") or []),
+                                            *([uc["size"]["page"]] if (uc.get("size") or {}).get("page") else [])]}
                                  | {b["page"] for b in chosen.get("suggested_bottlenecks") or []}),
         "fabrics": [{"fabric_id": f["fabric_id"], "fabric": f["fabric"], "priority": f["effective"]["priority"],
                      "computed_priority": f["effective"]["computed_priority"],
                      "override": bool(f["effective"]["override"]), "states": eff.counts(f)} for f in fabrics],
-        "assessment": {**chosen, "watch_metrics": watch.apply(chosen.get("watch_metrics") or [], decs)},
+        "assessment": {**chosen, "watch_metrics": watch.apply(chosen.get("watch_metrics") or [], decs),
+                       "use_cases": [{**uc, "size": market.use_case_size(uc.get("size"))} for uc in chosen.get("use_cases") or []]},
         "measures": [{k: m.get(k) for k in ("_id", "code", "name", "axis", "scope", "definition", "required_evidence")}
                      for m in get_collection("measures").find()],
     }
@@ -433,13 +454,14 @@ class MergeParams(BaseModel):
 @router.post("/technologies/{tech_id}/merge")
 def merge_technologies(tech_id: str, params: MergeParams) -> dict:
     """Merge whole technologies into this one — the user's judgment overriding
-    the LLM's. Each entry in `others` is a tech id or exact name. The target's
-    name survives; every alias of the absorbed technologies moves over, and so
-    do the choices people made on them (where the target has its own choice on
-    the same thing, the target's is kept and the merge says so) and catalog
-    membership; the absorbed entries are deleted, and all documents restamp.
-    History stays where it was: assessments, Points of View and editions keep
-    the absorbed ids."""
+    the LLM's. Each entry in `others` is a tech id or exact name; what moves
+    is services/merge's. The merge says which absorbed ones were assessed or
+    had a Point of View, and that the kept one needs assessing again to read
+    their pages. Refused while an assessment runs: it may be assessing one of
+    them."""
+    from app.services import busy
+    if why := busy.reason("scoring"):
+        raise HTTPException(status_code=409, detail=f"{why} Merge when it finishes.")
     techs = get_collection("technologies")
     target = techs.find_one({"_id": tech_id})
     if target is None:
@@ -453,49 +475,8 @@ def merge_technologies(tech_id: str, params: MergeParams) -> dict:
         if other["_id"] == tech_id:
             raise HTTPException(status_code=422, detail="cannot merge a technology into itself")
         absorbed.append(other)
-    merged = _carry_over(tech_id, absorbed)  # before the delete, so running it again after a stop is safe
-    aliases = sorted({a for o in absorbed for a in o.get("aliases", [])}
-                     | {o["name"] for o in absorbed})
-    techs.update_one({"_id": tech_id},
-                     {"$addToSet": {"aliases": {"$each": aliases}},
-                      "$set": {"updated_at": now_utc()}})
-    techs.delete_many({"_id": {"$in": [o["_id"] for o in absorbed]}})
-    jobs.later(restamp, techs.find_one({"_id": tech_id}, {"aliases": 1})["aliases"])  # the pages that name it or what it took in
-    tech_status.touch([tech_id, *(o["_id"] for o in absorbed)], now=True)  # the absorbed lose their rows
+    merged = merging.merge(tech_id, absorbed)
     return {**get_collection("technologies").find_one({"_id": tech_id}), "merge": merged}
-
-
-def _same_thing(d: dict) -> tuple:
-    return d["kind"], d.get("fabric_id"), d.get("measure_id"), d.get("field"), d.get("key")
-
-
-def _carry_over(tech_id: str, absorbed: list[dict]) -> dict:
-    """The absorbed technologies' choices in force move to the target, one
-    technology after another, unless the target already has one on the same
-    thing: then the target's is kept and the other is replaced. Catalog
-    membership moves when the target has none. What moved, in plain words."""
-    from app.api.decisions import described
-    coll, techs = get_collection("decisions"), get_collection("technologies")
-    moved, conflicts, carried = 0, [], False
-    for o in absorbed:
-        theirs = {_same_thing(d): d for d in decisions.active([tech_id])}
-        mine = decisions.active([o["_id"]])
-        clash = [d for d in mine if _same_thing(d) in theirs]
-        if clash:
-            coll.update_many({"_id": {"$in": [d["_id"] for d in clash]}},
-                             {"$set": {"active": False, "replaced_at": now_utc()}})
-        coll.update_many({"_id": {"$in": [d["_id"] for d in mine]}}, {"$set": {"tech_id": tech_id, "merged_from": o["_id"]}})
-        moved += len(mine) - len(clash)
-        for d in clash:
-            kept, dropped = described([theirs[_same_thing(d)], d])
-            conflicts.append({"kept": kept["what"], "dropped": dropped["what"], "from": o["name"]})
-        target = techs.find_one({"_id": tech_id}, {"imported": 1, "origin": 1}) or {}
-        catalog = {f: o[f] for f in ("imported", "origin") if o.get(f) and not target.get(f)}
-        if catalog:
-            techs.update_one({"_id": tech_id}, {"$set": catalog})
-            carried = True
-    return {"absorbed": [{"id": o["_id"], "name": o["name"]} for o in absorbed], "choices_moved": moved,
-            "catalog_carried": carried, "conflicts": conflicts}
 
 
 class AliasMove(BaseModel):
@@ -507,9 +488,16 @@ def claim_alias(tech_id: str, move: AliasMove) -> dict:
     """Move a raw alias string to this technology (from wherever it lives).
     The fix for a bad merge: claim the stray alias, documents restamp."""
     techs = get_collection("technologies")
-    target = techs.find_one({"_id": tech_id}, {"_id": 1})
+    target = techs.find_one({"_id": tech_id}, {"aliases": 1, "name": 1})
     if target is None:
         raise HTTPException(status_code=404, detail=f"unknown technology {tech_id!r}")
+    name = move.alias.strip().lower()
+    if name == target["name"] or name in (target.get("aliases") or []):
+        raise HTTPException(status_code=422, detail=f"“{name}” is already one of its names.")
+    if not techs.find_one({"_id": {"$ne": tech_id}, "aliases": name}, {"_id": 1}):
+        raise HTTPException(status_code=404, detail=f"No technology has the name “{name}”. Check the spelling, or add it "
+                                                    "under Edit names so collections look for it.")
+    move = AliasMove(alias=name)
     techs.update_many({"_id": {"$ne": tech_id}}, {"$pull": {"aliases": move.alias}})
     techs.update_one({"_id": tech_id},
                      {"$addToSet": {"aliases": move.alias},

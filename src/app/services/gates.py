@@ -61,7 +61,7 @@ def gate2(all_states: dict | None = None) -> list[dict]:
     chosen = decisions.active([i for i, s in on.items() if s.get("assessment")])
     applied = latest_applied(all_states=on, chosen=chosen)
     items: dict[str, list[dict]] = {"unscored": [], "waiting_for_tata": [], "override_moved": [], "maturity_mismatch": [],
-                                    "suggested_use_cases": [], "finance_missing": [], "ready_next_step": []}
+                                    "suggested_use_cases": [], "ready_next_step": []}
     from app.services import finance
     path = finance.steps()
     from app.services import classify_effective
@@ -92,10 +92,6 @@ def gate2(all_states: dict | None = None) -> list[dict]:
                          for o in opens for t in o["suggested_use_cases"]]
         if waiting_cases:
             items["suggested_use_cases"].append({**row, "cases": waiting_cases})
-        gaps = [{"fabric_id": o["fabric_id"], "fabric": o["fabric"], "missing": o["finance_missing"]}
-                for o in opens if o["finance_missing"]]
-        if gaps:
-            items["finance_missing"].append({**row, "gaps": gaps})
         ready = [{"fabric_id": o["fabric_id"], "fabric": o["fabric"], "at": o["step"], "next": o["next_step"]["name"]}
                  for o in opens if o["next_step"] and o["next_step"]["in_hand"]]
         if ready:
@@ -107,8 +103,7 @@ def gate2(all_states: dict | None = None) -> list[dict]:
         if level and maturity is not None and trl_band(level) != score_band(maturity):
             items["maturity_mismatch"].append({**row, "trl": level, "maturity": maturity})
     items["unscored"].sort(key=lambda r: (not r["blocking"], r["best"], r["name"]))
-    for kind in ("waiting_for_tata", "override_moved", "maturity_mismatch", "suggested_use_cases", "finance_missing",
-                 "ready_next_step"):
+    for kind in ("waiting_for_tata", "override_moved", "maturity_mismatch", "suggested_use_cases", "ready_next_step"):
         items[kind].sort(key=lambda r: (r["best"], r["name"]))
     return [{"kind": kind, "count": len(rows), "technologies": rows} for kind, rows in items.items() if rows]
 
@@ -116,7 +111,7 @@ def gate2(all_states: dict | None = None) -> list[dict]:
 def fabric_open(tech_id: str, f: dict, mine: list[dict], path: dict) -> dict:
     """What's still open for a technology in one fabric, as people left it
     (`mine`: its choices in force): Gate 2's items (measures to settle,
-    suggested use cases, finance figures from Proof of concept on), then what
+    suggested use cases), then what
     isn't recorded yet (the step reached, the blockers, an owner) and what the
     next step still needs. One count for the technology page and Gate 2."""
     from app.services import finance
@@ -131,8 +126,6 @@ def fabric_open(tech_id: str, f: dict, mine: list[dict], path: dict) -> dict:
         "override_moved": f["effective"]["override_moved"],
         # suggested use cases (not from the pages) wait for a person to accept or reject
         "suggested_use_cases": [s["title"] for s in f.get("suggested_use_cases") or [] if s["key"] not in decided],
-        # at Proof of concept or later, finance figures need their inputs
-        "finance_missing": sorted({x for v in fig["missing"].values() for x in v}) if fig["needed"] and finance.SHOWN else [],
         "step": fig["step"]["name"] if fig["step"] else None,
         # Nick's ladder: once a step is set, what the next rung still needs (services/finance)
         "next_step": {"name": nxt["name"], "in_hand": nxt["in_hand"],

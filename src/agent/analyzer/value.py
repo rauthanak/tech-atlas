@@ -13,6 +13,13 @@ would show one, and up to two suggested use cases (no citations) for a person
 to accept before publishing. The model never writes a figure: a chain with
 money or a percentage is refused and asked again.
 
+Each use case carries a ballpark size (28 Oct review): from a page that
+sizes it, else from a page that sizes a comparable market (named, with why it
+compares), else "none" with why. The size is the one figure the skill writes,
+always with its page; one that can't be used is kept as "none" with the
+reason, never a reason to ask again. The band is worked out when read
+(services/market.py).
+
 It also suggests which of the fabric's listed blockers the pages show, each
 with why, the words and the page; a person ticks them or not. A malformed
 suggestion is left out, never a reason to ask again."""
@@ -48,6 +55,34 @@ def task_values(fabric: dict, mechs: list[dict]) -> dict:
 
 def task(fabric: dict, mechs: list[dict]) -> Task:
     return Task("value_levers", "value_levers", "Map where the value lands", task_values(fabric, mechs))
+
+
+def _number(v) -> float | None:
+    return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+
+
+def size(given, cite) -> dict:
+    """A use case's ballpark size as stored; anything unusable becomes "none" with why."""
+    def none(reason: str, needed: str = "") -> dict:
+        return {"basis": "none", "reason": reason, "evidence_needed": needed}
+    if not isinstance(given, dict):
+        return none("No size was given.")
+    text = {k: str(given.get(k) or "").strip() for k in ("covers", "comparable", "why_comparable", "reason", "evidence_needed")}
+    if given.get("basis") not in ("evidence", "comparable"):
+        return none(text["reason"] or "No page states a size.", text["evidence_needed"])
+    page = cite([given.get("page")])
+    usd, pct = _number(given.get("amount_usd_bn")), _number(given.get("saving_pct"))
+    usd = usd if usd is not None and usd > 0 else None
+    pct = pct if pct is not None and 0 < pct <= 100 else None
+    if not page:
+        return none("The size cited no page from the evidence.")
+    if (usd is None) == (pct is None):
+        return none("The size gave no usable figure.")
+    if given["basis"] == "comparable" and not (text["comparable"] and text["why_comparable"]):
+        return none("A comparable must say what it is compared with and why.")
+    return {"basis": given["basis"], "amount_usd_bn": usd, "saving_pct": pct, "covers": text["covers"],
+            "year": given.get("year") if isinstance(given.get("year"), int) else None,
+            "comparable": text["comparable"] or None, "why_comparable": text["why_comparable"] or None, "page": page[0]}
 
 
 def check(fabric: dict, mechs: list[dict], pages: list[str]):
@@ -93,7 +128,7 @@ def check(fabric: dict, mechs: list[dict], pages: list[str]):
             cases.append({"key": f"{fabric['_id']}:{rank}", "title": str(uc["title"]).strip(), "rank": rank, "cited": True,
                           "suggested": False, "pages": cite(uc.get("pages")),
                           "levers": [lever(given[lv["lever_id"]], lv, n, rank) for n, lv in enumerate(required, 1)],
-                          "capital": {"direction": cap["direction"], "why": why}})
+                          "capital": {"direction": cap["direction"], "why": why}, "size": size(uc.get("size"), cite)})
         none = value.get("no_use_case") if isinstance(value.get("no_use_case"), dict) else None
         suggested = [{"key": f"{fabric['_id']}:s{n}", "title": str(s.get("title") or "").strip(), "why": str(s.get("why") or "").strip(),
                       "cited": False, "suggested": True}

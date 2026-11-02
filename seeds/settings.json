@@ -23,10 +23,12 @@
         "youtube.com",
         "instagram.com"
       ],
-      "pages_per_source": 60,
-      "page_part_chars": 120000,
+      "pages_per_source": 150,
+      "page_part_chars": 1200000,
       "page_part_concurrency": 4,
-      "lookback_days": 30
+      "lookback_days": 30,
+      "link_depth": 8,
+      "links_per_level": null
     },
     {
       "name": "radar",
@@ -41,7 +43,6 @@
         "early_commercial"
       ],
       "find_evidence_results": 5,
-      "find_evidence_daily_budget": 20,
       "frontier_near_band": 0.5
     }
   ]

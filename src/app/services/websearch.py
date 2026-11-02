@@ -43,11 +43,11 @@ def provider() -> str:
 def configured() -> bool:
     """An Anthropic search needs the key and an Anthropic model to run it."""
     return provider() == "anthropic" and bool(get_settings().anthropic_api_key) and \
-        LLM.initialize().provider == "anthropic"
+        getattr(LLM.initialize(), "provider", None) == "anthropic"
 
 
-def search(query: str, n: int) -> list[dict]:
+def search(query: str, n: int, sites: list[str] | None = None) -> list[dict]:
     if not configured():
         raise NotConfigured("Find evidence needs a web search: it uses the Anthropic model's own search, so set "
                             "ANTHROPIC_API_KEY and an Anthropic MODEL_NAME in the server's .env. Add a link works without it.")
-    return LLM.initialize().web_search(query, n)
+    return LLM.initialize().web_search(query, n, sites)

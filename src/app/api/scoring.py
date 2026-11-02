@@ -78,13 +78,6 @@ class Lever(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
 
 
-class FinanceDefaults(BaseModel):
-    margin_low: float | None = Field(default=None, ge=0, le=1)
-    margin_high: float | None = Field(default=None, ge=0, le=1)
-    loss_without: float | None = Field(default=None, ge=0, le=1)
-    loss_with: float | None = Field(default=None, ge=0, le=1)
-
-
 class FabricEdit(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     definition: str = Field(min_length=1, max_length=4000)
@@ -96,7 +89,6 @@ class FabricEdit(BaseModel):
     key_metrics: str | None = Field(default=None, max_length=2000)
     bottlenecks: list[str] | None = Field(default=None, max_length=20)
     cautions: str | None = Field(default=None, max_length=2000)
-    finance_defaults: FinanceDefaults | None = None
 
 
 @router.get("/scoring/fabrics")
@@ -107,7 +99,7 @@ def list_fabrics() -> dict:
 @router.put("/scoring/fabrics/{fabric_id}")
 def update_fabric(fabric_id: str, edit: FabricEdit) -> dict:
     changes = edit.model_dump()
-    for key in ("levers", "key_metrics", "bottlenecks", "cautions", "finance_defaults"):
+    for key in ("levers", "key_metrics", "bottlenecks", "cautions"):
         if changes[key] is None:
             del changes[key]
     return _apply_edit("fabrics", fabric_id, changes)
@@ -193,6 +185,12 @@ def _reasons(name: str, current: dict, changes: dict) -> list[str]:
             why.append("the evidence limit is a whole number of tokens above 0, such as 500,000")
     if "mode" in changes and changes["mode"] not in ("stacked", "per_measure"):
         why.append("an assessment calls the model one of two ways: stacked or per_measure")
+    if "bands" in changes:
+        b = changes["bands"]
+        tops = [x.get("below_usd_bn") for x in b] if isinstance(b, list) and all(isinstance(x, dict) for x in b) else []
+        if not (len(tops) >= 2 and tops[-1] is None and all(_number(t) and t > 0 for t in tops[:-1])
+                and tops[:-1] == sorted(set(tops[:-1])) and all(str(x.get("label") or "").strip() for x in b)):
+            why.append("the market bands each have a label and an upper limit in US$ billions, rising, the last one with none")
     if "map" in changes:
         m = changes["map"]
         if not (isinstance(m, dict) and set(m) == {"near", "mid", "far"} and all(isinstance(v, str) and v.strip()

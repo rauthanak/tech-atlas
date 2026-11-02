@@ -38,6 +38,21 @@ def _cpc(classification: dict) -> str:
     return "".join(parts) + (f"{group}/{sub}" if group else "")
 
 
+def applicants(doc: dict) -> list[str]:
+    """One exchange-document's applicants, in the EPO's own spelling when it gives one."""
+    parties = as_list((((doc.get("bibliographic-data") or {}).get("parties") or {}).get("applicants") or {}).get("applicant"))
+    names = [text_of((a.get("applicant-name") or {}).get("name")) for a in parties if a.get("@data-format") == "epodoc"] \
+        or [text_of((a.get("applicant-name") or {}).get("name")) for a in parties]
+    return [n for n in names if n]
+
+
+def documents(data: dict | None) -> tuple[int, list[dict]]:
+    """A search reply's total and its exchange-documents (none for OPS's 404)."""
+    search = ((data or {}).get("ops:world-patent-data") or {}).get("ops:biblio-search") or {}
+    entries = as_list((search.get("ops:search-result") or {}).get("exchange-documents"))
+    return int(search.get("@total-result-count") or 0), [d for e in entries for d in as_list(e.get("exchange-document", e))]
+
+
 def parse_document(doc: dict) -> Item:
     """One exchange-document from a search reply."""
     biblio = doc.get("bibliographic-data") or {}
@@ -52,10 +67,7 @@ def parse_document(doc: dict) -> Item:
     titles = as_list(biblio.get("invention-title"))
     title = next((text_of(t) for t in titles if isinstance(t, dict) and t.get("@lang") == "en"),
                  text_of(titles[0]) if titles else "") or "(untitled patent)"
-    applicants = as_list(((biblio.get("parties") or {}).get("applicants") or {}).get("applicant"))
-    names = [text_of((a.get("applicant-name") or {}).get("name")) for a in applicants
-             if a.get("@data-format") == "epodoc"] or \
-            [text_of((a.get("applicant-name") or {}).get("name")) for a in applicants]
+    names = applicants(doc)
     classes = as_list((biblio.get("patent-classifications") or {}).get("patent-classification"))
     cpc = list(dict.fromkeys(c for c in (_cpc(x) for x in classes) if c))
     abstracts = as_list(doc.get("abstract"))
@@ -81,6 +93,20 @@ class EpoOps(Adapter):
     search_help = ('CQL over titles and abstracts, e.g. ta="quantum key distribution". '
                    "The publication-date window is added for you.")
     example = 'ta="quantum key distribution"'
+    by_name = True
+    find_label = "Patents"
+    find_gives = "patents filed in the last three years"
+
+    def name_query(self, name: str) -> str:
+        return f'ta="{name.replace(chr(34), " ")}"'
+
+    def top(self, query: str, n: int) -> list[Item]:
+        """The first n filings of the last three years, in the office's order."""
+        today = date.today()
+        cql = f'({query}) and pd within "{today.year - 3}0101 {today:%Y%m%d}"'
+        with httpx.Client(timeout=60) as client:
+            data = self._search(client, cql, 1, min(n, PAGE))
+        return [parse_document(d) for d in documents(data)[1]] if data else []
 
     def __init__(self) -> None:
         self._token: str | None = None
@@ -126,12 +152,8 @@ class EpoOps(Adapter):
                 data = self._search(client, cql, first, last)
                 if data is None:
                     break
-                search = (data.get("ops:world-patent-data") or {}).get("ops:biblio-search") or {}
-                total = int(search.get("@total-result-count") or 0)
-                result = search.get("ops:search-result") or {}
-                for entry in as_list(result.get("exchange-documents")):
-                    for doc in as_list(entry.get("exchange-document", entry)):
-                        items.append(parse_document(doc))
+                total, docs = documents(data)
+                items += [parse_document(doc) for doc in docs]
                 if last >= min(total, MAX_RESULTS):
                     break
                 first = last + 1

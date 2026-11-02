@@ -30,7 +30,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -70,7 +70,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -80,7 +80,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -110,7 +110,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -120,7 +120,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -150,7 +150,7 @@
       "horizon": "H1",
       "cluster": "corporate_research_vendor_events",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -160,7 +160,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -223,7 +223,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -263,7 +263,7 @@
       "horizon": "H1",
       "cluster": "analysts_trade_press",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -324,8 +324,11 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
-      "access": "crawl"
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.ycombinator.com/blog"
+      ]
     },
     {
       "source_id": "techstars",
@@ -364,10 +367,10 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl",
       "entry_urls": [
-        "https://a16z.com/feed"
+        "https://a16z.com/news-content/"
       ]
     },
     {
@@ -397,7 +400,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -427,7 +430,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -437,7 +440,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -448,7 +451,8 @@
       "cluster": "vc_startup_developer",
       "cost": "free",
       "enabled": false,
-      "access": "crawl"
+      "access": "crawl",
+      "note": "Its robots.txt asks crawlers like the radar's not to read it (only Google is allowed)."
     },
     {
       "source_id": "stackoverflow_trends",
@@ -458,7 +462,8 @@
       "cluster": "vc_startup_developer",
       "cost": "free",
       "enabled": false,
-      "access": "crawl"
+      "access": "crawl",
+      "note": "It turns away automated readers (the site answers 429, too many requests)."
     },
     {
       "source_id": "kaggle",
@@ -467,7 +472,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -490,7 +495,8 @@
       "cost": "free",
       "enabled": false,
       "access": "crawl",
-      "follow_outbound": true
+      "follow_outbound": true,
+      "note": "Its robots.txt asks crawlers like the radar's not to read it; Reddit offers research access through its own programme."
     },
     {
       "source_id": "reddit_networking",
@@ -501,7 +507,8 @@
       "cost": "free",
       "enabled": false,
       "access": "crawl",
-      "follow_outbound": true
+      "follow_outbound": true,
+      "note": "Its robots.txt asks crawlers like the radar's not to read it; Reddit offers research access through its own programme."
     },
     {
       "source_id": "reddit_netsec",
@@ -512,7 +519,8 @@
       "cost": "free",
       "enabled": false,
       "access": "crawl",
-      "follow_outbound": true
+      "follow_outbound": true,
+      "note": "Its robots.txt asks crawlers like the radar's not to read it; Reddit offers research access through its own programme."
     },
     {
       "source_id": "reddit_cloud",
@@ -523,7 +531,8 @@
       "cost": "free",
       "enabled": false,
       "access": "crawl",
-      "follow_outbound": true
+      "follow_outbound": true,
+      "note": "Its robots.txt asks crawlers like the radar's not to read it; Reddit offers research access through its own programme."
     },
     {
       "source_id": "cncf_landscape",
@@ -532,7 +541,7 @@
       "horizon": "H2",
       "cluster": "vc_startup_developer",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -561,7 +570,8 @@
         "https://arxiv.org/list/eess.SP/recent",
         "https://arxiv.org/list/quant-ph/recent",
         "https://arxiv.org/list/cs.RO/recent",
-        "https://arxiv.org/list/cs.AI/recent"
+        "https://arxiv.org/list/cs.AI/recent",
+        "https://arxiv.org/list/cs.LG/recent"
       ]
     },
     {
@@ -592,7 +602,8 @@
       "cluster": "preprints_journals",
       "cost": "free",
       "enabled": false,
-      "access": "crawl"
+      "access": "crawl",
+      "note": "It turns away automated readers (the site answers 403, access refused)."
     },
     {
       "source_id": "nature",
@@ -640,7 +651,7 @@
       "horizon": "H3",
       "cluster": "preprints_journals",
       "cost": "free_tier",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -660,18 +671,24 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false,
-      "access": "crawl"
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.csail.mit.edu/news"
+      ]
     },
     {
       "source_id": "stanford_ai",
-      "name": "Stanford AI Lab",
-      "url": "https://ai.stanford.edu",
+      "name": "Stanford AI (HAI)",
+      "url": "https://hai.stanford.edu",
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false,
-      "access": "crawl"
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://hai.stanford.edu/news"
+      ]
     },
     {
       "source_id": "berkeley_bair",
@@ -733,7 +750,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -744,7 +761,8 @@
       "cluster": "university_labs",
       "cost": "free",
       "enabled": false,
-      "access": "crawl"
+      "access": "crawl",
+      "note": "The site couldn't be reached when checked; it may be reachable from Tata's network in India. Switch it on to try."
     },
     {
       "source_id": "iitb_cse",
@@ -753,7 +771,7 @@
       "horizon": "H3",
       "cluster": "university_labs",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -764,7 +782,8 @@
       "cluster": "university_labs",
       "cost": "free",
       "enabled": false,
-      "access": "crawl"
+      "access": "crawl",
+      "note": "The site couldn't be reached when checked; it may be reachable from Tata's network in India. Switch it on to try."
     },
     {
       "source_id": "neurips",
@@ -809,11 +828,11 @@
     {
       "source_id": "usenix_nsdi",
       "name": "USENIX NSDI",
-      "url": "https://www.usenix.org/conference/nsdi",
+      "url": "https://www.usenix.org/conferences/byname/178",
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -823,7 +842,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -849,21 +868,21 @@
     {
       "source_id": "usenix_osdi",
       "name": "USENIX OSDI",
-      "url": "https://www.usenix.org/conference/osdi",
+      "url": "https://www.usenix.org/conferences/byname/179",
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
       "source_id": "usenix_security",
       "name": "USENIX Security",
-      "url": "https://www.usenix.org/conference/usenixsecurity",
+      "url": "https://www.usenix.org/conferences/byname/108",
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -893,7 +912,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -903,7 +922,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free_tier",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -923,7 +942,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -933,7 +952,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -943,7 +962,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -963,7 +982,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -983,7 +1002,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1003,7 +1022,7 @@
       "horizon": "H3",
       "cluster": "conferences",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1094,7 +1113,7 @@
       "horizon": "H3",
       "cluster": "standards_foundations",
       "cost": "free_tier",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1201,7 +1220,8 @@
         "ta=\"zero trust network access\"",
         "ta=\"edge AI inference\"",
         "ta=\"network digital twin\""
-      ]
+      ],
+      "note": "Needs the European Patent Office's free keys (EPO_OPS_KEY and EPO_OPS_SECRET): see the Deployment Guide."
     },
     {
       "source_id": "wipo_patentscope",
@@ -1301,7 +1321,8 @@
       "cluster": "government_funding",
       "cost": "free",
       "enabled": false,
-      "access": "crawl"
+      "access": "crawl",
+      "note": "Its pages are drawn by script and gave no readable text when checked."
     },
     {
       "source_id": "dst_india",
@@ -1310,7 +1331,7 @@
       "horizon": "H3",
       "cluster": "government_funding",
       "cost": "free",
-      "enabled": false,
+      "enabled": true,
       "access": "crawl"
     },
     {
@@ -1480,7 +1501,8 @@
         "artificial intelligence",
         "zero trust",
         "satellite communications"
-      ]
+      ],
+      "note": "Needs USAJOBS' free key (USAJOBS_API_KEY): see the Deployment Guide."
     },
     {
       "source_id": "nsf_news",
@@ -1673,6 +1695,213 @@
       "enabled": false,
       "access": "none",
       "entry_urls": []
+    },
+    {
+      "source_id": "epo_patent_trends",
+      "name": "EPO: patent trends",
+      "url": "https://worldwide.espacenet.com",
+      "horizon": "H3",
+      "cluster": "patents",
+      "cost": "free",
+      "enabled": false,
+      "access": "query",
+      "adapter": "epo_trends",
+      "searches": [
+        "ta=\"quantum key distribution\"",
+        "ta=\"post-quantum cryptography\"",
+        "ta=\"coherent optical networks\"",
+        "ta=\"network slicing\"",
+        "ta=\"LEO satellite broadband\"",
+        "ta=\"zero trust network access\"",
+        "ta=\"edge AI inference\"",
+        "ta=\"network digital twin\""
+      ],
+      "note": "Needs the European Patent Office's free keys (EPO_OPS_KEY and EPO_OPS_SECRET): see the Deployment Guide."
+    },
+    {
+      "source_id": "openalex_trends",
+      "name": "OpenAlex: trends",
+      "url": "https://openalex.org",
+      "horizon": "H3",
+      "cluster": "preprints_journals",
+      "cost": "free",
+      "enabled": true,
+      "access": "query",
+      "adapter": "openalex_trends",
+      "searches": [
+        "quantum key distribution",
+        "post-quantum cryptography",
+        "coherent optical networks",
+        "network slicing",
+        "LEO satellite broadband",
+        "zero trust network access",
+        "edge AI inference",
+        "network digital twin",
+        "blockchain interoperability",
+        "decentralized identity",
+        "quantum networking",
+        "quantum sensing",
+        "IoT security",
+        "low-power wide-area network",
+        "digital twin",
+        "edge computing orchestration",
+        "autonomous mobile robots",
+        "confidential computing",
+        "AI agents",
+        "serverless computing"
+      ]
+    },
+    {
+      "source_id": "ieee_standards_association",
+      "name": "IEEE Standards Association",
+      "url": "https://standards.ieee.org",
+      "horizon": "H2",
+      "cluster": "standards_foundations",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://standards.ieee.org/news/"
+      ]
+    },
+    {
+      "source_id": "university_of_waterloo_iqc",
+      "name": "University of Waterloo IQC",
+      "url": "https://uwaterloo.ca/institute-for-quantum-computing",
+      "horizon": "H3",
+      "cluster": "university_labs",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://uwaterloo.ca/institute-for-quantum-computing/news"
+      ]
+    },
+    {
+      "source_id": "mila",
+      "name": "Mila",
+      "url": "https://mila.quebec",
+      "horizon": "H3",
+      "cluster": "university_labs",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://mila.quebec/en/news"
+      ]
+    },
+    {
+      "source_id": "vector_institute",
+      "name": "Vector Institute",
+      "url": "https://vectorinstitute.ai",
+      "horizon": "H3",
+      "cluster": "university_labs",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://vectorinstitute.ai/news/"
+      ]
+    },
+    {
+      "source_id": "tel_aviv_university",
+      "name": "Tel Aviv University",
+      "url": "https://english.tau.ac.il",
+      "horizon": "H3",
+      "cluster": "university_labs",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://english.tau.ac.il/news"
+      ]
+    },
+    {
+      "source_id": "weizmann_institute_of_science",
+      "name": "Weizmann Institute of Science",
+      "url": "https://www.weizmann.ac.il",
+      "horizon": "H3",
+      "cluster": "university_labs",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.weizmann.ac.il/pages/news"
+      ]
+    },
+    {
+      "source_id": "technion",
+      "name": "Technion",
+      "url": "https://www.technion.ac.il",
+      "horizon": "H3",
+      "cluster": "university_labs",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.technion.ac.il/en/news/"
+      ]
+    },
+    {
+      "source_id": "google_deepmind",
+      "name": "Google DeepMind",
+      "url": "https://deepmind.google",
+      "horizon": "H3",
+      "cluster": "corporate_research_vendor_events",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://deepmind.google/discover/blog/"
+      ]
+    },
+    {
+      "source_id": "converge_digest",
+      "name": "Converge Digest",
+      "url": "https://convergedigest.com",
+      "horizon": "H1",
+      "cluster": "analysts_trade_press",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl"
+    },
+    {
+      "source_id": "lightwave",
+      "name": "Lightwave",
+      "url": "https://www.lightwaveonline.com",
+      "horizon": "H1",
+      "cluster": "analysts_trade_press",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://www.lightwaveonline.com/data-center",
+        "https://www.lightwaveonline.com/optical-tech"
+      ]
+    },
+    {
+      "source_id": "the_next_platform",
+      "name": "The Next Platform",
+      "url": "https://www.nextplatform.com",
+      "horizon": "H1",
+      "cluster": "analysts_trade_press",
+      "cost": "free",
+      "enabled": false,
+      "access": "crawl",
+      "note": "Its robots.txt asks crawlers like the radar's not to read it; its publisher sells a content licence."
+    },
+    {
+      "source_id": "outshift_by_cisco",
+      "name": "Outshift by Cisco",
+      "url": "https://outshift.cisco.com",
+      "horizon": "H2",
+      "cluster": "corporate_research_vendor_events",
+      "cost": "free",
+      "enabled": true,
+      "access": "crawl",
+      "entry_urls": [
+        "https://outshift.cisco.com/blog"
+      ]
     }
   ]
 }

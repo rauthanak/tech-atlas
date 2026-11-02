@@ -211,16 +211,18 @@ class LLM:
         usage.record(self.provider, self.model_name, tokens, _ms(start), ok=True, reasoning=think)
         return text
 
-    def web_search(self, query: str, n: int) -> list[dict]:
-        """Up to n pages the provider's own web search finds: [{url, title}].
-        Only Anthropic has one built in; another provider raises with why."""
+    def web_search(self, query: str, n: int, sites: list[str] | None = None) -> list[dict]:
+        """Up to n pages the provider's own web search finds: [{url, title}],
+        only from `sites` (hosts) when given. Only Anthropic has one built in;
+        another provider raises with why."""
         if self.provider != "anthropic":
             raise NotImplementedError(f"the {self.provider} model has no built-in web search")
         start = time.monotonic()
         try:
             reply = self._client.messages.create(
                 model=self.model_name, max_tokens=1024, thinking={"type": "disabled"},
-                tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 1}],
+                tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 1,
+                        **({"allowed_domains": sites} if sites else {})}],
                 messages=[{"role": "user", "content": f"Search the web for: {query}\nThen reply with only: done"}])
         except Exception as exc:
             usage.record(self.provider, self.model_name, None, _ms(start), ok=False, error=str(exc))

@@ -21,6 +21,9 @@ class UsaJobs(Adapter):
     digest = True
     keys = ("USAJOBS_API_KEY", "CONTACT_EMAIL")
     search_help = "A keyword or phrase, e.g. post-quantum cryptography"
+    by_name = True
+    find_label = "US government jobs"
+    find_gives = "one page: US federal job postings that name it"
     example = "post-quantum cryptography"
 
     def digest_item(self, query: str, last_count: int | None) -> tuple[Item, int]:

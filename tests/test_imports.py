@@ -383,3 +383,43 @@ def test_an_import_keeps_its_rows_apart_and_an_older_one_moves_them_on_save(db, 
     assert {i["name"]: i["decision"] for i in after["items"]} == {"Edge AI": None, "LLM agents": "accept"}
     assert "items" not in db["imports"].find_one({"_id": imp["_id"]})
     assert db["import_items"].count_documents({"import_id": imp["_id"]}) == 2
+
+
+class SameRows:
+    """Reads the two QRNG rows of one file as one technology the register doesn't have."""
+    def ask(self, prompt, system=None, **kw):
+        raw = json.loads(prompt.rsplit("Raw technology names:\n", 1)[1])
+        both = ["quantum random number generation", "quantum random number generation (qrng)"]
+        return json.dumps({"groups": [{"name": both[0], "members": both}] if set(both) <= set(raw) else []})
+
+
+def test_two_rows_of_one_file_that_are_one_technology_come_in_as_one(db, monkeypatch):
+    _world(db, monkeypatch)
+    from app.services.llm import llm as llm_module
+    monkeypatch.setattr(llm_module.LLM, "initialize", classmethod(lambda cls, *a, **k: SameRows()))
+    rows = [["Quantum Random Number Generation", "Quantum", "Quantum Communications", "d", "8", "Early Commercial"],
+            ["Quantum Random Number Generation (QRNG)", "Cybersecurity", "Quantum Security", "d", "7", "Early Commercial"]]
+    imp = upload(book(rows)).json()
+    imp = client.post(f"/api/imports/{imp['_id']}/match").json()
+    first, second = imp["items"]
+    assert first["group"] == "new"
+    assert (second["group"], second["same_as_row"], second["target_name"]) == \
+        ("proposed", first["row"], "Quantum Random Number Generation")
+    _decide(imp["_id"], [second["row"]], "accept")
+    assert client.post(f"/api/imports/{imp['_id']}/confirm").json()["added"] == 1
+    techs = list(db["technologies"].find({"origin": "imported"}))
+    assert len(techs) == 1 and {"quantum random number generation", "quantum random number generation (qrng)"} <= set(techs[0]["aliases"])
+    assert techs[0]["imported"]["rows"] == [first["name"], second["name"]] and _moves(db, techs[0]["_id"]) == {}  # two rows: values stay on the record
+    client.post(f"/api/imports/{imp['_id']}/reopen", json={"rows": [second["row"]]})  # undone: its name comes off again
+    assert "quantum random number generation (qrng)" not in db["technologies"].find_one({"_id": techs[0]["_id"]})["aliases"]
+
+
+def test_a_row_rejected_as_the_same_comes_in_as_its_own(db, monkeypatch):
+    _world(db, monkeypatch)
+    from app.services.llm import llm as llm_module
+    monkeypatch.setattr(llm_module.LLM, "initialize", classmethod(lambda cls, *a, **k: SameRows()))
+    imp = upload(book([["Quantum Random Number Generation", "", "", "", "", ""],
+                       ["Quantum Random Number Generation (QRNG)", "", "", "", "", ""]])).json()
+    imp = client.post(f"/api/imports/{imp['_id']}/match").json()
+    _decide(imp["_id"], [imp["items"][1]["row"]], "reject")
+    assert client.post(f"/api/imports/{imp['_id']}/confirm").json()["added"] == 2

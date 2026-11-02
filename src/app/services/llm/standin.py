@@ -124,5 +124,5 @@ class StandIn:
 
         return Done(messages=itertools.repeat(AIMessage(content="done")))
 
-    def web_search(self, query: str, n: int) -> list[dict]:
+    def web_search(self, query: str, n: int, sites: list[str] | None = None) -> list[dict]:
         return []

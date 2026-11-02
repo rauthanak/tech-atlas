@@ -78,12 +78,13 @@ def create_run(params: ScoringRunParams) -> dict:
 
 
 @router.get("/scoring/runs")
-def list_runs(limit: int = 50) -> dict:
+def list_runs(limit: int = 50, start: int = 0) -> dict:
+    """The newest runs first, `limit` from `start`, and how many there are (`total`), for a list in pages."""
     # the per-technology records (gates, tech_calls) are read by the engine only
-    runs = list(get_collection("scoring_runs")
-                .find({}, {"snapshot": 0, "gates": 0, "tech_calls": 0})
-                .sort("started_at", -1).limit(max(1, min(limit, 200))))
-    return {"scoring_runs": runs}
+    coll = get_collection("scoring_runs")
+    runs = list(coll.find({}, {"snapshot": 0, "gates": 0, "tech_calls": 0})
+                .sort("started_at", -1).skip(max(0, start)).limit(max(1, min(limit, 200))))
+    return {"scoring_runs": runs, "total": coll.count_documents({})}
 
 
 @router.get("/scoring/runs/{run_id}")
@@ -307,7 +308,11 @@ def compose_all(params: ComposeAllParams | None = None, tz: str = Depends(reques
     wide pool). Default: the technologies waiting for a Point of View.
     recompose=true: every switched-on technology with a latest assessment,
     each written from it — existing Points of View from that run are
-    replaced and their version bumps. Switched-off ones are left out."""
+    replaced and their version bumps. Switched-off ones are left out.
+    Refused while an assessment run goes: it would write from half-finished
+    assessments and leave the rest for another run."""
+    if why := busy.reason("scoring"):
+        raise HTTPException(status_code=409, detail=f"{why} Write them when it finishes.")
     all_states = evidence.states()
     targets = (_rewrite_targets(all_states) if params and params.recompose
                else evidence.pov_targets(all_states))

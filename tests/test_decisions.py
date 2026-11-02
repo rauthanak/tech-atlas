@@ -245,3 +245,21 @@ def test_start_up_keeps_the_newest_of_duplicate_choices(db):
     bootstrap.dedupe_decisions()
     assert sorted(d["_id"] for d in _active(db)) == ["new", "other"]
     assert db["decisions"].find_one({"_id": "old"})["replaced_at"]
+
+
+def test_the_grid_panels_change_is_the_assessment_tabs_hand_score(db):
+    """R2: Change on the leaders' grid sends Score by hand's choice with the dot's
+    fabric; a technology-wide measure's choice holds in every fabric."""
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from stacked_fakes import load_seeded
+    load_seeded(db, "measures")
+    db["technologies"].insert_one({"_id": "qkd", "name": "quantum key distribution"})
+    c = TestClient(app)
+    r = c.post("/api/decisions", json={"kind": "hand_score", "tech_id": "qkd", "fabric_id": "network",
+                                       "measure_id": "maturity-trl", "value": 8, "reason": "NIST standards are final"})
+    assert r.status_code == 201, r.text
+    assert r.json()["decision"]["fabric_id"] is None
+    r = c.post("/api/decisions", json={"kind": "hand_score", "tech_id": "qkd", "fabric_id": None,
+                                       "measure_id": "commercial-adoption", "value": 6, "reason": "r"})
+    assert r.status_code == 422 and "say which fabric" in r.json()["detail"]

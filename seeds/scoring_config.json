@@ -39,17 +39,17 @@
       ],
       "grid": {
         "near_high": "P1",
-        "near_mid": "P2",
-        "near_low": "P4",
+        "near_mid": "P3",
+        "near_low": "P5",
         "mid_high": "P2",
-        "mid_mid": "P3",
-        "mid_low": "P5",
-        "far_high": "P3",
-        "far_mid": "P5",
+        "mid_mid": "P4",
+        "mid_low": "P6",
+        "far_high": "P2",
+        "far_mid": "P4",
         "far_low": "P6"
       },
-      "open_question": "Which priorities should trigger action at Tata, for example P1–P2 invest or pilot, P3–P4 watch closely, P5–P6 just watch? Confirm with Tata.",
-      "version": 3
+      "open_question": "Tata's own map, from its reference radar (Now = the near band; Later = mid and far).",
+      "version": 4
     },
     {
       "name": "evidence",
@@ -73,6 +73,37 @@
       "mode": "stacked",
       "note": "stacked: one call per technology, then one per fabric it touches (item 5). per_measure: one call per measure per fabric, the earlier way.",
       "open_question": null
+    },
+    {
+      "name": "market_bands",
+      "bands": [
+        {
+          "below_usd_bn": 0.1,
+          "label": "under $100M"
+        },
+        {
+          "below_usd_bn": 1,
+          "label": "$100M–1B"
+        },
+        {
+          "below_usd_bn": 10,
+          "label": "$1–10B"
+        },
+        {
+          "below_usd_bn": 100,
+          "label": "$10–100B"
+        },
+        {
+          "below_usd_bn": 1000,
+          "label": "$100B–1T"
+        },
+        {
+          "below_usd_bn": null,
+          "label": "over $1T"
+        }
+      ],
+      "open_question": "Hasan's scale (hundreds of millions, billions, trillions): confirm the edges with Tata.",
+      "version": 1
     }
   ]
 }
