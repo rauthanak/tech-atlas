@@ -36,7 +36,7 @@ SEPARATE = "separate"  # an edition's `rows`: its placements are in ROWS, not in
 
 
 def rows(e: dict, kind: str, fabric: str | None = None, tech_id: str | None = None) -> list[dict]:
-    """An edition's placed or held rows, in its order, of one fabric or
+    """An edition's placed, held or too early rows, in its order, of one fabric or
     technology when given. Editions published before 24 Oct hold theirs inside."""
     if e.get("rows") == SEPARATE:
         q = {"edition_id": e["_id"], "kind": kind, **({"fabric_id": fabric} if fabric else {}),
@@ -113,14 +113,39 @@ def live() -> dict:
                              if missing else "No priority yet"})
     placed.sort(key=lambda r: (r["priority"], -(r["how_big"] or 0)))
     held.sort(key=lambda r: r["name"])
+    early = too_early(set(applied), lists) if radar_settings().get("frontier_too_early", True) else []
     grid = get_collection("scoring_config").find_one(
         {"_id": "priority_grid"}, {"timeline_cutpoints": 1, "potential_cutpoints": 1, "timeline_from": 1, "potential_from": 1}) or {}
-    return {"placed": placed, "held": held, "fabrics": [{"id": k, "name": v} for k, v in fabrics.items()],
+    return {"placed": placed, "held": held, "too_early": early, "fabrics": [{"id": k, "name": v} for k, v in fabrics.items()],
             "stages": [{"id": a["_id"], "name": a["name"], "emerging": bool(a.get("emerging")), "known": not a.get("catch_all")}
                        for a in sorted(lists["availability"].values(), key=lambda a: a.get("order", 99))],
             "cutpoints": {"how_soon": grid.get("timeline_cutpoints", [4, 7]), "how_big": grid.get("potential_cutpoints", [4, 7])},
             # which measures make each axis, so the leaders' grid can show what placed a dot
             "grid_from": {"how_soon": grid.get("timeline_from", []), "how_big": grid.get("potential_from", [])}}
+
+
+TOO_EARLY = ("thin", "not_credible")
+
+
+def too_early(assessed: set[str], lists: dict) -> list[dict]:
+    """Tata's catalog technologies the radar has looked at but can't place:
+    switched on, never assessed, their evidence judged thin or not credible
+    (a person's choice applied). Leaders see them under the grid, so a
+    catalog technology never just vanishes (5 Nov review)."""
+    cat = {d["tech_id"]: d for d in decisions.active(None, ["catalog"])}
+    techs = get_collection("technologies").find(
+        {"$or": [{"imported": {"$exists": True, "$nin": [None, False]}}, {"origin": "imported"},
+                 {"_id": {"$in": [k for k, d in cat.items() if d["value"] == "yes"]}}],
+         "_id": {"$nin": list(assessed)}, "enabled": {"$ne": False}},
+        {"name": 1, "label": 1, "imported": 1, "origin": 1, "classification": 1, "assessed_classification": 1})
+    techs = [t for t in techs if decisions.in_catalog(t, cat.get(t["_id"]))["in"]]
+    grouped = decisions.by_tech(decisions.active([t["_id"] for t in techs]))
+    out = []
+    for t in techs:
+        ev = classify_effective.effective(t, grouped.get(t["_id"], []), lists).get("evidence") or {}
+        if ev.get("verdict") in TOO_EARLY:
+            out.append({"tech_id": t["_id"], "name": display_name(t, t["_id"]), "verdict": ev["verdict"], "reason": ev.get("reason")})
+    return sorted(out, key=lambda r: r["name"].lower())
 
 
 def assumptions() -> list[dict]:
@@ -252,8 +277,55 @@ def _since_now() -> dict | None:
             "moved": sum(1 for k, v in is_.items() if k in was and was[k] != v),
             "placed_new": len(is_.keys() - was.keys()), "placed_gone": len(was.keys() - is_.keys()),
             "povs_written": len({r["tech_id"] for r in every if r["pov"] and r["pov"]["composed_at"] > before["published_at"]}),
-            "now": {"placements": len(now["placed"]), "held": len(now["held"]),
+            "hand_changes": hand_changes(before["published_at"]),
+            "now": {"placements": len(now["placed"]), "held": len(now["held"]), "too_early": len(now["too_early"]),
                     "povs": len({r["tech_id"] for r in every if r["pov"]})}}
+
+
+HAND = ("hand_score", "tata_entry", "override")  # what a person changes that moves what leaders see
+
+
+def hand_changes(since_at: str) -> list[dict]:
+    """What people changed by hand since `since_at` (the latest edition), newest
+    first, so whoever publishes sees it before leaders do: scores set by hand,
+    Tata's figures entered, priorities set by hand, and any of these undone.
+    `before` is what the radar gave: the priority the scores give, or the
+    measure's score in the latest assessment (none for Tata's figures)."""
+    recs = [d for d in get_collection("decisions").find(
+        {"kind": {"$in": list(HAND)}, "$or": [{"at": {"$gt": since_at}}, {"undone_at": {"$gt": since_at}}]})
+        if d.get("active") or d.get("undone_at")]  # one a newer choice replaced: the newer one is listed
+    if not recs:
+        return []
+    ids = list({d["tech_id"] for d in recs})
+    techs = {t["_id"]: t for t in get_collection("technologies").find({"_id": {"$in": ids}}, {"name": 1, "label": 1, "enabled": 1})}
+    fabrics = {f["_id"]: f.get("name") for f in get_collection("fabrics").find({}, {"name": 1})}
+    measures = {m["_id"]: m.get("name") for m in get_collection("measures").find({}, {"name": 1})}
+    povs = latest_povs.latest(ids, ())
+    out = []
+    for d in recs:
+        t = techs.get(d["tech_id"])
+        if not t or t.get("enabled") is False:
+            continue
+        undone = bool(d.get("undone_at")) and d["undone_at"] > since_at
+        at = d["undone_at"] if undone else d["at"]
+        if d["kind"] == "override":
+            radar = d.get("computed")
+        elif d["kind"] == "hand_score":
+            a = get_collection("assessments").find_one(
+                {"tech_id": d["tech_id"], **({"fabric_id": d["fabric_id"]} if d.get("fabric_id") else {})},
+                {f"measures.{d.get('measure_id')}.score": 1}, sort=[("created_at", -1)])
+            radar = (((a or {}).get("measures") or {}).get(d.get("measure_id")) or {}).get("score")
+        else:
+            radar = None  # Tata's own figure: the radar never scores it
+        pv = povs.get(d["tech_id"])
+        out.append({"decision_id": d["_id"], "tech_id": d["tech_id"], "name": display_name(t, d["tech_id"]),
+                    "kind": d["kind"], "fabric": fabrics.get(d.get("fabric_id"), d.get("fabric_id")) if d.get("fabric_id") else None,
+                    "measure": measures.get(d.get("measure_id"), d.get("measure_id")) if d.get("measure_id") else None,
+                    "before": radar, "after": None if undone else d.get("value"), "undone": undone,
+                    "by": d.get("undone_by") if undone else d.get("by"), "at": at,
+                    "tz": d.get("undone_tz") if undone else d.get("tz"), "reason": None if undone else d.get("reason"),
+                    "pov_before": bool(pv and pv["composed_at"] < at)})
+    return sorted(out, key=lambda r: r["at"], reverse=True)
 
 
 def publish(name: str | None, tz: str) -> dict:
@@ -272,7 +344,7 @@ def publish(name: str | None, tz: str) -> dict:
                       "Publish when that finishes, so leaders don't see some old and some new.")
     now = live()
     if not now["placed"] and not now["held"]:
-        raise Refused("Nothing to publish yet: no technology is assessed.")
+        raise Refused("Nothing to publish yet: no technology is assessed.")  # a list of the too early alone isn't an edition
     before = latest()
     moved = _mark_moves(now["placed"], before)
     edition_id = uuid.uuid4().hex[:12]
@@ -296,14 +368,16 @@ def publish(name: str | None, tz: str) -> dict:
     doc = {"_id": edition_id, "name": (name or "").strip() or None, "published_at": now_utc(), "tz": tz, "by": auth.by(),
            "previous": {k: before.get(k) for k in ("_id", "name", "published_at", "tz")} | {"label": label(before)}
            if before else None,
-           **{k: v for k, v in now.items() if k not in ("placed", "held")}, "rows": SEPARATE,
+           **{k: v for k, v in now.items() if k not in ("placed", "held", "too_early")}, "rows": SEPARATE,
            "near_band": float(radar_settings().get("frontier_near_band", 0.5)),
            "assumptions": assumptions(), "evidence": evidence_counts(),
-           "counts": {"placements": len(now["placed"]), "held": len(now["held"]), "povs": len(frozen), "moved": moved,
+           "counts": {"placements": len(now["placed"]), "held": len(now["held"]), "too_early": len(now["too_early"]),
+                      "povs": len(frozen), "moved": moved,
                       "technologies": len({r["tech_id"] for r in now["placed"] + now["held"]})}}
     # the placements first, each its own record: Frontier never finds an edition without them
-    placements = [{"_id": f"{edition_id}:{r['tech_id']}:{r['fabric_id']}", "edition_id": edition_id, "kind": kind, "n": n, **r}
-                  for kind in ("placed", "held") for n, r in enumerate(now[kind])]
+    placements = [{"_id": f"{edition_id}:{r['tech_id']}:{r.get('fabric_id')}", "edition_id": edition_id, "kind": kind, "n": n,
+                   "fabric_id": None, **r}  # the too early have no fabric
+                  for kind in ("placed", "held", "too_early") for n, r in enumerate(now[kind])]
     for i in range(0, len(placements), 1000):
         get_collection(ROWS).insert_many(placements[i:i + 1000])
     get_collection("editions").insert_one(doc)

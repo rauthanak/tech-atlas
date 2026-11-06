@@ -19,7 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from agent.analyzer.placement import compute_placement
 from app.services.llm.context import carry, with_context
-from app.services import auth
+from app.services import auth, quotes
 from app.services.db.mongo import get_collection
 from app.services.llm.llm import LLM, call_with_backoff, parse_json
 from app.services.prompts.store import PromptStore
@@ -332,16 +332,34 @@ def unscored(why: str) -> dict:
             "justification": None, "evidence_urls": [], "counter_case": None}
 
 
-def _figure(f, cited: list) -> dict | None:
-    """A market figure a measure rests on, kept only when it is a number from
-    a page the measure cites: the radar never shows a figure the model made up."""
-    if not isinstance(f, dict) or f.get("url") not in cited:
-        return None
+def _number(v) -> float | None:
     try:
-        amount = float(f.get("amount_usd_bn"))
+        return float(v) if v is not None and not isinstance(v, bool) else None
     except (TypeError, ValueError):
         return None
-    return {"amount_usd_bn": amount, "year": f.get("year"), "scope": f.get("scope"), "url": f["url"]} if amount > 0 else None
+
+
+def figure_check(f, cited: list) -> tuple[dict | None, str | None]:
+    """A figure a measure rests on (a market size, or a growth rate), kept only
+    when it comes from a page the measure cites and the words that state it
+    are on that page (services/quotes): the radar never shows a figure the
+    model made up. Else (None, why), or (None, None) when none was given."""
+    if not isinstance(f, dict):
+        return None, None
+    if f.get("url") not in cited:
+        return None, "its page isn't one the measure cites"
+    quote = str(f.get("quote") or "").strip()
+    amount, rate = _number(f.get("amount_usd_bn")), _number(f.get("cagr_pct"))
+    if not (amount and amount > 0) and not (rate and 0 < rate < 1000):
+        return None, "it gave no usable number"
+    if not quotes.on_page(quote, url=f["url"]):
+        return None, "the words that state it weren't found on its page"
+    if amount and amount > 0:
+        if not quotes.matches(amount, quote):
+            return None, "the number doesn't match the page's words"
+        return {"amount_usd_bn": amount, "year": f.get("year"), "scope": f.get("scope"), "url": f["url"], "quote": quote}, None
+    return {"cagr_pct": rate, "from_year": f.get("from_year"), "to_year": f.get("to_year"), "scope": f.get("scope"),
+            "url": f["url"], "quote": quote}, None
 
 
 ABSTAINED = "the answer said the pages don't support a score, so its number isn't used"
@@ -386,8 +404,15 @@ def measure_result(data: dict, cite: set[str] | None = None) -> dict:
         "counter_case": data.get("counter_case"),
         "unscorable": said or score is None,
         "missing": missing,
-        "figure": _figure(data.get("figure"), kept),
+        **_figure_fields(data.get("figure"), kept),
     }
+
+
+def _figure_fields(given, kept: list) -> dict:
+    """The figure as kept, why one given wasn't, and that the page-words check
+    ran (assessments before 5 Nov didn't ask for a growth rate or the words)."""
+    figure, why = figure_check(given, kept)
+    return {"figure": figure, "figure_checked": True, **({"figure_dropped": why} if why else {})}
 
 
 def rollup_tora(measure_results: dict[str, dict], measures: list[dict]) -> dict:

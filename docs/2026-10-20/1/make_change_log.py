@@ -20,7 +20,7 @@ OUT = ROOT / "Tech Radar - changes after the midpoint review.docx"
 NAVY = RGBColor(0x04, 0x1A, 0x4A)
 MUTED = RGBColor(0x49, 0x4A, 0x52)
 
-VERSION = "Version 42 · 1 November 2026"
+VERSION = "Version 43 · 6 November 2026"
 HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the midpoint review, with today's screens and design mock-ups."),
            ("2", "20 Oct 2026", "Change 0 built: technologies say how solid their assessment is, a technology's result in each fabric stays "
                                 "with the technology, plain names on every screen. Real screens replace its mock-up."),
@@ -139,7 +139,10 @@ HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the mi
            ("41", "1 Nov 2026", "Change 62: finance figures removed; a merge reports only real clashes and keeps each name "
                                  "to look for once."),
            ("42", "1 Nov 2026", "Change 63: an import brings in two rows of one sheet that name one technology as one; market "
-                                 "size can rest on a wider market, named as such.")]
+                                 "size can rest on a wider market, named as such."),
+           ("43", "6 Nov 2026", "Change 64: hand changes listed before Publish; catalog technologies too early to place on "
+                                 "the leaders' view; every figure checked against its page, and the growth rate; an "
+                                 "industry on each use case; five short parts in each Point of View.")]
 
 # The numbers in the text, from the live radar on 21 Oct (6 Oct is the run before these changes).
 N = dict(
@@ -151,7 +154,7 @@ N = dict(
     fr_placed=399, fr_techs=188, fr_mature=87,
     b_research=346, b_pilot=195, b_early="1,108", b_mature=524, on_list=967, on_list_added=885, on_list_joined=82,
     two_levers_before=50, two_levers_after=100, capital_after=100, blocker_pairs=301, pairs=516,
-    povs_catalog=22,
+    povs_catalog=22, too_early=264,
     uc_before=652, jargon_before=196, uc_after=607, jargon_after=90, jargon_bare=6,
 )
 
@@ -182,6 +185,9 @@ SOURCES = [
      "Ankur's guidance on the three tests: early signals and where they come from, what to watch to decide when to act, "
      "the 2×2 as on Tata's radar with the scores behind each placement visible and adjustable, and a ballpark market size "
      "per use case; Abhishek's test cases."),
+    ("S13", "Abhishek's reply of 3 Nov to our test-case email, and Tata's Federated Learning Point of View",
+     "Who changes scores and when leaders see it; catalog technologies the radar can't place; market size and growth as "
+     "plain figures; the parts of Tata's own Point of View the radar's lacked."),
 ]
 
 # Built screens, in reading order, with their captions: item-N.png or item-N-<screen>.png
@@ -1687,6 +1693,33 @@ ITEMS.append(
          metrics=[("Repeated rows in Tata's sheet split into two technologies", "10", "Proposed as one at the next import")],
          diagram=None, before=[]))
 
+ITEMS.append(
+    dict(n="64", title="Hand changes before Publish, too early to place, figures checked against their page, and Tata's "
+                       "Point of View parts", status="Live",
+         source=[("S13", "Abhishek's reply of 3 Nov: who changed which score, catalog technologies that vanish, TAM and CAGR, "
+                         "and Tata's Federated Learning Point of View")],
+         what=["Publish lists what people changed by hand since the last edition: scores set by hand, Tata's figures entered, "
+               "priorities set by hand, and any of these undone. Each row names the technology, what changed (\"Growth: the "
+               "radar's 5 → 8 by hand\"), who, when and why, and says when its Point of View was written before the change. "
+               "Leaders still can't change scores; a change reaches them only at the next Publish.",
+               "Catalog technologies the radar has looked at but can't place, because their evidence is thin or not "
+               "credible, are listed for leaders under the grid as Too early to place, with the reason for each. The grid "
+               "shows one line in the Wait corner that jumps to the list. A setting switches it off.",
+               "A market figure, a growth rate or a use case's size is kept only when the page's own words that state it are "
+               "on the page it cites, and a dollar amount in those words matches the figure. The Market size card shows "
+               "those words under the band, and the growth rate a page states, in its words. The AI never works out a rate.",
+               "Each use case names the industry it serves, from a list in the use-case skill's text.",
+               "Each Point of View gains five short parts, every bullet citing its page: Risks, under the recommendation; "
+               "and, in a new fold, Why customers want it, Alternatives, Who's building it and What's new. A part the pages "
+               "don't cover says so. The Point of View now reads each cited page's summary, not just its title."],
+         why="A change made by hand could reach leaders without the person publishing noticing; a catalog technology the "
+             "radar couldn't place looked missed; and Tata's own Points of View carry parts the radar's lacked.",
+         metrics=[("Hand changes shown at Publish", "Counts only", "Each one: what, who, when, why"),
+                  ("Catalog technologies leaders don't see", "{too_early}, with no word", "Listed as too early to place, with why"),
+                  ("Figures checked against their page's words", "None", "Every market size, growth rate and use-case size"),
+                  ("Parts in a Point of View from Tata's format", "Missing five", "All five, from the pages")],
+         diagram=None, before=[]))
+
 
 DECISIONS = [
     "Finance figures (contribution, payback, break-even) are removed: Tata won't enter them (1 Nov). The path to scale keeps "
@@ -1707,6 +1740,8 @@ DECISIONS = [
     "When several rows of an imported list join one technology, none of their values is applied; a narrower technology is "
     "never folded into a broader one.",
     "The radar may suggest blockers from the pages; only a person picks them (signed off 21 Oct).",
+    "Only an admin changes a score; a change reaches leaders at the next Publish, listed there first (5 Nov).",
+    "A figure the radar shows must be in its page's own words; no sector weights are invented (5 Nov).",
     "Tata's list is called the catalog. A person can add a technology to it or take one out, kept like any other choice, "
     "with Undo (signed off 21 Oct).",
 ]

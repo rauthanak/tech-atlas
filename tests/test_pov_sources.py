@@ -36,7 +36,8 @@ def test_sources_are_numbered_from_the_pages_and_given_to_the_writer(db, monkeyp
     _, values, sources = pov.pov_inputs("r1", "edge-ai", with_sources=True)
     assert [s["n"] for s in sources] == [1] and sources[0]["source"] == "Light Reading"
     assert "TRL 6 (A prototype shown in a real setting), judged from its pages: a field trial [1]" in values["assessment_data"]
-    assert "SOURCES (cite only these numbers):\n[1] Light Reading" in values["assessment_data"]
+    assert "SOURCES (cite only these numbers; each with what the page says):\n[1] Light Reading · 2026-09-01 · Edge AI ships\n    s" \
+        in values["assessment_data"]  # its summary under it: what the page says, not just its title
     doc = pov.compose_pov("r1", "edge-ai")
     assert doc["sources"][0]["url"] == "https://lightreading.com/a" and "citation_problems" not in doc and w.calls == 1
 
@@ -58,3 +59,25 @@ def test_sources_are_labelled_by_the_sources_name(db):
                            "sources": [{"n": 1, "source": "cx_today"}, {"n": 2, "source": "new.example (web search)"}]})
     got = TestClient(app).get("/api/scoring/runs/r1/pov/quic").json()["sources"]
     assert [x["source"] for x in got] == ["CX Today", "new.example (web search)"]
+
+
+class Lists(Writer):
+    def ask(self, prompt, system=None, **kw):
+        self.calls += 1
+        return json.dumps({"headline": "h", "recommendation": "Monitor [1].",
+                           "customer_need": ["Data can't leave the hospital [1]", "Cheaper links", "  "],
+                           "alternatives": "homomorphic encryption [1]",
+                           "players": [f"Vendor {n}: builds it [1]" for n in range(7)],
+                           "risks": ["Accuracy gap [1]"]})
+
+
+def test_the_short_lists_keep_only_bullets_that_cite_a_listed_page(db, monkeypatch):
+    """5 Nov review: why customers want it, alternatives, who's building it,
+    risks and what's new, each from the pages: a bullet citing no page is
+    dropped, a list that isn't one is empty, each at most its length."""
+    _world(db, monkeypatch, Lists("[1]"))
+    s = pov.compose_pov("r1", "edge-ai")["sections"]
+    assert s["customer_need"] == ["Data can't leave the hospital [1]"]
+    assert s["alternatives"] == [] and s["whats_new"] == []
+    assert len(s["players"]) == 5 and s["risks"] == ["Accuracy gap [1]"]
+    assert pov.bullets(["a [2]", "b [1]"], 3, 1) == (["b [1]"], 1)  # [2] isn't listed

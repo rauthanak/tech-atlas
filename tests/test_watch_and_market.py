@@ -30,13 +30,51 @@ def test_the_next_assessment_gets_the_metrics_to_check(db):
     assert engine.previous_watch("edge-ai", "r1") == engine.NO_PREVIOUS  # never its own run's
 
 
-def test_a_market_figure_needs_a_page_the_measure_cites():
+SAYS = "Analysts expect the market to reach USD 7.2 billion by 2026, a CAGR of 15.2% from 2024 to 2030."
+
+
+def test_a_market_figure_needs_a_page_the_measure_cites_and_its_words_on_it(db):
+    page(db, "https://m.example", 1)
+    db["documents"].update_one({}, {"$set": {"has_text": True, "summary_text": "A summary."}})
+    db["page_texts"].insert_one({"_id": "https://m.example@1", "text": SAYS})
+    words = "reach USD 7.2 billion by 2026"
     ok = engine.measure_result({"score": 7, "evidence_urls": ["https://m.example"],
-                                "figure": {"amount_usd_bn": "7.2", "year": 2026, "scope": "worldwide", "url": "https://m.example"}})
-    assert ok["figure"] == {"amount_usd_bn": 7.2, "year": 2026, "scope": "worldwide", "url": "https://m.example"}
-    for bad in ({"amount_usd_bn": 7, "url": "https://not-cited.example"}, {"amount_usd_bn": "lots", "url": "https://m.example"},
-                {"amount_usd_bn": 0, "url": "https://m.example"}, None):
-        assert engine.measure_result({"score": 7, "evidence_urls": ["https://m.example"], "figure": bad})["figure"] is None
+                                "figure": {"amount_usd_bn": "7.2", "year": 2026, "scope": "worldwide", "url": "https://m.example",
+                                           "quote": words}})
+    assert ok["figure"] == {"amount_usd_bn": 7.2, "year": 2026, "scope": "worldwide", "url": "https://m.example", "quote": words}
+    assert ok["figure_checked"] and "figure_dropped" not in ok
+    for bad, why in (({"amount_usd_bn": 7, "url": "https://not-cited.example", "quote": words}, "its page isn't one the measure cites"),
+                     ({"amount_usd_bn": "lots", "url": "https://m.example", "quote": words}, "it gave no usable number"),
+                     ({"amount_usd_bn": 0, "url": "https://m.example", "quote": words}, "it gave no usable number"),
+                     ({"amount_usd_bn": 7.2, "url": "https://m.example"}, "the words that state it weren't found on its page"),
+                     ({"amount_usd_bn": 7.2, "url": "https://m.example", "quote": "reach USD 9 billion"},
+                      "the words that state it weren't found on its page"),
+                     ({"amount_usd_bn": 0.72, "url": "https://m.example", "quote": words}, "the number doesn't match the page's words")):
+        out = engine.measure_result({"score": 7, "evidence_urls": ["https://m.example"], "figure": bad})
+        assert out["figure"] is None and out["figure_dropped"] == why, bad
+    assert "figure_dropped" not in engine.measure_result({"score": 7, "evidence_urls": ["https://m.example"], "figure": None})
+    # a growth rate a page states, with its words; never one without them
+    rate = engine.measure_result({"score": 6, "evidence_urls": ["https://m.example"], "figure": {
+        "cagr_pct": 15.2, "from_year": 2024, "to_year": 2030, "scope": "worldwide", "url": "https://m.example",
+        "quote": "a CAGR of 15.2% from 2024 to 2030"}})
+    assert rate["figure"]["cagr_pct"] == 15.2 and rate["figure"]["quote"] == "a CAGR of 15.2% from 2024 to 2030"
+    assert market.growth_rate({market.GROWTH: rate})["cagr_pct"] == 15.2
+    assert engine.measure_result({"score": 6, "evidence_urls": ["https://m.example"], "figure": {
+        "cagr_pct": 15.2, "url": "https://m.example", "quote": "a CAGR of 20%"}})["figure"] is None
+    assert market.growth_rate({market.GROWTH: {"score": 6, "figure": None, "figure_checked": True}}) == {"cagr_pct": None}
+    assert market.growth_rate({market.GROWTH: {"score": 6, "figure": None}}) is None  # assessed before rates were asked
+
+
+def test_the_words_on_the_page(db):
+    from app.services import quotes
+    db["documents"].insert_one({"_id": "d", "has_text": False, "summary_text": "Sales hit \u201c$312.4\u00a0million\u201d\nin 2025."})
+    assert quotes.on_page('hit "$312.4 million" in 2025', doc_id="d")  # curly quotes, spaces and line breaks don't matter
+    assert not quotes.on_page("hit", doc_id="d")  # words without a number aren't a figure's
+    assert not quotes.on_page("$312.4 million " * 30, doc_id="d")  # too long to be a figure's words
+    assert not quotes.on_page("$312.4 million", doc_id="missing")
+    assert quotes.matches(0.3124, "$312.4 million") and not quotes.matches(3.124, "$312.4 million")
+    assert quotes.matches(1.2, "from $312 million to $1.2 billion")  # either end of a range
+    assert quotes.matches(2, "€2bn") and quotes.matches(5, "$5 to 10 billion")  # no scaled dollar amount: nothing to compare
 
 
 def test_the_bands(db):

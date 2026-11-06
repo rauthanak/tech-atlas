@@ -29,9 +29,9 @@
         "mid": "5: steady growth; new entrants each year, funding trending up.",
         "high": "8–10: inflecting — funding rounds accelerating, hyperscaler entry, standard-body urgency."
       },
-      "required_evidence": "Dated series or repeated events across the evidence window (funding, launches, adoptions), not a single enthusiastic article.",
+      "required_evidence": "Dated series or repeated events across the evidence window (funding, launches, adoptions), not a single enthusiastic article. If a page states this market's growth rate (CAGR), give it as figure, with the page's own words. Never work a rate out from two figures.",
       "open_question": null,
-      "version": 1,
+      "version": 2,
       "scope": "technology"
     },
     {

@@ -57,6 +57,7 @@ class RadarSettingsEdit(BaseModel):
     classify_pages_cap: int = Field(ge=1, le=50)
     emerging_availability: list[str] = Field(max_length=20)
     find_evidence_results: int = Field(ge=1, le=10)
+    frontier_too_early: bool = True  # the leaders' view lists Tata's catalog technologies too early to place
 
     @field_validator("default_time_zone")
     @classmethod

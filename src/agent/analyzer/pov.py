@@ -29,8 +29,13 @@ log = logging.getLogger(__name__)
 # capability_gap, which retold the scores' measures); background (v11 on) is
 # the one written from general knowledge, for a reader new to the technology
 SECTIONS = ("headline", "background", "summary", "maturity", "value", "tora_analysis", "other_measures",
-            "placement_rationale", "evidence_gaps", "recommendation")
+            "placement_rationale", "evidence_gaps", "recommendation",
+            "customer_need", "alternatives", "players", "risks", "whats_new")
+# the short lists Tata's own Points of View have (5 Nov review), each from the
+# pages only: at most this many bullets, every one citing a listed page
+LISTS = {"customer_need": 3, "alternatives": 3, "players": 5, "risks": 3, "whats_new": 3}
 CITE = re.compile(r"\[(\d+)\]")
+SUMMARY_CHARS = 1200  # of a page's summary, in the sources list the skill reads
 
 AXES = {"market_potential": "Market Potential", "strategic_fit": "Strategic Fit",
         "adoption_readiness": "Adoption Readiness"}
@@ -193,8 +198,20 @@ class Sources:
     def cite_urls(self, urls: list[str]) -> str:
         return _cite(self.urls(urls))
 
-    def text(self) -> str:
-        return "\n".join(f"[{s['n']}] {s['source']} · {s['date']} · {s['title']}" for s in self.items)
+    def text(self, summaries: bool = False) -> str:
+        """The list as the skill reads it; with `summaries`, each page's short
+        summary under it, so the skill knows what the pages say, not just their titles."""
+        said: dict = {}
+        if summaries:
+            docs = get_collection("documents")
+            ids = [s["doc_id"] for s in self.items if s.get("doc_id")]
+            said = {d["_id"]: d.get("summary_text") for d in docs.find({"_id": {"$in": ids}}, {"summary_text": 1})}
+        lines = []
+        for s in self.items:
+            lines.append(f"[{s['n']}] {s['source']} · {s['date']} · {s['title']}")
+            if said.get(s.get("doc_id")):
+                lines.append(f"    {said[s['doc_id']][:SUMMARY_CHARS]}")
+        return "\n".join(lines)
 
 
 def _plan(tech_id: str, fabric_id: str, f: dict, decs: list[dict], decisions, finance) -> str:
@@ -236,7 +253,8 @@ def _plan(tech_id: str, fabric_id: str, f: dict, decs: list[dict], decisions, fi
 
 def _size_line(size: dict, src: "Sources") -> str:
     comparable = f" (comparable: {size['comparable']}: {size['why_comparable']})" if size["basis"] == "comparable" else ""
-    return f"{market.size_words(size)}{comparable}{src.cite_docs([size['page']]) if size.get('page') else ''}"
+    words = f', the page says "{size["quote"]}"' if size.get("quote") else ""
+    return f"{market.size_words(size)}{comparable}{words}{src.cite_docs([size['page']]) if size.get('page') else ''}"
 
 
 def _extras(tech: dict, applied: list[dict], decs: list[dict], src: Sources) -> str:
@@ -266,16 +284,22 @@ def _extras(tech: dict, applied: list[dict], decs: list[dict], src: Sources) -> 
               + src.cite_docs(c["evidence"].get("pages") or []) if c.get("evidence") else "- Evidence: not judged yet")]
     size = next((s for s in (market.market_size(a.get("measures")) for a in applied) if s), None)
     if size:  # the band the page shows; quote it as a band, with the figure it comes from
+        words = f', the page says "{size["quote"]}"' if size.get("quote") else ""
         lines.append(f"- Market size: the {size['band']} band, from a figure of ${size['amount_usd_bn']:g}B"
-                     f" ({', '.join(str(x) for x in (size.get('scope'), size.get('year')) if x)}){src.cite_urls([size['url']])}"
+                     f" ({', '.join(str(x) for x in (size.get('scope'), size.get('year')) if x)}){words}{src.cite_urls([size['url']])}"
                      if size["band"] else "- Market size: no page gives a market figure")
+    growth = next((g for g in (market.growth_rate(a.get("measures")) for a in applied) if g), None)
+    if growth:  # only a rate a page states, with its words
+        lines.append(f'- Growth rate: {growth["cagr_pct"]:g}% a year, the page says "{growth["quote"]}"{src.cite_urls([growth["url"]])}'
+                     if growth.get("cagr_pct") else "- Growth rate: no page gives one")
     accepted = {d["key"] for d in decs if d["kind"] == "use_case" and d["value"] == "accept"}
     value = ["VALUE, per fabric (cite as [n]; never write a figure other than the ballpark sizes given):"]
     for a in applied:
         cases = a.get("use_cases") or []
         if cases:
             for uc in cases:
-                value.append(f"- {a['fabric']}: use case {uc['rank']}: {uc['title']}{src.cite_docs(uc.get('pages') or [])}")
+                served = f" (industry: {uc['industry']})" if uc.get("industry") else ""
+                value.append(f"- {a['fabric']}: use case {uc['rank']}: {uc['title']}{served}{src.cite_docs(uc.get('pages') or [])}")
                 for lv in uc.get("levers") or []:
                     value.append(f"    lever ({lv['lever_id']}): {lv['operating_change']} → {lv['metric']} → "
                                  f"{lv['financial_effect']} → evidence needed: {lv['evidence_needed']} → next step when: "
@@ -330,7 +354,7 @@ def pov_inputs(run_id: str, tech_id: str, with_sources: bool = False):
     src = Sources()
     extras = _extras(tech, applied, decs, src)
     digest = _assessment_digest(applied, {m["_id"]: m for m in method}, grid, read, cite=src.cite_urls)
-    data = f"{extras}\n\n{digest}\n\nSOURCES (cite only these numbers):\n{src.text() or '(none)'}"
+    data = f"{extras}\n\n{digest}\n\nSOURCES (cite only these numbers; each with what the page says):\n{src.text(summaries=True) or '(none)'}"
     values = {"technology": tech.get("label") or technology, "assessment_data": data}
     return (assessments, values, src.items) if with_sources else (assessments, values)
 
@@ -411,7 +435,7 @@ def pov_view(pov: dict) -> dict:
                                                        "model_score")},
                                "reason": (m.get("decision") or {}).get("reason"), "refs": src.urls(m.get("evidence_urls"))}
                          for mid, m in a["measures"].items()},
-            "use_cases": [{"title": uc["title"], "refs": src.docs(uc.get("pages")),
+            "use_cases": [{"title": uc["title"], "industry": uc.get("industry"), "refs": src.docs(uc.get("pages")),
                            "levers": [lv["lever_id"] for lv in uc.get("levers") or []],
                            "capital": (uc.get("capital") or {}).get("direction"),
                            "capital_why": (uc.get("capital") or {}).get("why"),
@@ -427,12 +451,30 @@ def pov_view(pov: dict) -> dict:
     size = next((s for s in (market.market_size(a.get("measures")) for a in applied) if s), None)
     if size and size.get("url"):
         size["refs"] = src.urls([size["url"]])
-    return {"classification": cls, "fabrics": fabrics, "market_size": size, "sources": src.items,
+    growth = next((g for g in (market.growth_rate(a.get("measures")) for a in applied) if g), None)
+    if growth and growth.get("url"):
+        growth["refs"] = src.urls([growth["url"]])
+    return {"classification": cls, "fabrics": fabrics, "market_size": size, "growth_rate": growth, "sources": src.items,
             "measures": [{k: m.get(k) for k in ("_id", "code", "name", "axis", "weight", "scope")} for m in method],
             "watch_metrics": watch.apply(next((a["watch_metrics"] for a in applied if a.get("watch_metrics")), []),
                                          decisions.active([tech_id], ["watch_threshold", "watch_crossed"])),
             "latest_assessment": {"scoring_run_id": latest[0]["scoring_run_id"], "fabric_ids": [a["fabric_id"] for a in latest],
                                   "assessed_at": min(a.get("created_at") or "" for a in latest)} if latest else None}
+
+
+def bullets(given, most: int, sources: int) -> tuple[list[str], int]:
+    """One of the short lists as kept: bullets that cite at least one page, and
+    only listed ones, at most `most`; and how many were dropped for citing none."""
+    if not isinstance(given, list):
+        return [], 0
+    kept, dropped = [], 0
+    for b in given:
+        nums = [int(n) for n in CITE.findall(b)] if isinstance(b, str) else []
+        if nums and all(1 <= n <= sources for n in nums):
+            kept.append(b.strip())
+        elif isinstance(b, str) and b.strip():
+            dropped += 1
+    return kept[:most], dropped
 
 
 def compose_pov(run_id: str, tech_id: str, tz: str | None = None, job_id: str | None = None) -> dict:
@@ -473,6 +515,12 @@ def compose_pov(run_id: str, tech_id: str, tz: str | None = None, job_id: str | 
             log.warning("pov compose returned bad JSON (attempt %d): %s", attempt, exc)
     if sections is None:
         raise RuntimeError(f"Writing the Point of View failed twice: {why}. Try again.")
+    dropped = 0
+    for k, most in LISTS.items():
+        sections[k], n = bullets(sections.get(k), most, len(sources))
+        dropped += n
+    if dropped:
+        log.warning("pov for %s: %d bullets dropped for citing no listed page", tech_id, dropped)
 
     doc_id = f"{run_id}:{tech_id}"
     existing = get_collection("povs").find_one({"_id": doc_id}, {"version": 1})

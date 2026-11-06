@@ -158,7 +158,8 @@ BLANKS: dict[str, dict[str, dict]] = {
     "pov": {
         "technology": _blank("the technology's display name", "the technology", ("The technology chosen below", None)),
         "assessment_data": _blank("its latest assessment: scores per fabric, TORA, placement, priority, "
-                                  "watch metrics and pages read", "the assessment",
+                                  "watch metrics, the market size and growth rate with the page's own words, "
+                                  "and the pages it cites, each with its summary", "the assessment",
                                   ("The technology's latest assessment", None)),
     },
 }

@@ -1,7 +1,7 @@
 """Frontier, for leaders: the latest published edition (services/editions),
 never live data. Its placements (people's overrides applied, each one that
 moved since the edition before saying why), what isn't placed yet with the
-reason, the assumptions in force and the evidence behind it; and each
+reason, the catalog technologies too early to place (in every fabric), the assumptions in force and the evidence behind it; and each
 technology's Point of View as it stood when the edition was published.
 Read-only: a leader may make only these calls (services/auth.LEADER_CALLS)."""
 
@@ -21,6 +21,7 @@ def frontier(fabric: str | None = None) -> dict:
     if e is None:
         return {"edition": None}
     return {"edition": editions.summary(e), "placed": editions.with_why(e, fabric), "held": editions.rows(e, "held", fabric),
+            "too_early": editions.rows(e, "too_early"),
             **{k: e.get(k) for k in ("fabrics", "stages", "cutpoints", "grid_from", "near_band", "assumptions", "evidence")}}
 
 

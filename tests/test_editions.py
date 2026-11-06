@@ -37,7 +37,7 @@ def test_nothing_to_publish_says_why(db):
 def test_an_edition_freezes_placements_povs_and_assumptions(db):
     _world(db)
     first = publish("FY27 Q2").json()["edition"]
-    assert first["counts"] == {"placements": 2, "held": 0, "povs": 2, "moved": 0, "technologies": 2}
+    assert first["counts"] == {"placements": 2, "held": 0, "too_early": 0, "povs": 2, "moved": 0, "technologies": 2}
     # work goes on after publishing: a rewrite, an override, an edited assumption
     db["povs"].update_one({"_id": "r1:edge-ai"}, {"$set": {"sections.headline": "rewritten", "version": 2}})
     decisions.create("override", "edge-ai", fabric_id="cloud", value="P1", reason="board priority", tz="UTC",
@@ -139,7 +139,7 @@ def test_the_briefing_says_what_changed_since_the_edition(db):
     db["povs"].update_one({"_id": "r1:quic"}, {"$set": {"composed_at": "2099-01-01T00:00:00+00:00"}})  # written after it
     since = client.get("/api/editions/since").json()["since"]
     assert since["moved"] == 1 and since["povs_written"] == 1
-    assert since["now"] == {"placements": 2, "held": 0, "povs": 2}  # what a publish now would send
+    assert since["now"] == {"placements": 2, "held": 0, "too_early": 0, "povs": 2}  # what a publish now would send
 
 
 def test_a_point_of_view_says_which_version_leaders_see(db):
@@ -195,3 +195,75 @@ def test_an_edition_records_which_measures_make_each_axis(db):
     # an edition from before it recorded them: none, not an error
     db["editions"].update_many({}, {"$unset": {"grid_from": ""}})
     assert client.get("/api/frontier").json()["grid_from"] is None
+
+
+def _since():
+    from app.services import editions
+    editions.forget_since()
+    return client.get("/api/editions/since").json()["since"]
+
+
+def test_whoever_publishes_sees_what_was_changed_by_hand_since(db):
+    """5 Nov review: scores, Tata's figures and priorities changed by hand since
+    the edition, with the radar's value before, who, when and why; one undone
+    since says so; one made before the edition, or replaced, isn't listed."""
+    _world(db)
+    db["assessments"].update_many({"tech_id": "edge-ai"}, {"$set": {"measures.growth": {"score": 5}}})
+    early = decisions.create("hand_score", "quic", measure_id="growth", value=6, reason="old", tz="UTC")
+    publish("FY27 Q2")
+    assert _since()["hand_changes"] == []
+    decisions.create("hand_score", "edge-ai", fabric_id="cloud", measure_id="growth", value=7, reason="first", tz="UTC")
+    decisions.create("hand_score", "edge-ai", fabric_id="cloud", measure_id="growth", value=8, reason="analyst call", tz="UTC")
+    decisions.create("override", "quic", fabric_id="cloud", value="P1", reason="board priority", tz="UTC", computed="P3")
+    decisions.deactivate(early["_id"], "UTC")
+    db["povs"].update_many({}, {"$set": {"composed_at": "2000-01-01T00:00:00+00:00"}})  # written before the changes
+    rows = _since()["hand_changes"]
+    by = {(r["tech_id"], r["kind"], r["undone"]): r for r in rows}
+    assert len(rows) == 3  # the replaced hand score of 7 isn't listed
+    score = by[("edge-ai", "hand_score", False)]
+    assert (score["measure"], score["fabric"], score["before"], score["after"], score["reason"], score["pov_before"]) == \
+        ("Growth", None, 5, 8, "analyst call", True)  # growth: every fabric
+    prio = by[("quic", "override", False)]
+    assert (prio["before"], prio["after"], prio["measure"]) == ("P3", "P1", None)
+    undone = by[("quic", "hand_score", True)]
+    assert undone["after"] is None and undone["reason"] is None
+    assert rows == sorted(rows, key=lambda r: r["at"], reverse=True)
+    db["technologies"].update_one({"_id": "quic"}, {"$set": {"enabled": False}})
+    assert {r["tech_id"] for r in _since()["hand_changes"]} == {"edge-ai"}  # switched off: leaders don't see it
+
+
+def _catalog(db, tech_id, verdict, **extra):
+    tech(db, tech_id, tech_id.replace("-", " "))
+    db["technologies"].update_one({"_id": tech_id}, {"$set": {
+        "imported": {"row": 1}, "classification": {"evidence": {"verdict": verdict, "reason": f"{verdict} because"}}, **extra}})
+
+
+def test_catalog_technologies_too_early_to_place_are_frozen_for_leaders(db):
+    """5 Nov review: Tata's catalog technologies the radar judged thin or not
+    credible, and never assessed, are listed for leaders in every fabric; the
+    assessed, the not judged, the switched off and those not (or no longer)
+    in the catalog aren't; the setting switches the list off."""
+    _world(db)
+    _catalog(db, "qrng", "thin")
+    _catalog(db, "ioc", "not_credible")
+    _catalog(db, "pqc", "strong")
+    _catalog(db, "off", "thin", enabled=False)
+    _catalog(db, "out", "thin")
+    decisions.create("catalog", "out", value="no", tz="UTC")
+    tech(db, "free", "free")
+    db["technologies"].update_one({"_id": "free"}, {"$set": {"classification": {"evidence": {"verdict": "thin"}}}})
+    db["technologies"].update_one({"_id": "free"}, {"$unset": {"imported": ""}})
+    tech(db, "added", "added")
+    db["technologies"].update_one({"_id": "added"}, {"$set": {"classification": {"evidence": {"verdict": "thin"}}}})
+    decisions.create("catalog", "added", value="yes", tz="UTC")
+    db["technologies"].update_one({"_id": "edge-ai"}, {"$set": {"imported": {"row": 2},
+                                                                 "classification": {"evidence": {"verdict": "thin"}}}})  # assessed
+    e = publish().json()["edition"]
+    assert e["counts"]["too_early"] == 3
+    body = client.get("/api/frontier", params={"fabric": "cloud"}).json()
+    assert [(r["tech_id"], r["verdict"], r["reason"]) for r in body["too_early"]] == [
+        ("added", "thin", None), ("ioc", "not_credible", "not_credible because"), ("qrng", "thin", "thin because")]
+    assert client.get("/api/frontier").json()["too_early"] == body["too_early"]  # the same in every fabric
+    db["settings"].update_one({"_id": "radar"}, {"$set": {"frontier_too_early": False}}, upsert=True)
+    publish()
+    assert client.get("/api/frontier").json()["too_early"] == []

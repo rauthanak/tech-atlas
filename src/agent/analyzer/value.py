@@ -16,9 +16,13 @@ money or a percentage is refused and asked again.
 Each use case carries a ballpark size (28 Oct review): from a page that
 sizes it, else from a page that sizes a comparable market (named, with why it
 compares), else "none" with why. The size is the one figure the skill writes,
-always with its page; one that can't be used is kept as "none" with the
+always with its page and the page's own words, which must be on it
+(services/quotes, 5 Nov review); one that can't be used is kept as "none" with the
 reason, never a reason to ask again. The band is worked out when read
 (services/market.py).
+
+Each use case names the industry it serves, from the list in the skill's
+text (5 Nov review); a missing one is left blank, never a reason to ask again.
 
 It also suggests which of the fabric's listed blockers the pages show, each
 with why, the words and the page; a person ticks them or not. A malformed
@@ -26,6 +30,7 @@ suggestion is left out, never a reason to ask again."""
 
 import re
 
+from app.services import quotes
 from app.services.db.mongo import get_collection
 from app.services.prompts.recipe import Task
 
@@ -80,9 +85,15 @@ def size(given, cite) -> dict:
         return none("The size gave no usable figure.")
     if given["basis"] == "comparable" and not (text["comparable"] and text["why_comparable"]):
         return none("A comparable must say what it is compared with and why.")
+    quote = str(given.get("quote") or "").strip()
+    if not quotes.on_page(quote, doc_id=page[0]):
+        return none("The words that state the size weren't found on its page.")
+    if usd is not None and not quotes.matches(usd, quote):
+        return none("The size doesn't match the words on its page.")
     return {"basis": given["basis"], "amount_usd_bn": usd, "saving_pct": pct, "covers": text["covers"],
             "year": given.get("year") if isinstance(given.get("year"), int) else None,
-            "comparable": text["comparable"] or None, "why_comparable": text["why_comparable"] or None, "page": page[0]}
+            "comparable": text["comparable"] or None, "why_comparable": text["why_comparable"] or None, "page": page[0],
+            "quote": quote}
 
 
 def check(fabric: dict, mechs: list[dict], pages: list[str]):
@@ -125,7 +136,9 @@ def check(fabric: dict, mechs: list[dict], pages: list[str]):
                 raise ValueError(f"use case {rank} gives no capital required: say light, moderate or heavy, and why")
             if MONEY.search(why):
                 raise ValueError("the capital note wrote a figure")
+            industry = uc["industry"].strip() if isinstance(uc.get("industry"), str) else ""
             cases.append({"key": f"{fabric['_id']}:{rank}", "title": str(uc["title"]).strip(), "rank": rank, "cited": True,
+                          "industry": industry if 0 < len(industry) <= 60 else None,
                           "suggested": False, "pages": cite(uc.get("pages")),
                           "levers": [lever(given[lv["lever_id"]], lv, n, rank) for n, lv in enumerate(required, 1)],
                           "capital": {"direction": cap["direction"], "why": why}, "size": size(uc.get("size"), cite)})

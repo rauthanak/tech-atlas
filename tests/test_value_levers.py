@@ -111,16 +111,26 @@ def _sized(size):
     return {**_case([_lever("network_contribution"), _lever("network_delivery_cost")]), "size": size}
 
 
+def _pages_say(db):
+    """The pages the sizes cite, with the words that state them."""
+    db["documents"].insert_many([
+        {"_id": "p2", "has_text": False, "summary_text": "The quantum-safe WAN market will reach US$2.4 billion in 2025."},
+        {"_id": "p3", "has_text": True, "summary_text": "SD-WAN history."}])
+    db["page_texts"].insert_one({"_id": "p3", "text": "Firms cut WAN spend by\u00a015% when they moved to SD-WAN."})
+
+
 def test_a_ballpark_size_from_the_evidence_or_a_comparable(db):
     fabric, mechs = _fabric(db)
+    _pages_say(db)
     check = value.check(fabric, mechs, PAGES)
     out = check({"use_cases": [_sized({"basis": "evidence", "amount_usd_bn": 2.4, "covers": "quantum-safe WAN", "year": 2025,
-                                        "page": 2})]}, None)
+                                        "page": 2, "quote": "will reach US$2.4 billion in 2025"})]}, None)
     assert out["use_cases"][0]["size"] == {"basis": "evidence", "amount_usd_bn": 2.4, "saving_pct": None,
                                            "covers": "quantum-safe WAN", "year": 2025, "comparable": None,
-                                           "why_comparable": None, "page": "p2"}
+                                           "why_comparable": None, "page": "p2", "quote": "will reach US$2.4 billion in 2025"}
     out = check({"use_cases": [_sized({"basis": "comparable", "saving_pct": 15, "covers": "WAN spend", "page": 3,
-                                        "comparable": "SD-WAN in 2018", "why_comparable": "same buyers"})]}, None)
+                                        "comparable": "SD-WAN in 2018", "why_comparable": "same buyers",
+                                        "quote": "cut WAN spend by 15%"})]}, None)
     size = out["use_cases"][0]["size"]
     assert size["basis"] == "comparable" and size["saving_pct"] == 15 and size["amount_usd_bn"] is None
     assert size["comparable"] == "SD-WAN in 2018" and size["page"] == "p3"
@@ -141,6 +151,24 @@ def test_a_size_that_cant_be_used_is_kept_as_none_with_why(db):
     assert reason({"basis": "evidence", "amount_usd_bn": 2, "saving_pct": 5, "page": 1})["reason"] == "The size gave no usable figure."
     assert reason({"basis": "comparable", "amount_usd_bn": 2, "page": 1, "comparable": "x"})["reason"] == (
         "A comparable must say what it is compared with and why.")
+    _pages_say(db)
+    # 5 Nov review: the size's own words must be on its page, and agree with it
+    assert reason({"basis": "evidence", "amount_usd_bn": 2.4, "page": 2})["reason"] == (
+        "The words that state the size weren't found on its page.")
+    assert reason({"basis": "evidence", "amount_usd_bn": 2.4, "page": 2, "quote": "will reach US$3 billion"})["reason"] == (
+        "The words that state the size weren't found on its page.")
+    assert reason({"basis": "evidence", "amount_usd_bn": 24, "page": 2, "quote": "will reach US$2.4 billion in 2025"})["reason"] == (
+        "The size doesn't match the words on its page.")
+
+
+def test_each_use_case_names_its_industry(db):
+    fabric, mechs = _fabric(db)
+    check = value.check(fabric, mechs, PAGES)
+    case = _case([_lever("network_contribution"), _lever("network_delivery_cost")])
+    assert check({"use_cases": [{**case, "industry": " Healthcare and life sciences "}]}, None)["use_cases"][0]["industry"] == \
+        "Healthcare and life sciences"
+    for bad in (None, "", "x" * 61, 7):  # left blank, never a reason to ask again
+        assert check({"use_cases": [{**case, "industry": bad}]}, None)["use_cases"][0]["industry"] is None
 
 
 def test_the_levers_still_never_carry_a_figure_with_a_size(db):

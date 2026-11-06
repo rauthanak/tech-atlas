@@ -1,14 +1,17 @@
 """Market size as a band (agreed with Tata on 21 Oct): never a figure the
 model makes up. The Addressable market measure returns the one figure it rests
-on, with its year, its scope and the page that gives it (engine._figure keeps
-it only when that page is one the measure cites); each use case carries its
-ballpark size the same way (value.size). The band is worked out here, from the
+on, with its year, its scope, the page that gives it and the page's own words
+(engine.figure_check keeps it only when that page is one the measure cites and
+the words are on it, services/quotes); each use case carries its ballpark
+size the same way (value.size). The Growth measure gives the growth rate a
+page states, checked the same way (5 Nov review). The band is worked out here, from the
 bands in Setup (scoring_config `market_bands`, Hasan's scale: hundreds of
 millions, billions, trillions)."""
 
 from app.services.db.mongo import get_collection
 
 MEASURE = "addressable-market"
+GROWTH = "growth"
 # used when a database has no market_bands yet: the seeded list
 DEFAULT_BANDS = [{"below_usd_bn": 0.1, "label": "under $100M"}, {"below_usd_bn": 1, "label": "$100M–1B"},
                  {"below_usd_bn": 10, "label": "$1–10B"}, {"below_usd_bn": 100, "label": "$10–100B"},
@@ -30,6 +33,17 @@ def market_size(measures: dict | None) -> dict | None:
         return None
     f = m["figure"]
     return {**f, "band": band(f["amount_usd_bn"])} if f else {"band": None}
+
+
+def growth_rate(measures: dict | None) -> dict | None:
+    """From an assessment's measures: the growth rate a page states
+    {cagr_pct, from_year, to_year, scope, url, quote}, or {cagr_pct: None}
+    when no page gave one, or None when the assessment predates growth rates."""
+    m = (measures or {}).get(GROWTH)
+    if not m or not m.get("figure_checked"):
+        return None
+    f = m["figure"]
+    return f if f and f.get("cagr_pct") else {"cagr_pct": None}
 
 
 def size_words(size: dict) -> str:

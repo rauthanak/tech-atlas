@@ -80,7 +80,8 @@ def _answer(skill: str, text: str):
     if skill == "pov":
         return {"headline": "A stand-in Point of View.", "background": "Stand-in.", "maturity": "Stand-in.",
                 "value": "Stand-in.", "summary": "Stand-in.", "tora_analysis": {}, "other_measures": "Stand-in.",
-                "placement_rationale": "Stand-in.", "evidence_gaps": [], "recommendation": "Monitor."}
+                "placement_rationale": "Stand-in.", "evidence_gaps": [], "recommendation": "Monitor.",
+                "customer_need": [], "alternatives": [], "players": [], "risks": [], "whats_new": []}
     if skill == "technology_names":
         return {i: {"names": [], "not_a_technology": None} for i in re.findall(r"^\s*-?\s*([\w.-]+):", text, re.M)}
     if skill == "name_check":
