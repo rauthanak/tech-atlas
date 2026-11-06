@@ -20,7 +20,7 @@ OUT = ROOT / "Tech Radar - changes after the midpoint review.docx"
 NAVY = RGBColor(0x04, 0x1A, 0x4A)
 MUTED = RGBColor(0x49, 0x4A, 0x52)
 
-VERSION = "Version 43 · 6 November 2026"
+VERSION = "Version 44 · 6 November 2026"
 HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the midpoint review, with today's screens and design mock-ups."),
            ("2", "20 Oct 2026", "Change 0 built: technologies say how solid their assessment is, a technology's result in each fabric stays "
                                 "with the technology, plain names on every screen. Real screens replace its mock-up."),
@@ -142,7 +142,8 @@ HISTORY = [("1", "20 Oct 2026", "First version: every change agreed after the mi
                                  "size can rest on a wider market, named as such."),
            ("43", "6 Nov 2026", "Change 64: hand changes listed before Publish; catalog technologies too early to place on "
                                  "the leaders' view; every figure checked against its page, and the growth rate; an "
-                                 "industry on each use case; five short parts in each Point of View.")]
+                                 "industry on each use case; five short parts in each Point of View."),
+           ("44", "6 Nov 2026", "Change 65: the leaders' view lists what each business line has committed to, by fabric.")]
 
 # The numbers in the text, from the live radar on 21 Oct (6 Oct is the run before these changes).
 N = dict(
@@ -284,6 +285,8 @@ AFTER_CAPTIONS = {
     "item-21-dropdowns.png": "After: every dropdown's arrow is set in from its rounded edge, with room kept for it after the text.",
     "item-20-plan.png": "After: Tata's plan: the commitment as a status in the title; where Tata is on its path to scale as one track; then a checklist of what's recorded, each with its action.",
     "item-19-finance.png": "After: Finance leads with Enter the figures, says when figures are asked for and what the next step needs now, and lists what the figures need once.",
+    "item-65-committed.png": "After: under the counts, each technology with an owner: who owns it, the next action and date, "
+                             "and what's committed, grouped by fabric; with one fabric chosen, only that business line's.",
     "item-51-score-by-hand.png": "After: every measure the model scored has Score by hand; a person's score replaces it, the model's stays beside it, with Undo.",
     "item-18-history.png": "After: History says what the latest assessment read, of all its pages, and lists every choice people made, who, when and why, with Undo.",
 }
@@ -1723,6 +1726,24 @@ ITEMS.append(
                   ("Parts in a Point of View from Tata's format", "Missing five", "All five, from the pages")],
          diagram=None, before=[]))
 
+ITEMS.append(
+    dict(n="65", title="What each business line has committed to, on the leaders' view", status="Live",
+         source=[("S12", "Backlog item 4, Leader's response and BU summary: tie it to the technology and business line, not to "
+                         "a Point of View; a summary per business line of what it said yes to, the resources and progress; "
+                         "Ankur doubts business heads will enter it themselves")],
+         what=["The What Tata has committed box under the leaders' grid keeps its counts and now lists each technology with "
+               "an owner: who owns it, the next action and its date, and the people, budget or trial committed, furthest "
+               "along first, each linked to its Point of View.",
+               "With a fabric chosen, the box lists only that business line's technologies: its summary. On All, the list "
+               "is grouped by fabric. The edition pack carries the same box.",
+               "Nothing new to record: the innovation team keeps recording the owner, next action and resources on the "
+               "technology's fabric tab, after speaking to the business line. Business heads don't enter anything, and a "
+               "recorded owner is the line's yes."],
+         why="Leaders could see how many technologies had an owner, but not which, nor what each business line had taken on, "
+             "without opening dots one by one.",
+         metrics=[("What leaders see of commitments", "Counts per state", "Counts, then each commitment by business line")],
+         diagram=None, before=[]))
+
 
 DECISIONS = [
     "Finance figures (contribution, payback, break-even) are removed: Tata won't enter them (1 Nov). The path to scale keeps "
@@ -1743,6 +1764,8 @@ DECISIONS = [
     "When several rows of an imported list join one technology, none of their values is applied; a narrower technology is "
     "never folded into a broader one.",
     "The radar may suggest blockers from the pages; only a person picks them (signed off 21 Oct).",
+    "Commitments are recorded by the innovation team on each technology's fabric, not by business heads; no export until "
+    "Abhishek's portal can take one (6 Nov).",
     "Only an admin changes a score; a change reaches leaders at the next Publish, listed there first (5 Nov).",
     "A figure the radar shows must be in its page's own words; no sector weights are invented (5 Nov).",
     "Tata's list is called the catalog. A person can add a technology to it or take one out, kept like any other choice, "
