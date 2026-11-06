@@ -1711,7 +1711,10 @@ ITEMS.append(
                "Each use case names the industry it serves, from a list in the use-case skill's text.",
                "Each Point of View gains five short parts, every bullet citing its page: Risks, under the recommendation; "
                "and, in a new fold, Why customers want it, Alternatives, Who's building it and What's new. A part the pages "
-               "don't cover says so. The Point of View now reads each cited page's summary, not just its title."],
+               "don't cover says so. The Point of View now reads each cited page's summary, not just its title.",
+               "On the leaders' grid, names listed beside a cluster of dots are plain text: the small coloured circle in front "
+               "of each name looked like a second dot. Dots on one point share a priority; one a person set says so in words, "
+               "\"(P1, set by a person)\"."],
          why="A change made by hand could reach leaders without the person publishing noticing; a catalog technology the "
              "radar couldn't place looked missed; and Tata's own Points of View carry parts the radar's lacked.",
          metrics=[("Hand changes shown at Publish", "Counts only", "Each one: what, who, when, why"),
